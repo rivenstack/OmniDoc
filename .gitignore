@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+.yarn/install-state.gz
+
+# Builds / output (framework-neutral candidates)
+dist/
+build/
+out/
+.output/
+.vercel/
+.netlify/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+.angular/
+coverage/
+storybook-static/
+*.tsbuildinfo
+
+# Caches
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.swc
+.vite/
+.vitest/
+.nyc_output/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test / Playwright / Cypress artifacts
+test-results/
+playwright-report/
+blob-report/
+cypress/videos/
+cypress/screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.idea/
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Local MCP overrides that may contain secrets
+# Keep tracked .cursor/mcp.json (no secrets). Ignore local secret-bearing copies.
+.cursor/mcp.local.json
+.cursor/mcp.*.local.json
+**/mcp.secrets.json
+
+# Optional local scratch
+.tmp/
+.temp/
+*.local
