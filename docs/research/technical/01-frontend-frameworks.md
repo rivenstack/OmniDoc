@@ -1,6 +1,6 @@
 # Frontend Framework Candidates
 
-**Research date / access date:** 2026-09-13  
+**Research date / access date:** 2026-09-13
 **Question:** Which TypeScript web frameworks are credible for an
 authenticated, document-heavy, editor-centric SaaS under Extension-First
 criteria — without selecting a winner?
