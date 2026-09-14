@@ -85,11 +85,38 @@ verify Phase 0, then `@user` accepts/rejects ADR-0001.
 - **Phase 0 final defect ledger: DEF-001, DEF-002, DEF-003 all CLOSED —
   zero open defects.** Phase Decision reaffirmed **PASS**. Repository
   remains safe to publish.
-- **Active:** Task 0.7 → **`@user`** ADR-0001 decision gate
-  (`docs/handoffs/current.md` — gate content preserved throughout all
-  remediation/verification cycles)
+- **Research-review refinements landed (2026-09-14,
+  `@user`-directed):** `docs/research/version-ledger.md` created as the
+  single authority for version-bound claims (pinning + re-verify rules);
+  stale version cells across the technical package corrected after the
+  evidence set was found to have gone stale within a day of being
+  written — Next.js "v15+" → **16.3.5**, React Router 7 → **8**
+  (v8 had shipped 2026-06-17), TipTap 3.27.3 → **3.31.3**, Lexical
+  ~0.43 → **0.50.0**.
+- **ADR-0001 amended and partially accepted (2026-09-14, `@user`):**
+  category 1 (frontend framework) → **Next.js 16.3.5**, replacing the
+  proposal's React Router 7; category 2 (editor) → **TipTap 3.31.3**
+  with **ProseMirror JSON as the note source of truth** (markdown
+  produced only by one canonical serializer for export + chunking).
+  Categories 3–7 remain `proposed`. Decision record: ADR-0001
+  §Decision record.
+- **ADR-0002 `accepted` (2026-09-14):** **Nx 23.2.1** + **pnpm 12.4.1**
+  + **Node 24 LTS**, `apps/web` + `apps/api` + `packages/*`, with
+  `@nx/enforce-module-boundaries` making the ports-only invariant
+  mechanically checkable. **Supersedes** the previously "confirmed"
+  `frontend/` + `backend/` directory contract.
+- **ADR-0003 `accepted` (2026-09-14):** Tailwind CSS 4.3.3 + shadcn/ui
+  4.21.0 on Base UI 1.8.0; RSC + Server Actions first with Zustand
+  5.0.15 for editor/UI state (no client cache library in v1); Vitest
+  5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + axe 4.13.0 +
+  MSW 2.15.0 + Storybook 10.6.0.
+- **Active:** Task 0.7 → **`@user`** ADR-0001 decision gate —
+  **partially answered 2026-09-14**; the remaining categories and gates
+  in `docs/handoffs/current.md` are still live
 - Expected next: `/commander` re-plans Phase 1 with `/designer` and
-  `/implementer` once `@user` answers ADR-0001 + open gates
+  `/implementer` on the accepted stack (Next.js 16 + Nx workspace),
+  and rolls Task 0.7 forward; scaffolding still requires an Implementer
+  handoff
 
 ### Wave B packages (accepted evidence; do not rewrite)
 
@@ -118,23 +145,30 @@ verify Phase 0, then `@user` accepts/rejects ADR-0001.
 | 0.1b Integrate Wave B → open 0.5 | Commander | completed | `docs/handoffs/archive/H-2026-09-13-P0-T01B-commander-commander.md` |
 | 0.5 Architecture + ADR-0001 proposed | Architect | completed | `docs/handoffs/archive/H-2026-09-13-P0-T05-commander-architect.md` |
 | 0.6 Independent Phase 0 verification | Phase Check | completed (PASS) | `docs/handoffs/archive/H-2026-09-13-P0-T06-architect-phase-check.md` |
-| 0.7 `@user` ADR-0001 decision gate | `@user` | ready | `docs/handoffs/current.md` |
+| 0.7 `@user` ADR-0001 decision gate | `@user` | partially answered 2026-09-14 (categories 1–2; 3–7 + gates open) | `docs/handoffs/current.md` |
 
 ## Blockers
 
-- Stack remains undecided until ADR-0001 `@user` acceptance
-- No application install/run until ADR-0001 + implementation handoff
+- **ADR-0001 categories 3–7 remain `proposed`** (database, vector,
+  embedding/LLM posture, auth, hosting) — categories 1–2 are accepted
+  (2026-09-14)
+- Scaffolding is authorized in *shape* by ADR-0002 but still requires an
+  **Implementer handoff** before any app is generated
 - Production AI/provider activation remains gated
 - Phase 0 verification complete (PASS) with **zero open defects**
   (DEF-001, DEF-002, DEF-003 all closed). Phase 0 fully closes once
-  `@user` answers the ADR-0001 gate (Task 0.7)
+  `@user` finishes the ADR-0001 gate (Task 0.7)
 
 ## Open Gates
 
 **ADR / stack**
 
-- **ADR-0001** — proposed by Architect; `@user` accepts/rejects/amends
-  (open)
+- **ADR-0001** — `accepted (partial)` 2026-09-14: category 1 (frontend
+  framework) and category 2 (editor + note source of truth) accepted;
+  categories 3–7 remain `proposed` and await `@user`
+- **ADR-0002** — `accepted` 2026-09-14 (Nx workspace, pnpm, layout,
+  boundary enforcement)
+- **ADR-0003** — `accepted` 2026-09-14 (frontend application toolchain)
 
 **Researcher-surfaced `@user` gates**
 
@@ -151,14 +185,17 @@ verify Phase 0, then `@user` accepts/rejects ADR-0001.
 - Public sample workspace vs local-only fixtures
 - UT-1…UT-14 unrun — user-validation open
 
-**ADR-0001-added decision inputs (still open)**
+**ADR-0001-added decision inputs**
 
-- Year-1 tenant count / corpus size
-- Collaborative editing in v1?
-- Markdown vs structured JSON as note source of truth
-- Always-on demo hosting required?
-- React-only vs openness to Svelte (proposal assumes React)
-- Package manager preference (research did not select)
+- **Answered 2026-09-14:** note source of truth → ProseMirror JSON
+  (markdown via one canonical serializer); React-only (Svelte closed);
+  package manager → pnpm 12.4.1
+- Still open: year-1 tenant count / corpus size; collaborative editing
+  in v1; always-on demo hosting required
+- **New inputs added by the 2026-09-14 decisions:** Nx generator choices
+  and `@nx/enforce-module-boundaries` tag taxonomy (ADR-0002); whether
+  Nx remote/cloud caching is ever enabled (currently **local cache
+  only**, data-ownership question)
 
 **Standing**
 

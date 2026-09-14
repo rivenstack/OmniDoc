@@ -5,21 +5,25 @@ publication or effective date is stated. Confidence: **H** high (primary
 official source), **M** medium (reputable secondary + corroboration),
 **L** low (community / marketing / undated).
 
+Version pins in this file come from
+[`../version-ledger.md`](../version-ledger.md) (last verified
+2026-09-14). Do not restate a version without a ledger row.
+
 ## 1. Frontend frameworks
 
 | Option | Version/signal | Maintenance | TS SaaS fit | A11y | RTL-readiness | Hosting portability | Lock-in | Editor/AI streaming ecosystem | Cost/license | Evidence | Conf. |
 |--------|----------------|-------------|-------------|------|---------------|---------------------|---------|-------------------------------|--------------|----------|-------|
-| Next.js (App Router) | Docs show v15+ App Router; RSC default | Vercel-led; large ecosystem | Strong for authenticated apps | React/a11y ecosystem; app responsibility | Logical CSS + `lang`/`dir` are app-owned; framework does not ship RTL locale | Strong on Vercel; portable via Node adapters with effort | Medium (platform conventions, RSC bundler coupling) | TipTap/Lexical React; SSE/stream patterns common | MIT (framework) | nextjs.org/docs; react.dev RSC | H |
-| React Router 7 (Remix successor) | Official: RR v7 = Remix path; Vite | Remix/RR team; Vite-native | Strong loaders/actions | Same React a11y model | App-owned `dir`/`lang` | High (Node, Cloudflare, etc. adapters) | Lower than Next for hosting | Mature data APIs; streaming SSR supported | MIT | reactrouter.com; remix.run merge blog | H |
+| Next.js (App Router) | App Router on **16.3.5** (stable 2026-09-11; verified 2026-09-14); RSC default | Vercel-led; large ecosystem | Strong for authenticated apps | React/a11y ecosystem; app responsibility | Logical CSS + `lang`/`dir` are app-owned; framework does not ship RTL locale | Strong on Vercel; portable via Node adapters with effort | Medium (platform conventions, RSC bundler coupling) | TipTap/Lexical React; SSE/stream patterns common | MIT (framework) | nextjs.org/docs; react.dev RSC | H |
+| React Router 8 (Remix successor) | Official: RR v8 = Remix path (**8.3.1**, 2026-08-28; verified 2026-09-14); Vite | Remix/RR team; Vite-native | Strong loaders/actions | Same React a11y model | App-owned `dir`/`lang` | High (Node, Cloudflare, etc. adapters) | Lower than Next for hosting | Mature data APIs; streaming SSR supported | MIT | reactrouter.com; remix.run merge blog | H |
 | Vite + React SPA | Vite build tool + client router | Vite/Evan You; RR optional | Fit for editor-heavy SPA; SEO/auth shell DIY | App-owned | App-owned | Highest static/CDN portability | Low framework lock-in; ops for API/SSR elsewhere | Streaming AI via separate API; no built-in SSR | MIT | vitejs.dev; community 2026 comparisons | H/M |
 | SvelteKit | Kit 2.x docs active | Svelte core | Strong full-stack; smaller React editor ecosystem | Good kit a11y patterns; verify editor libs | App-owned; fewer React editor options | Adapters (Node, Vercel, etc.) | Medium (Svelte component ecosystem) | TipTap has Svelte; Lexical React-first | MIT | svelte.dev/docs/kit | H |
-| TanStack Start (brief) | Vite + SSR/streaming | Newer; TanStack | Credible 4th for Vite SSR without Next | Same React model | App-owned | Vite deploy targets | Maturity younger than Next/RR7 | Growing | MIT | tanstack.com SSR docs | M |
+| TanStack Start (brief) | Vite + SSR/streaming | Newer; TanStack | Credible 4th for Vite SSR without Next | Same React model | App-owned | Vite deploy targets | Maturity younger than Next/RR8 | Growing | MIT | tanstack.com SSR docs | M |
 
 ## 2. Rich-text / markdown editors
 
 | Option | License | A11y claim | Collab path | Extensibility | RTL-readiness | Notes | Conf. |
 |--------|---------|------------|-------------|---------------|---------------|-------|-------|
-| TipTap (ProseMirror) | MIT core; paid Cloud suite | Headless — a11y is implementer duty; docs on roles/keyboard | Yjs + Hocuspocus (OSS); Cloud paid | Strong extension model | Official `textDirection` ltr/rtl/auto | v3.27.x observed 2026-07 on GitHub | H |
+| TipTap (ProseMirror) | MIT core; paid Cloud suite | Headless — a11y is implementer duty; docs on roles/keyboard | Yjs + Hocuspocus (OSS); Cloud paid | Strong extension model | Official `textDirection` ltr/rtl/auto | v3.31.3 (npm latest, 2026-09-04; verified 2026-09-14) | H |
 | Lexical | MIT (Meta) | WCAG-oriented design claim; still needs product testing | `@lexical/yjs` | Plugin architecture | Needs product PoC for BiDi; not claimed as shipped RTL locale | Official React bindings | H |
 | CodeMirror 6 | MIT | Strong screen-reader / keyboard story for code | Collab packages exist | Extension system | Directionality for code/notes needs PoC | Better for code blocks than full notes WYSIWYG | H |
 | Milkdown | MIT | Crepe/toolbar a11y work ongoing | Community / Yjs paths (verify) | Plugin + ProseMirror + remark | Unverified for BiDi | Markdown-first WYSIWYG | H/M |
@@ -36,7 +40,7 @@ official source), **M** medium (reputable secondary + corroboration),
 
 | Option | Index types | Tenant filter | Self-host | Managed cost posture | Embedding-model change | Conf. |
 |--------|-------------|---------------|-----------|----------------------|------------------------|-------|
-| Postgres + pgvector | HNSW, IVFFlat; iterative scans ≥0.8 | SQL `WHERE` / partial indexes / RLS | Yes (extension) | Bundled with Postgres host | Full re-embed + rebuild | H |
+| Postgres + pgvector | HNSW, IVFFlat; iterative scans ≥0.8.0 (latest 0.8.6, verified 2026-09-14) | SQL `WHERE` / partial indexes / RLS | Yes (extension) | Bundled with Postgres host | Full re-embed + rebuild | H |
 | Qdrant | HNSW + payload filters | Payload / partitioning | Yes + Cloud | Free tier + hourly resources | Re-index vectors | H/M |
 | Weaviate | Flexible indexes; hybrid BM25+vector | Native multi-tenancy (shard/tenant) | Yes + Cloud | Flex from ~$45/mo (vendor page) | Re-index | H |
 | Pinecone | Managed indexes | Namespaces (soft isolation) | No | Serverless RU/WU + mins (~$50 Std cited) | Re-index; proprietary API | H/M |

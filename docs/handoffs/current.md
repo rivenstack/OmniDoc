@@ -2,15 +2,38 @@
 handoff_id: H-2026-09-13-P0-T07
 affinity: decision-gate
 track: main
-status: ready
+status: in-progress
 phase: "0"
 task: "0.7"
 from: phase-check
 to: user
 created: 2026-09-13
+answered: 2026-09-14
 ---
 
 # Phase 0 — Task 0.7 `@user` ADR-0001 Decision Gate
+
+> **Status 2026-09-14: PARTIALLY ANSWERED.** `@user` settled the
+> frontend stack during research review. Recorded in
+> `docs/adr/ADR-0001-frontend-and-platform-stack.md` §Decision record,
+> `docs/adr/ADR-0002-workspace-and-tooling.md`,
+> `docs/adr/ADR-0003-frontend-application-toolchain.md`, and
+> `docs/research/version-ledger.md`. **The gate table and gates 2–5
+> below are still live** — categories 3–7 of ADR-0001 remain
+> `proposed`, and the product/legal/budget gates are unanswered.
+>
+> Answered on 2026-09-14: framework → **Next.js 16.3.5** (was React
+> Router 7 in the proposal); editor → **TipTap 3.31.3**; note source of
+> truth → **ProseMirror JSON** with markdown export; monorepo →
+> **Nx 23.2.1** with `apps/` + `packages/`; package manager →
+> **pnpm 12.4.1**; React-only (Svelte closed); styling/components →
+> **Tailwind 4.3.3 + shadcn/ui 4.21.0 on Base UI 1.8.0**; data/state →
+> **RSC + Server Actions + Zustand 5.0.15**; testing → **Vitest 5 +
+> Testing Library 16.3.3 + Playwright 1.63 + axe 4.13 + MSW 2.15 +
+> Storybook 10.6**; runtime → **Node 24 LTS**.
+>
+> `/commander` owns rolling this handoff forward into the next
+> main-track task.
 
 ## Start Command
 
@@ -24,7 +47,8 @@ Owner: **`@user`**
 
 Phase 0 passed independent verification
 (`docs/reviews/phase-0-verification.md`, Phase Decision: **PASS**).
-`ADR-0001` (`status: proposed`) is ready for your decision. This handoff
+`ADR-0001` (`status: accepted (partial)` since 2026-09-14) is ready for
+your decision on the remaining categories. This handoff
 exists to get your accept / reject / amend answer per category and your
 answers to the open product/legal/budget gates so `/commander` can
 re-plan Phase 1 with `/designer` and `/implementer`.
@@ -70,8 +94,8 @@ the primary evidence; ADR-0001 summarizes and cites them per category.
 
 | # | Category | Architect's proposed choice (still just a proposal) | Primary tradeoff you are accepting if you approve |
 |---|----------|-------------------------------------------------------|------------------------------------------------------|
-| 1 | Frontend framework | **React Router 7** (Framework Mode) | Portable hosting, less Vercel coupling, but a newer docs/hiring transition vs Next.js |
-| 2 | Rich-text editor | **TipTap** (ProseMirror); CodeMirror for fenced code | MIT + RTL-ready `textDirection` API, but accessibility chrome is DIY and storage format (markdown vs JSON) is still open |
+| 1 | Frontend framework | **Next.js 16.3.5** (App Router) — *answered 2026-09-14; the proposal was React Router 7* | Accepted on portfolio-recognizability grounds; React canary coupling is an accepted, documented cost |
+| 2 | Rich-text editor | **TipTap 3.31.3** (ProseMirror) + CodeMirror 6 for fenced code; **ProseMirror JSON as note source of truth** — *answered 2026-09-14* | MIT + `textDirection` API; accessibility chrome is DIY and now app-owned; markdown is export/chunking only |
 | 3 | Relational database | **PostgreSQL** (shared schema + app scoping + RLS defense-in-depth) | One operational system; RLS footguns (owner/pool bypass) must be actively guarded against |
 | 4 | Vector storage | **pgvector** in Postgres | Operational simplicity now; ANN+filter tuning and re-embed cost on model change; escalate to Qdrant only if eval fails |
 | 5 | Embedding / LLM posture | **Ports + mocks first**; operator-owned keys; OpenAI embeddings; Anthropic or OpenAI LLM at activation; **no** Assistants/`vector_stores` as corpus SoT; customer BYOK **later** | Standard ~30-day abuse-log retention unless you separately pursue sales-gated ZDR — do not let marketing imply zero-retention by default |

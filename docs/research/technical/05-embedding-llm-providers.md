@@ -1,6 +1,7 @@
 # Embedding and LLM Provider Posture
 
 **Research date / access date:** 2026-09-13  
+**Version pins / provider policy dates:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14; re-confirm retention + pricing rows on the live account before any external claim)  
 **Question:** Mainstream embedding/LLM options for OmniDoc — retention,
 training terms, BYOK feasibility, unit cost, swap portability. Evidence
 only; no vendor selection. Not legal advice.

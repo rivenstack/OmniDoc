@@ -31,6 +31,8 @@
   scans or exact/partial-index strategies — test isolation as security
 - Long-running embed/ingest jobs favor worker-capable hosts; function-only
   platforms need an external worker story
-- Remix new-project path is React Router 7; cite RR7 not legacy Remix alone
+- Remix new-project path is React Router 8; cite RR8 not legacy Remix alone
+- Version claims rot: cite the exact version + release date + read date, or
+  point at `docs/research/version-ledger.md` — never "latest" or "observed"
 - TipTap documents `textDirection`; headless editors still require product
   a11y ownership — do not equate API presence with WCAG pass

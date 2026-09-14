@@ -26,14 +26,18 @@ chosen yet**.
 | Agent operating system and handoff protocol | Settled |
 | Primary locale `en` (LTR) | Settled |
 | Architecture baseline (ports, tenancy, threat/RAG bars, fixtures) | Defined in [`architecture.md`](architecture.md) (architecture-ready draft) |
-| Frontend framework, editor, DB, vector store, auth, hosting | **Proposed** in [ADR-0001](docs/adr/ADR-0001-frontend-and-platform-stack.md) — **not accepted**; awaits `@user` |
-| Package manager | Still undecided (research did not evaluate; confirm at implementation) |
+| Frontend framework + editor | **Accepted 2026-09-14** — Next.js 16.3.5, TipTap 3.31.3, ProseMirror JSON as note SoT ([ADR-0001](docs/adr/ADR-0001-frontend-and-platform-stack.md) `accepted (partial)`) |
+| Workspace tooling | **Accepted 2026-09-14** — Nx 23.2.1, pnpm 12.4.1, Node 24 LTS ([ADR-0002](docs/adr/ADR-0002-workspace-and-tooling.md)) |
+| Frontend toolchain | **Accepted 2026-09-14** — Tailwind + shadcn/ui on Base UI, RSC-first, Vitest/Playwright/Storybook ([ADR-0003](docs/adr/ADR-0003-frontend-application-toolchain.md)) |
+| DB, vector store, auth, hosting, LLM posture | **Proposed** in [ADR-0001](docs/adr/ADR-0001-frontend-and-platform-stack.md) categories 3–7 — **not accepted**; awaits `@user` |
 | RTL locale shipping | Deferred (not closed) |
 | Production AI / provider activation | Open |
 
-Do not invent a stack. Do not add `package.json` or app scaffolding until
-ADR-0001 is accepted by `@user`. Today ADR-0001 is only **`proposed`** — a
-recommendation exists; it is not binding yet.
+Do not invent a stack. The frontend framework, editor, workspace tooling,
+and frontend toolchain are **accepted** (ADR-0001 categories 1–2,
+ADR-0002, ADR-0003). Do not add `package.json`, lockfiles, or app
+scaffolding until an implementation handoff authorizes it — and do not
+treat ADR-0001 categories 3–7 as settled: those remain **`proposed`**.
 Live status: [`context.md`](context.md). ADR index: [`docs/adr/`](docs/adr/README.md).
 
 ## Frontend contributors
@@ -67,8 +71,8 @@ OmniDoc/
 │   ├── memory/               # Per-role durable memory
 │   ├── research/             # Technical & UX evidence packs
 │   └── api/                  # API contracts (expected; may not exist yet)
-├── frontend/                 # App UI — confirmed directory contract (not present yet)
-├── backend/                  # App API / workers — confirmed directory contract (not present yet)
+├── apps/                     # Nx apps — web (Next.js) + api/workers (not present yet)
+├── packages/                 # Nx shared packages: ui, contracts, domain, mocks (not present yet)
 ├── .cursor/                  # Cursor agents, skills, rules, mcp.json
 └── references/               # Reference-capture pattern (optional)
 ```
@@ -77,13 +81,15 @@ OmniDoc/
 baseline**: experience-first ports, retrieval-time tenant isolation,
 answer/citation states, threat/safety bars, and mock-fixture themes.
 Stack-specific choices live under [`docs/adr/`](docs/adr/README.md).
-ADR-0001 is **`proposed`**, not accepted — read the proposal for what is
-likely coming; do not scaffold as if it already won.
+ADR-0001 is **`accepted (partial)`** — categories 1–2 (framework,
+editor + note source of truth) are binding; categories 3–7 are still a
+proposal. Read it for what is settled and what is not before scaffolding.
 
-`frontend/` and `backend/` are the **confirmed** directory contract
-(Architect + ADR-0001 proposal; aligned with
-`.cursor/skills/api-contract-change/SKILL.md`). Apps are still absent
-until ADR-0001 acceptance and an implementation handoff.
+`apps/` and `packages/` are the **confirmed** workspace layout
+([ADR-0002](docs/adr/ADR-0002-workspace-and-tooling.md), `accepted`
+2026-09-14; supersedes the earlier `frontend/` + `backend/` prediction).
+Apps are still absent until an implementation handoff authorizes
+scaffolding.
 
 ## Agent operating system (at a glance)
 

@@ -1,9 +1,9 @@
 # ADR-0001 — Frontend and Platform Stack
 
-- **Status:** `proposed`
-- **Date:** 2026-09-13
+- **Status:** `accepted (partial)` — categories 1 and 2 accepted by `@user` on 2026-09-14; categories 3–7 remain `proposed`. Full record: §Decision record (2026-09-14).
+- **Date:** 2026-09-13 (amended 2026-09-14)
 - **Deciders:** Architect proposes; `@user` accepts / rejects / amends
-- **Consulted evidence:** `docs/research/technical/` (Wave B);
+- **Consulted evidence:** `docs/research/technical/` (Wave B) + `docs/research/version-ledger.md` (pins, verified 2026-09-14);
   UX package as **experience constraints** only
   (`docs/research/ux/`, REC-01…REC-12, citation-trust). UT-1…UT-14 are
   **unrun hypotheses** and are not used as justification.
@@ -14,6 +14,14 @@
 ---
 
 ## Context
+
+> **Version note (2026-09-14).** React Router's current major is **8**
+> (8.3.1; v7 is still patched but not the current line) — see
+> `docs/research/version-ledger.md`. On 2026-09-14 `@user` accepted
+> **Next.js 16.3.5** as the framework, so §1 below records the
+> amendment rather than the original React Router 7 proposal. The
+> original reasoning is preserved in §1's alternatives table so the
+> decision trail stays auditable.
 
 OmniDoc needs a concrete TypeScript web stack to leave Phase 0: UI
 framework, note editor, relational DB, vector storage, embedding/LLM
@@ -75,78 +83,125 @@ is labelled **conditional** and the blocking gate is listed.
 
 ### 1. Frontend framework
 
-**Decision (proposed):** **React Router 7 (Framework Mode)** as the
-primary UI meta-framework, with a clear Node deploy adapter (and
-optional SPA mode only if a later ADR justifies it).
+**Decision (amended; accepted by `@user` 2026-09-14):** **Next.js
+16.3.5** (App Router) as the UI meta-framework, living in the Nx
+`apps/web` workspace (ADR-0002). Server components for the shell,
+marketing, and read-only surfaces; the note editor stays a client
+island. Streaming Ask goes through project-owned ports (route handlers
+/ SSE), never provider SDKs from the browser.
+
+**Why the original proposal changed**
+
+The 2026-09-13 proposal recommended **React Router 7 Framework Mode**.
+Two corrections moved the decision:
+
+1. **Version drift.** RR7 was already a major behind at the time of
+   writing (v8 shipped 2026-06-17), so the choice had to be re-taken
+   on current majors regardless. See
+   `docs/research/version-ledger.md`.
+2. **A missing decision driver.** The stated business context is a
+   portfolio / freelancing credibility product, so **audience
+   recognizability** — what a prospective client or hiring manager
+   recognises in a demo and on a CV — belongs in the driver list. The
+   original driver set omitted it entirely and priced only technical
+   concerns. On it, Next.js wins decisively, and it is the single
+   largest contributing factor to this amendment.
 
 **Drivers**
 
-- Authenticated, editor-heavy app: research notes that the note surface
-  is largely Client Components regardless of RSC
-  (`01-frontend-frameworks.md` — Next adverse: RSC benefit reduced for
-  core editor).
-- Hosting portability: RR7 documents multiple adapters; lower soft
-  Vercel coupling than Next (`00-evidence-matrix.md`,
-  `01-frontend-frameworks.md`, `08-candidate-shortlist.md`).
-- Streaming Ask via resource routes / SSE behind project ports aligns
-  with ports-only UI (`01-frontend-frameworks.md`).
+- **Portfolio recognizability** (added; dominant for this product's
+  stated purpose)
+- Ecosystem depth for this product shape: TipTap/Lexical React
+  adapters, shadcn/ui componentry (ADR-0003), Storybook, streaming
+  answer UI patterns
+- Authenticated, editor-heavy app: the note surface is largely Client
+  Components regardless of framework, so RSC benefit concentrates in
+  shell/marketing surfaces (`01-frontend-frameworks.md`)
+- Hosting optionality: Node/PaaS portable (Railway/Render per §7) *and*
+  Vercel available, with self-host still possible
 - Extension-First: TipTap/Lexical React ecosystems documented as mature
-  relative to Svelte for this product shape (`01`, `02`).
+  relative to Svelte for this product shape (`01`, `02`)
+
+**Known costs accepted (explicitly)**
+
+- **React canary coupling.** The Next.js App Router runs a React
+  *canary* build, not stable React — the risk the research flagged is
+  real and ongoing. Mitigation: keep the editor and the data layer
+  framework-agnostic behind ports, and forbid canary-only APIs in
+  application code. React Router 8 pins stable React ≥19.2.7, so this
+  is a genuine cost of the chosen path.
+- **Soft Vercel coupling** remains. Mitigation: containerize web and
+  worker early (§7) and avoid platform-proprietary bindings in app
+  code.
+- Vercel's Hobby tier is personal/**non-commercial** only, so it does
+  not by itself solve the always-on demo gate (Q6). Demo hosting is
+  still decided with §7.
 
 **Alternatives considered**
 
-| Option | Why not primary |
+| Option | Why not chosen |
 |--------|-----------------|
-| Next.js App Router | Strong DX and ecosystem (`01`); lost on soft Vercel coupling + RSC complexity for an editor-centric app when workers likely live off-platform (`01`, `07`, shortlist). Remains **fallback** if `@user` mandates Vercel-first DX. |
+| React Router 8 Framework Mode | **The original 2026-09-13 proposal.** Technically sound (`01`): portable Node/Cloudflare adapters, Vite toolchain, ESM-only, stable React ≥19.2.7, clearer data APIs. Lost on audience recognizability for a portfolio product, and it was proposed at RR7 after v8 had already shipped. Remains the **documented fallback** if canary coupling or Vercel-shaped conventions become a real problem. |
 | Vite + React SPA | Highest static portability (`01`); lost because auth/BFF/SSE/secret handling become fully DIY and raise session/CSRF risk surface for a multi-tenant SaaS (`01` adverse). Acceptable only if split API is explicitly preferred. |
-| SvelteKit | Strong Kit (`01`); lost on thinner React-centric editor/streaming UI ecosystem for OmniDoc’s Extension-First bar (`01`, shortlist watchlist). Reopen only if `@user` answers “open to Svelte” affirmatively. |
+| SvelteKit | **Closed by `@user` 2026-09-14 (React-only).** Strong Kit (`01`); lost on thinner React-centric editor/streaming UI ecosystem for OmniDoc’s Extension-First bar (`01`, shortlist watchlist). Reopen only if `@user` answers “open to Svelte” affirmatively. |
 | TanStack Start | Watchlist; younger maturity (`00`, `01`). |
 
 **Consequences**
 
-- Liked: portable Node deploy; Vite toolchain; clear loaders/actions.
-- Disliked: Remix→RR7 naming/docs transition; less RSC depth than Next
-  if marketing SSR becomes important later (`01`).
-- Directory contract: keep predictability of `frontend/` (UI) +
-  `backend/` (API/workers/adapters) from `docs/frontend/README.md`.
-  RR7 app lives under `frontend/`; long-running workers remain in
-  `backend/` (or `frontend` only if a later ADR colocates — default is
-  split so ingestion jobs are not tied to UI request limits).
+- Liked: strongest ecosystem and hiring/demo recognizability; App Router
+  shell + client editor island; Vercel *and* Node/PaaS deploy paths stay
+  open.
+- Disliked: React canary coupling (see accepted costs); RSC complexity
+  is real even though most of it lands in shell surfaces; soft Vercel
+  conventions persist and must be actively resisted.
+- Directory contract: the `frontend/` + `backend/` shape from
+  `docs/frontend/README.md` is **replaced by the Nx workspace layout in
+  ADR-0002** (`apps/web`, `apps/api`, `packages/*`). Workers stay in a
+  separate app so ingestion jobs are not tied to UI request limits.
 
 **Migration / rollback**
 
-- Forward: scaffold only after acceptance + Implementer handoff.
-- Rollback: to Next or Vite SPA requires route/data-API rewrite; keep
-  domain ports and `docs/api/` contracts stable to limit blast radius.
+- Forward: scaffold only after the ADR-0002 workspace lands + an
+  Implementer handoff.
+- Rollback: switching to React Router 8 requires rewriting routing and
+  data APIs but not the domain layer — keep ports, `docs/api/`
+  contracts, and the editor island framework-agnostic to bound the blast
+  radius. This is why the ports-only invariant matters more under this
+  decision, not less.
 
 **Security / privacy**
 
 - Session cookies and org context stay server-authoritative
   (`06-auth-identity.md` checklist; `architecture.md`).
-- No provider keys in the browser bundle.
+- No provider keys in the browser bundle — server actions/route handlers
+  are the only path to the answer port.
 
 **Verification**
 
-- PoC: authenticated shell + TipTap island + SSE mock Ask; deploy to
-  non-Vercel Node host; confirm no provider SDK in client graph.
-- Falsify if team cannot staff RR7 docs transition or if `@user`
-  requires Vercel-only workflow.
+- PoC: authenticated shell + TipTap island + SSE mock Ask; deploy to a
+  Node host (not Vercel-only); confirm no provider SDK in the client
+  graph (`@nx/enforce-module-boundaries` tag check, ADR-0002).
+- Confirm no canary-only React API is used anywhere in app code — grep
+  in review, and fail the PR if found.
+- Falsify if canary-only breakage or Vercel-shaped coupling repeatedly
+  blocks upgrades, or if the workspace cannot keep the editor island
+  framework-agnostic behind ports.
 
 **Consistency with `docs/frontend/README.md`**
 
-- Package manager remains **undecided** (guide correctly says pending;
-  research did not evaluate npm/pnpm/yarn). No change forced here —
-  Implementer chooses after acceptance unless `@user` prefers one.
-- Expected `frontend/` + `backend/` + `docs/api/` + `docs/adr/` contract
-  is **confirmed** by this proposal (guide already allowed Architect
-  adjustment).
+- **Package manager: decided — pnpm 12.4.1** (ADR-0002). The guide's
+  "undecided" note and its prerequisites table are now stale; the guide
+  must be refreshed as part of the ADR-0002 rollout.
+- Directory contract: the guide's `frontend/` + `backend/` expectation
+  is **superseded by ADR-0002** (`apps/` + `packages/`).
 
 ---
 
 ### 2. Rich-text / markdown editor
 
-**Decision (proposed):** **TipTap (ProseMirror)** as the primary note
-editor foundation (MIT core).
+**Decision (accepted by `@user` 2026-09-14):** **TipTap 3.31.3**
+(ProseMirror) as the primary note editor foundation (MIT core), with
+CodeMirror 6 inside it for fenced code.
 
 **Drivers**
 
@@ -167,13 +222,25 @@ editor foundation (MIT core).
 | Milkdown | Markdown-first strength (`02`); lost on smaller ecosystem / weaker collab docs skim (`02`). Prefer if `@user` mandates markdown-as-only-SoT *and* PoC wins. |
 | CodeMirror 6 | Excellent for code / source (`02`); lost as primary notes WYSIWYG; still expected **inside** TipTap for fenced code. |
 
-**Storage mode (explicitly open)**
+**Storage mode (decided 2026-09-14)**
 
-Markdown vs ProseMirror JSON as durable SoT is **not decided** here
-(shortlist Q3). Architecture requires one SoT + export
-(`architecture.md`). Recommendation: store TipTap/ProseMirror JSON
-**or** markdown with a single canonical serializer — choose in a
-follow-on ADR or Implementer PoC after `@user` preference.
+**TipTap/ProseMirror JSON is the durable source of truth; markdown is
+an export and chunking projection, not the store.** `@user` chose this
+over markdown-as-SoT and over storing both.
+
+- One SoT, satisfying `architecture.md` (one durable source of truth +
+  export paths): the JSON document.
+- A **single canonical serializer** (JSON → markdown) is the only
+  markdown producer. Chunking and embedding consume its output; export
+  consumes the same output. Never parse markdown back into the store —
+  a lossy round-trip would corrupt the editor document.
+- Passage-level citation anchors (block ids) come from ProseMirror node
+  attributes, which is what makes stable citation targets cheap. This is
+  the main reason JSON-as-SoT beat markdown-as-SoT for a
+  citation-centric product.
+- Consequence to own: markdown export fidelity is now a product
+  surface with its own tests (tables, nested quotes, fenced code,
+  inline identifiers/URLs), not an afterthought.
 
 **Consequences**
 
@@ -468,17 +535,64 @@ data-region gate.
 
 ---
 
-## Summary table (proposed)
+## Summary table
 
-| Category | Proposed choice |
-|----------|-----------------|
-| Frontend | React Router 7 Framework Mode |
-| Editor | TipTap (ProseMirror); CodeMirror for fenced code |
-| Database | PostgreSQL (+ app scope + RLS defense-in-depth) |
-| Vector | pgvector in Postgres |
-| Embedding/LLM | Ports + mocks first; operator keys; OpenAI embeddings; Anthropic or OpenAI LLM at activation; no Assistants vector_store SoT; BYOK later |
-| Auth | Better Auth + organization plugin |
-| Hosting | Railway (or Render); VPS if self-host mandated |
+| # | Category | Choice | Status |
+|---|----------|--------|--------|
+| 1 | Frontend | **Next.js 16.3.5** (App Router) | `accepted` 2026-09-14 |
+| 2 | Editor | **TipTap 3.31.3** (ProseMirror) + CodeMirror 6 for fenced code; **ProseMirror JSON as SoT**, markdown via one canonical serializer | `accepted` 2026-09-14 |
+| 3 | Database | PostgreSQL 18 (+ app scope + RLS defense-in-depth) | `proposed` |
+| 4 | Vector | pgvector 0.8.6 in Postgres | `proposed` |
+| 5 | Embedding/LLM | Ports + mocks first; operator keys; OpenAI embeddings; Anthropic or OpenAI LLM at activation; no Assistants vector_store SoT; BYOK later | `proposed` |
+| 6 | Auth | Better Auth 1.7.4 + organization plugin | `proposed` — conditional on the year-1 SSO answer |
+| 7 | Hosting | Railway (or Render); VPS if self-host mandated | `proposed` — demo-hosting gate still open |
+
+---
+
+## Decision record (2026-09-14)
+
+`@user` answered the Task 0.7 gate (`docs/handoffs/current.md`) during
+research review. Exact pins come from
+`docs/research/version-ledger.md`.
+
+### Accepted
+
+| Decision | Exact pin |
+|----------|-----------|
+| Frontend framework | **Next.js 16.3.5** (App Router) — chosen over React Router 8; primary reason: portfolio audience recognizability |
+| Editor foundation | **TipTap 3.31.3** (MIT core; `textDirection` verified present) |
+| Note source of truth | **TipTap/ProseMirror JSON**; markdown produced only by one canonical serializer for export + chunking |
+| Language / runtime | **Node 24 LTS** (`engines.node >= 24`, `.nvmrc` = `24`) |
+| Package manager | **pnpm 12.4.1** |
+| Monorepo tool + layout | **Nx 23.2.1**, `apps/` + `packages/` → **ADR-0002** |
+| Language surface | **React-only** (SvelteKit formally closed in §1) |
+| Styling + components | **Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI 1.8.0** → **ADR-0003** |
+| Data + state | **RSC + Server Actions first**; Zustand 5.0.15 for editor/UI state only; no client cache library in v1 → ADR-0003 |
+| Testing | **Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + @axe-core/playwright 4.13.0 + MSW 2.15.0 + Storybook 10.6.0** → ADR-0003 |
+
+### Explicitly still open — no default assumed
+
+- Categories 3–7 above (database, vector, embedding/LLM posture, auth,
+  hosting)
+- Budget ceiling; self-host vs managed; privacy / ZDR ambition; customer
+  BYOK; data region; year-1 enterprise SSO
+- Demo posture: mock-only deterministic Ask vs live provider; public
+  sample workspace vs local fixtures
+- Year-1 tenant count / corpus size; collaborative editing in v1;
+  always-on demo hosting
+- **RTL locale** — remains deferred, **not closed**; `@user` did not
+  bring it forward
+- **Production AI / provider activation** — remains gated
+- **UT-1…UT-14** — still unrun hypotheses
+
+### Follow-through owned elsewhere (not done by this amendment)
+
+- `docs/handoffs/current.md` Task 0.7 is **partially answered** and must
+  be rolled forward by `/commander`; gates 2–5 in that handoff are still
+  live.
+- `docs/frontend/README.md` needs a refresh for the now-known stack
+  (package manager, directory contract, prerequisites).
+- `context.md` live status and open gates need the same update.
 
 ---
 
@@ -490,14 +604,16 @@ conditional.
 
 ### From Researcher
 
-1. Monthly budget ceiling (infra + AI)
+1. Monthly budget ceiling (infra + AI) — **open**
 2. Self-host vs managed preference (app, auth, vectors) — may flip
-   auth/hosting/vector sections
+   auth/hosting/vector sections — **open**
 3. Privacy / zero-data-retention ambition vs standard abuse retention
-4. Customer BYOK: yes / no / **later** (this ADR assumes later)
-5. Data region preference (none / US / EU)
-6. Enterprise SSO in year one (may force Keycloak/Clerk B2B)
-7. **ADR-0001 acceptance** itself
+   — **open**
+4. Customer BYOK: yes / no / **later** (this ADR assumes later) — **open**
+5. Data region preference (none / US / EU) — **open**
+6. Enterprise SSO in year one (may force Keycloak/Clerk B2B) — **open**
+7. **ADR-0001 acceptance** itself — **partially answered 2026-09-14**
+   (categories 1–2 accepted; 3–7 open)
 
 ### From UX Researcher
 
@@ -508,15 +624,20 @@ conditional.
 
 ### Standing / ADR-added
 
-11. RTL locale support — deferred, not closed
+11. RTL locale support — deferred, not closed (unchanged by the
+    2026-09-14 review; `@user` did not bring it forward)
 12. Production AI / provider activation — open
 13. Year-1 tenant count / corpus size (affects RLS vs schema-per-tenant
-    and pgvector ceiling)
-14. Collaborative editing in v1? (editor collab path reserved only)
-15. Markdown vs structured JSON as note SoT
-16. Always-on demo hosting required?
-17. React-only vs openness to Svelte (this ADR assumes React)
-18. Package manager preference (if any) — not selected by research
+    and pgvector ceiling) — **open**
+14. Collaborative editing in v1? (editor collab path reserved only) —
+    **open**
+15. Markdown vs structured JSON as note SoT — **answered 2026-09-14:
+    ProseMirror JSON is the SoT, markdown is a serializer projection**
+16. Always-on demo hosting required? — **open**
+17. React-only vs openness to Svelte — **answered 2026-09-14:
+    React-only**
+18. Package manager preference — **answered 2026-09-14: pnpm 12.4.1**
+    (ADR-0002)
 
 ---
 

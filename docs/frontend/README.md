@@ -59,41 +59,68 @@ RTL-readiness discipline (see [Non-negotiables](#stack-independent-non-negotiabl
 - Agent roster, handoff protocol, and one-owner rule
 - No secrets in the repository
 
-### Pending ADR-0001 acceptance (+ `@user` gate)
+### Settled stack (accepted 2026-09-14)
 
-A full recommendation exists in
-[`docs/adr/ADR-0001-frontend-and-platform-stack.md`](../adr/ADR-0001-frontend-and-platform-stack.md)
-(`status: **proposed**`). Read it to see what is **likely** coming.
-Until `@user` accepts it, treat every stack choice below as **not
-binding**. Do not scaffold or install as if one option already won.
+These are **binding**. Source of truth:
+[`docs/adr/`](../adr/README.md) and
+[`docs/research/version-ledger.md`](../research/version-ledger.md) (every
+pin below was registry-verified on 2026-09-14).
 
-Proposed categories (still pending acceptance):
+| Area | Choice | ADR |
+|------|--------|-----|
+| Framework | Next.js 16.3.5 (App Router), React-only | [ADR-0001 §1](../adr/ADR-0001-frontend-and-platform-stack.md) |
+| Editor | TipTap 3.31.3 (ProseMirror) + CodeMirror 6 for fenced code | ADR-0001 §2 |
+| Note source of truth | TipTap/ProseMirror **JSON**; markdown only via one canonical serializer (export + chunking) | ADR-0001 §2 |
+| Workspace | Nx 23.2.1, `apps/` + `packages/`, boundaries enforced | [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md) |
+| Package manager | pnpm 12.4.1 | ADR-0002 |
+| Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) | ADR-0002 |
+| Styling / components | Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI `@base-ui/react` 1.8.0 | [ADR-0003](../adr/ADR-0003-frontend-application-toolchain.md) |
+| Data / state | RSC + Server Actions first; Zustand 5.0.15 for editor/UI state; **no client cache library in v1** | ADR-0003 |
+| Testing | Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + `@axe-core/playwright` 4.13.0 + MSW 2.15.0 + Storybook 10.6.0 | ADR-0003 |
+| Supporting libs | react-hook-form 7.88.0 + Zod 4.6.5; react-markdown 10.1.0 + remark-gfm + **rehype-sanitize** (mandatory); Shiki 4.4.3; lucide-react 1.46.0; next-themes 0.4.6; ESLint 10.10.0 + Prettier 3.9.6 | ADR-0003 |
 
-- Frontend framework / meta-framework
-- Rich-text / markdown editor library
-- Database and vector store
-- Embedding / LLM posture (mocks-first; operator keys; BYOK deferred)
-- Auth / identity
-- Hosting
+Notes that matter day to day:
 
-Also still undecided (not locked by the ADR proposal):
+- **Sanitization is mandatory** on the note/markdown render path — note
+  content is untrusted UGC (`architecture.md` §6).
+- **No client cache library, no i18n runtime, no second component base**
+  may be added without reopening ADR-0003.
+- **Server Actions may only call project-owned ports / route handlers.**
+  No Server Action and no client code may call a provider directly.
+- **Nx remote/cloud caching stays off** (local cache only) until `@user`
+  decides the data-ownership question (ADR-0002 §Security).
+- Component source is **copy-in and owned** in `packages/ui`; upgrades
+  are per-component reconciliations, not dependency bumps.
 
-- Component library (if any), styling approach, client state management,
-  test runner / e2e tooling
-- **Package manager** (npm / pnpm / yarn / other) — research did not
-  evaluate this; confirm at implementation handoff, not by guessing
+### Still pending / open
+
+`ADR-0001` is **`accepted (partial)`**: categories 1–2 are binding,
+categories 3–7 remain `proposed`:
+
+- Database (proposal: PostgreSQL 18 + app scope + RLS)
+- Vector store (proposal: pgvector 0.8.6)
+- Embedding / LLM posture (proposal: ports + mocks first, operator keys,
+  BYOK later)
+- Auth / identity (proposal: Better Auth 1.7.4 + organization plugin)
+- Hosting (proposal: Railway or Render; VPS if self-host mandated)
+
+Also open: budget ceiling; self-host vs managed; privacy / ZDR ambition;
+customer BYOK; data region; year-1 enterprise SSO; demo posture (mock vs
+live Ask, public vs local fixtures); year-1 tenant count; collaborative
+editing in v1; always-on demo hosting; **RTL locale shipping** (deferred,
+not closed); production AI activation.
 
 Directory layout: see
-[Expected directory contract](#expected-directory-contract-confirmed).
+[Workspace layout](#workspace-layout-adr-0002).
 
 Live status and open gates: always re-check root [`context.md`](../../context.md).
 
 **Architecture vs ADR:** root [`architecture.md`](../../architecture.md)
 is the OmniDoc **architecture-ready baseline** (ports, tenancy,
 answer/citation states, threat/safety, RAG eval bar, mock-fixture
-themes). It is not a blank starter. Concrete stack packages remain
-**ADR-0001-dependent** and unbound until acceptance. Decisions index:
-[`docs/adr/README.md`](../adr/README.md).
+themes). It is not a blank starter. Concrete stack packages now come
+from the accepted ADRs; categories 3–7 remain ADR-0001-dependent.
+Decisions index: [`docs/adr/README.md`](../adr/README.md).
 
 ---
 
@@ -103,13 +130,14 @@ themes). It is not a blank starter. Concrete stack packages remain
 
 | Tool | Notes |
 |------|--------|
-| **Node.js LTS** (or current LTS-track) | This machine currently has Node v24 and `npm`. Prefer an LTS you can keep consistent with teammates once ADR-0001 names one. |
-| **A package manager** | Still **undecided** — research did not evaluate npm/pnpm/yarn; confirm at implementation handoff. `npm` is available here; `pnpm` is not installed on this machine today. Do not treat any manager as decided. |
+| **Node.js 24 LTS** | **Pinned** (ADR-0002): `engines.node >= 24` and `.nvmrc` = `24`. Node 24 is the Active LTS line (24.21.0 at pin time) and satisfies every verified dependency floor. The reference machine currently runs Node 26.4.0. |
+| **pnpm 12.4.1** | **Decided** — pnpm is the workspace package manager (ADR-0002); it is installed on the reference machine. Do not add npm/yarn lockfiles. |
 | **Git** | Required for clone / branch / PR |
 | **Editor** | Cursor, VS Code, or equivalent. Enable EditorConfig support so [`.editorconfig`](../../.editorconfig) applies. |
 
-There is **no** `package.json` yet. You cannot `npm install` an app that
-does not exist. That is expected until ADR-0001.
+There is **no** `package.json` yet. You cannot `pnpm install` an app that
+does not exist. That is expected until an implementation handoff
+authorizes scaffolding.
 
 ### Clone
 
@@ -154,28 +182,37 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `frontend/` | **Confirmed** UI app root (Architect + ADR-0001 proposal) — **not present yet** |
-| `backend/` | **Confirmed** API/workers root (Architect + ADR-0001 proposal) — **not present yet** |
+| `apps/web/` | **Confirmed** UI application root (ADR-0001 §1 + ADR-0002) — **not present yet** |
+| `apps/api/` | **Confirmed** API / workers root (ADR-0002) — **not present yet** |
+| `packages/ui/`, `packages/contracts/`, `packages/domain/`, `packages/mocks/` | **Confirmed** shared packages (ADR-0002) — **not present yet** |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture-ready baseline (ports, tenancy, fixtures) — stack packages still ADR-0001-dependent |
-| [`docs/adr/`](../adr/) | Decision records; ADR-0001 is `proposed`, not accepted |
+| [`docs/adr/`](../adr/) | Decision records; ADR-0001 is `accepted (partial)`, ADR-0002/0003 `accepted` |
 
-### Expected directory contract (confirmed)
+### Workspace layout (ADR-0002)
 
-Architect confirmed the `frontend/` + `backend/` directory contract in the
-ADR-0001 proposal. Apps are still absent until ADR-0001 is **accepted**
-and an implementation handoff authorizes scaffolding.
+Confirmed by [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md)
+(`accepted` 2026-09-14), which **supersedes** the earlier
+`frontend/` + `backend/` contract. Apps are still absent until an
+implementation handoff authorizes scaffolding.
 
 ```text
-frontend/                 # UI application (framework pending ADR-0001 acceptance)
-backend/                  # API / workers / adapters (stack pending ADR-0001 acceptance)
+apps/web/                 # Next.js 16.3.5 UI application
+apps/api/                 # API / BFF / ingestion + embedding workers
+packages/ui/              # shadcn/ui components + design tokens (copy-in, owned)
+packages/contracts/       # shared request/response/stream types
+packages/domain/          # provider-neutral ports + domain orchestration
+packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
-docs/adr/                 # Architecture Decision Records (ADR-0001 proposed)
+docs/adr/                 # Architecture Decision Records
 docs/frontend/            # Contributor docs, checklists, fixture notes
 ```
 
-This shape matches the paths named by the API-contract skill. Do not create
-scaffolding until ADR-0001 acceptance + an implementation handoff. Package
-manager remains undecided (research did not evaluate it).
+`apps/web` may depend on `packages/contracts` and `packages/ui` only —
+never on `packages/domain` internals, `packages/mocks` production paths,
+or any provider SDK. That boundary is enforced in CI by
+`@nx/enforce-module-boundaries` (ADR-0002), not by review etiquette.
+Do not create scaffolding until an implementation handoff authorizes it;
+package manager is **pnpm 12.4.1**.
 
 ---
 
@@ -217,7 +254,7 @@ Authoritative protocol: [`docs/handoffs/README.md`](../handoffs/README.md).
    the `active/` file).
 3. Open a PR for reviewable changes (see [Branch, commits, PRs](#branch-commits-prs-and-review)).
 4. Call out blockers and open gates explicitly — never “quietly ship”
-   around ADR-0001 or production activation.
+   around an open gate or production activation.
 
 Human PRs and agent handoffs coexist: agents persist handoffs; humans
 still use normal git review. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
@@ -226,7 +263,7 @@ still use normal git review. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 ## Stack-independent non-negotiables
 
-These rules stay true no matter which stack ADR-0001 selects.
+These rules stay true regardless of stack or ADR state.
 
 ### 1. Ports-only UI
 
@@ -329,14 +366,14 @@ Examples: `docs/frontend-onboarding`, `feat/note-list-empty-state`
 
 - Small, reviewable commits with why-focused messages
 - Do not commit secrets, credentials, or personal data
-- Do not add framework lock-in files before ADR-0001
+- Do not add scaffolding or lockfiles outside an authorized handoff
 
 ### Pull requests
 
 - One concern per PR when practical
 - Link the handoff path or issue in the description
 - List manual checks you ran (especially a11y / logical-CSS when UI exists)
-- Call out anything still gated (ADR-0001, production providers, RTL locale)
+- Call out anything still gated (ADR-0001 categories 3–7, production providers, RTL locale)
 
 These are **team conventions**, not automated gates. This repository does
 **not** have CI configured yet — do not expect GitHub Actions or required
@@ -373,7 +410,7 @@ A frontend change is done when:
 
 ## What you can start today
 
-Concrete work that does **not** require ADR-0001:
+Concrete work that needs **no further decisions**:
 
 1. **Review this pack and `CONTRIBUTING.md`** — note gaps or unclear
    ownership; escalate via the routes below.
@@ -390,24 +427,25 @@ Concrete work that does **not** require ADR-0001:
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
 5. **Collect design-token input** — lists of semantic roles (surface,
-   text, accent, danger, focus ring, etc.) and motion preferences —
-   without picking a CSS framework.
+   text, accent, danger, focus ring, etc.) and motion preferences. The
+   framework is already decided (Tailwind CSS 4.3.3, ADR-0003); supply
+   semantic roles, not a framework choice.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.
 7. **Read research as it lands** under `docs/research/` — absorb; do not
    treat research shortlists as stack decisions.
 
-### Still blocked until ADR-0001
+### Still blocked until Phase 1 planning + an implementation handoff
 
-- Creating `package.json`, lockfiles, or app scaffolding
-- Choosing or installing a framework, editor library, component library,
-  or test runner as “the” stack
+- Creating `package.json`, lockfiles, or app scaffolding (the *shape* is
+  settled by ADR-0002; the *action* still needs a handoff)
 - Implementing production provider adapters
 - Shipping an RTL locale
-- Treating ADR-0001 recommendations as accepted stack choices
+- Adopting anything on ADR-0003's deferred list (client cache library,
+  i18n runtime, a second component base)
 - Treating `architecture.md` as final accepted truth beyond its
-  architecture-ready baseline (stack packages still await ADR-0001)
+  architecture-ready baseline (ADR-0001 categories 3–7 still await `@user`)
 
 ---
 
@@ -416,7 +454,7 @@ Concrete work that does **not** require ADR-0001:
 | Kind of question | Route to |
 |------------------|----------|
 | Product priority, scope, portfolio framing, final go/no-go, production provider activation, BYOK/privacy confirmations | **`@user`** |
-| Boundaries, ports, ADR-0001 proposal, directory contract confirmation, API architecture | **`/architect`** |
+| Boundaries, ports, ADR-0001/0002/0003, directory contract, API architecture | **`/architect`** |
 | Phase order, task ownership, handoff routing, “who owns this?”, Wave integration | **`/commander`** |
 | Technical evidence, provider terms, shortlists (not selection) | `/researcher` |
 | Journey/trust UX evidence and design-facing recommendations | `/ux-researcher` |

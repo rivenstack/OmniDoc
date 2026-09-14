@@ -1,6 +1,7 @@
 # Frontend Framework Candidates
 
 **Research date / access date:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Question:** Which TypeScript web frameworks are credible for an
 authenticated, document-heavy, editor-centric SaaS under Extension-First
 criteria — without selecting a winner?
@@ -20,7 +21,7 @@ criteria — without selecting a winner?
 
 | Criterion | Evidence | Class | Conf. |
 |-----------|----------|-------|-------|
-| Maintenance | Active official docs; App Router + RSC model documented | Verified technical | H |
+| Maintenance | Active official docs (App Router on **16.3.5**, verified 2026-09-14); App Router + RSC model documented | Verified technical | H |
 | Compatibility | React Server Components by default; Client Components via `'use client'` | Verified technical | H |
 | Upgrade safety | Dual App/Pages routers; React canary coupling in App Router noted in docs | Verified technical | H |
 | Accessibility | Framework does not replace WCAG work; React ecosystem tooling | Common practice | M |
@@ -38,13 +39,13 @@ lock-in.
 
 **Sources:** https://nextjs.org/docs ; https://react.dev/reference/rsc/server-components (accessed 2026-09-13).
 
-### B. React Router 7 (Remix successor)
+### B. React Router 8 (Remix successor)
 
 | Criterion | Evidence | Class | Conf. |
 |-----------|----------|-------|-------|
-| Maintenance | Official: Remix merges into React Router v7; new projects recommended on RR7 | Verified provider/product | H |
+| Maintenance | Official: Remix merges into React Router; v8 is the current major (**8.3.1**, verified 2026-09-14); new projects recommended on RR8 | Verified provider/product | H |
 | Compatibility | Vite plugin; loaders/actions; Framework Mode SSR default | Verified technical | H |
-| Upgrade safety | Codemod path from Remix v2 documented; Node 20+ | Verified technical | H |
+| Upgrade safety | v7→v8 documented as a minimal-breaking upgrade (former future flags are now default; `react-router-dom` removed); **Node 22.22+, React 19.2.7+, Vite 7+, ESM-only** | Verified technical | H |
 | Accessibility | Same React model as Next | Common practice | M |
 | RTL-readiness | App-owned | Inference | M |
 | Performance | Nested routes + selective SPA mode (`ssr: false`) | Verified technical | H |
@@ -52,10 +53,10 @@ lock-in.
 | Hosting / lock-in | Multiple adapters (Node, Cloudflare, etc.); less Vercel-coupling than Next | Common practice | M |
 | Editor / streaming | Streaming SSR documented; AI streams typically via resource routes | Verified + practice | M |
 
-**Adverse:** Naming transition (Remix → RR7) can confuse docs/hiring;
+**Adverse:** Naming transition (Remix → React Router) can confuse docs/hiring;
 RSC depth differs from Next — verify team expectations.
 
-**Sources:** https://remix.run/blog/merging-remix-and-react-router ; https://reactrouter.com/7.16.0/start/framework/routing ; upgrading docs (accessed 2026-09-13).
+**Sources:** https://remix.run/blog/react-router-v8 ; https://reactrouter.com/ ; upgrading docs (accessed 2026-09-14).
 
 ### C. Vite + React SPA (no meta-framework SSR)
 
@@ -96,7 +97,7 @@ risk for rich-text and streaming AI UI kits.
 ### Brief exclusion / watchlist
 
 - **TanStack Start:** Credible Vite+SSR option with streaming; younger
-  maturity than Next/RR7 — keep as watchlist, not primary shortlist seat
+  maturity than Next/RR8 — keep as watchlist, not primary shortlist seat
   unless Architect expands options (tanstack.com SSR docs, 2026-09-13).
 - **WordPress/PHP/commerce stacks:** Explicitly out of scope per handoff.
 
@@ -106,7 +107,7 @@ risk for rich-text and streaming AI UI kits.
 
 - Next.js App Router defaults to Server Components; interactivity requires
   Client Components.
-- React Router v7 is the documented successor path for Remix framework apps.
+- React Router v8 is the documented successor path for Remix framework apps (v7 remains patched).
 - SvelteKit provides typed server loads and adapters.
 
 ### Common market practices
@@ -124,12 +125,12 @@ risk for rich-text and streaming AI UI kits.
 ### Unknowns / @user items
 
 - Preference for React vs willingness to use Svelte?
-- Preference for Vercel-shaped DX vs hosting-portable Vite/RR7?
+- Preference for Vercel-shaped DX vs hosting-portable Vite/RR8?
 - Is marketing-site SEO in-process or a separate static site?
 
 ## PoC plan (non-binding)
 
-1. Scaffold RR7 and Next App Router shells with identical TipTap note page,
+1. Scaffold RR8 and Next App Router shells with identical TipTap note page,
    cookie session stub, and SSE mock citation stream.
 2. Measure: cold start, editor input latency, a11y axe on editor chrome,
    logical CSS/`dir` fixture with mixed URL/`bdi` identifiers.

@@ -13,7 +13,10 @@ read that instead of duplicating it here (including clone steps for
    - Main track: [`docs/handoffs/current.md`](docs/handoffs/current.md)
    - Parallel: the exact file under [`docs/handoffs/active/`](docs/handoffs/active/)
 3. Read Allowed Write Paths and stay inside them.
-4. Confirm stack status: **ADR-0001 is `proposed`**, not accepted — read
+4. Confirm stack status: **ADR-0001 is `accepted (partial)`** — categories
+   1–2 (framework, editor + note source of truth) are binding; categories
+   3–7 are still `proposed`. ADR-0002 (workspace/tooling) and ADR-0003
+   (frontend toolchain) are `accepted`. Read
    [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md)
    for the recommendation, then wait for the `@user` gate. Do not add
    framework scaffolding or lockfiles early.
