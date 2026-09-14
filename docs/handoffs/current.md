@@ -1,198 +1,146 @@
 ---
-handoff_id: H-2026-09-13-P0-T07
-affinity: decision-gate
+handoff_id: H-2026-09-14-P1-T01
+affinity: design
 track: main
-status: in-progress
-phase: "0"
-task: "0.7"
-from: phase-check
-to: user
-created: 2026-09-13
-answered: 2026-09-14
+status: ready
+phase: "1"
+task: "1.1"
+from: commander
+to: designer
+created: 2026-09-14
 ---
 
-# Phase 0 — Task 0.7 `@user` ADR-0001 Decision Gate
-
-> **Status 2026-09-14: PARTIALLY ANSWERED.** `@user` settled the
-> frontend stack during research review. Recorded in
-> `docs/adr/ADR-0001-frontend-and-platform-stack.md` §Decision record,
-> `docs/adr/ADR-0002-workspace-and-tooling.md`,
-> `docs/adr/ADR-0003-frontend-application-toolchain.md`, and
-> `docs/research/version-ledger.md`. **The gate table and gates 2–5
-> below are still live** — categories 3–7 of ADR-0001 remain
-> `proposed`, and the product/legal/budget gates are unanswered.
->
-> Answered on 2026-09-14: framework → **Next.js 16.3.5** (was React
-> Router 7 in the proposal); editor → **TipTap 3.31.3**; note source of
-> truth → **ProseMirror JSON** with markdown export; monorepo →
-> **Nx 23.2.1** with `apps/` + `packages/`; package manager →
-> **pnpm 12.4.1**; React-only (Svelte closed); styling/components →
-> **Tailwind 4.3.3 + shadcn/ui 4.21.0 on Base UI 1.8.0**; data/state →
-> **RSC + Server Actions + Zustand 5.0.15**; testing → **Vitest 5 +
-> Testing Library 16.3.3 + Playwright 1.63 + axe 4.13 + MSW 2.15 +
-> Storybook 10.6**; runtime → **Node 24 LTS**.
->
-> `/commander` owns rolling this handoff forward into the next
-> main-track task.
+# Phase 1 — Task 1.1 Visual System and Journey UI Specs
 
 ## Start Command
 
 ```text
-@user Read docs/handoffs/current.md. Decide ADR-0001 (accept / reject / amend, per category) and answer the listed open gates. The frontend contributor track in docs/frontend/README.md is already unblocked and does not require this decision to begin.
+/designer Read docs/handoffs/current.md and execute Task 1.1 exactly. Produce implementation-ready visual system and journey UI specs from accepted UX + architecture. Do not invent customer findings. Do not scaffold application code.
 ```
 
 ## Objective
 
-Owner: **`@user`**
+Owner: `/designer`
 
-Phase 0 passed independent verification
-(`docs/reviews/phase-0-verification.md`, Phase Decision: **PASS**).
-`ADR-0001` (`status: accepted (partial)` since 2026-09-14) is ready for
-your decision on the remaining categories. This handoff
-exists to get your accept / reject / amend answer per category and your
-answers to the open product/legal/budget gates so `/commander` can
-re-plan Phase 1 with `/designer` and `/implementer`.
+Create the OmniDoc visual system and implementation-ready UI specs for
+the four core journeys (capture, organize, retrieve, ask) plus dual-mode
+Ask chrome, cookbook/wizard, usage strip, public sample labelling, and
+honest workspace chrome — from **accepted** UX research and **accepted**
+architecture. Specs must be implementable on Next.js 16 + Tailwind 4 +
+shadcn/ui (Base UI) in `packages/ui` (ADR-0002/0003).
 
-**Nothing below is decided yet. Nothing is scaffolded. No stack exists
-in code.**
+A parallel Implementer task (1.2) scaffolds the Nx workspace. Do not
+wait for it. Do not write `apps/` or `packages/`.
 
-## Required Reading (optional but recommended before deciding)
+Consider Figma MCP (`plugin-figma-figma`) if authenticated and useful
+for design-system fidelity; GSAP Master only if motion specs need it;
+Canva MCP only for supporting marketing assets. MCP output does not
+close architecture or Phase Check gates. If an MCP is unauthenticated,
+note that and continue with repo-native Markdown/spec files.
 
-1. `docs/adr/ADR-0001-frontend-and-platform-stack.md` — full proposal
-   with drivers, alternatives, consequences, and citations
-2. `docs/reviews/phase-0-verification.md` — independent verification
-   (what was checked, what passed; DEF-001 / DEF-002 closed on re-verify)
-3. `context.md` — live status and open gates
-4. `architecture.md` — boundaries these choices sit behind (ports,
-   tenant isolation, threat/safety, RAG-evaluation bar)
+## Required Reading
 
-You do not need to read the underlying research files unless you want
-the primary evidence; ADR-0001 summarizes and cites them per category.
+1. `context.md` (read-only)
+2. `architecture.md` (accepted ports, answer states, locale, §5.9–§5.11)
+3. `AGENTS.md` Design Scope
+4. `docs/memory/designer.md`
+5. ADR-0001, ADR-0002, ADR-0003, ADR-0004 (all `accepted`)
+6. `docs/research/ux/08-design-facing-recommendations.md` (REC-01…REC-19)
+7. `docs/research/ux/09-byok-cookbook-and-dual-mode.md`
+8. `docs/research/ux/01-journeys.md`, `02-citation-trust.md`,
+   `03-onboarding-mobile.md`, `06-portfolio-credibility.md`,
+   `07-accessibility-friction.md`
+9. `quality/ui-qa-checklist.md` (starting point, not final)
+10. This handoff
 
-## What was verified (do not re-litigate; re-open only if you disagree)
+## Inputs / Evidence
 
-- No stack is scaffolded; no `package.json`; no secrets in the repo
-- No vendor was selected by either research stream; ADR-0001 correctly
-  says `proposed`, never `accepted`
-- Handoff ledger integrity, evidence counts (20 cited findings / 22
-  competitor observations / 14 unrun hypotheses / 12 recommendations),
-  and the architecture/ADR-0001 package all independently re-verified
-  against on-disk evidence — see the report for the full results table
-- Phase 0 verification returned **PASS**. Two documentation defects
-  found during verification (**DEF-001** Medium `/implementer`;
-  **DEF-002** Low `/commander`) were remediated and independently
-  re-verified as **closed**. Phase 0 exits with **zero open defects**.
-  Cosmetic handoff-text refresh for this status note (DEF-003) does not
-  affect your ADR-0001 decision.
-- Product name is **OmniDoc** (slug `omni-doc`), confirmed by `@user`.
-  Archived Phase 0 handoffs may still say "OmniNote" — that was the
-  pre-correction inferred name; see `docs/handoffs/archive/README.md`.
+- Stack: Next.js 16.3.5, TipTap 3.31.3, Tailwind 4.3.3, shadcn/ui on
+  Base UI, Better Auth orgs, ProseMirror JSON SoT
+- Dual-mode: `mock` | `operator_free_tier` | `customer_key` (ADR-0004)
+- Mock-first until CX gate; public labelled sample + clone fixtures
+- Minimal year-1 tenants; no fake enterprise teams
+- `en` LTR now; RTL deferred with RTL-readiness discipline
+- Production AI still gated — design live chrome as labelled, not as
+  the default first-run path
+- UT-* remain unrun hypotheses — do not treat as findings
 
-## Decisions you are asked to make
+## Allowed Write Paths
 
-### 1. ADR-0001 — accept / reject / amend, per category
+- `docs/design/**` (create the tree)
+- `quality/ui-qa-checklist.md` (extend if spec-driven, do not weaken)
+- `docs/memory/designer.md` (durable lessons only)
+- This file: append Outcome; set `status: completed` when done
 
-| # | Category | Architect's proposed choice (still just a proposal) | Primary tradeoff you are accepting if you approve |
-|---|----------|-------------------------------------------------------|------------------------------------------------------|
-| 1 | Frontend framework | **Next.js 16.3.5** (App Router) — *answered 2026-09-14; the proposal was React Router 7* | Accepted on portfolio-recognizability grounds; React canary coupling is an accepted, documented cost |
-| 2 | Rich-text editor | **TipTap 3.31.3** (ProseMirror) + CodeMirror 6 for fenced code; **ProseMirror JSON as note source of truth** — *answered 2026-09-14* | MIT + `textDirection` API; accessibility chrome is DIY and now app-owned; markdown is export/chunking only |
-| 3 | Relational database | **PostgreSQL** (shared schema + app scoping + RLS defense-in-depth) | One operational system; RLS footguns (owner/pool bypass) must be actively guarded against |
-| 4 | Vector storage | **pgvector** in Postgres | Operational simplicity now; ANN+filter tuning and re-embed cost on model change; escalate to Qdrant only if eval fails |
-| 5 | Embedding / LLM posture | **Ports + mocks first**; operator-owned keys; OpenAI embeddings; Anthropic or OpenAI LLM at activation; **no** Assistants/`vector_stores` as corpus SoT; customer BYOK **later** | Standard ~30-day abuse-log retention unless you separately pursue sales-gated ZDR — do not let marketing imply zero-retention by default |
-| 6 | Auth / identity | **Better Auth** + organization plugin (self-hosted) | You own security ops/maturity risk; strong if self-host narrative matters to you; **reopens to Clerk/Keycloak if you require year-1 enterprise SSO** |
-| 7 | Hosting | **Railway** (or Render); VPS if you mandate self-host | Usage-cost unpredictability vs PaaS convenience; Render free tier sleeps — bad for live demos unless paid always-on |
+**Must not touch:** `context.md`, `architecture.md`, `docs/adr/**`,
+`docs/research/**`, `apps/**`, `packages/**`, workspace scaffold files,
+`docs/handoffs/active/**` (Implementer 1.2).
 
-You may accept all seven, reject/amend any subset, or send it back to
-`/architect` with specific objections. Partial acceptance is valid — e.g.
-accept 1–4 and 7, hold 5–6 pending your BYOK/SSO answers below.
+## Deliverables
 
-### 2. Open gates (Researcher-surfaced)
+1. Design-system foundation: color/type/spacing/elevation tokens mapped
+   to Tailwind v4 + shadcn conventions; dark mode via `next-themes`;
+   Base UI `Direction` as single direction source.
+2. App shell + navigation for authenticated workspace (honest
+   org/workspace switcher — REC-18).
+3. Journey specs (desktop + mobile): capture (write-first TipTap),
+   organize (light optional structure), retrieve, ask with passage-level
+   citations and first-class refusal/partial/conflict.
+4. Dual-mode / cookbook / usage specs: mode×corpus labelling (REC-13,
+   REC-17); cookbook chapters (REC-14); compact usage strip (REC-15);
+   failure copy that names the mode (REC-16).
+5. Empty, loading, error, indexing-progress, and sample-vs-mine states.
+6. Accessibility and RTL-readiness notes per component (focus, keyboard,
+   labels, contrast, reduced motion, logical CSS, `bdi` for keys/URLs/
+   usage IDs/code). Do not claim RTL locale support.
+7. Component inventory for `packages/ui` (names only + states) so
+   Implementer can copy-in shadcn pieces without inventing IA.
+8. Outcome on this handoff.
 
-- Monthly budget ceiling (infra + AI)?
-- Self-host vs managed preference (app, auth, vectors)? — may flip the
-  auth/hosting/vector recommendations above
-- Privacy / zero-data-retention ambition, or accept standard ~30-day
-  abuse-log retention?
-- Customer BYOK: yes / no / **later** (ADR-0001 assumes later)?
-- Data region preference (none / US / EU)?
-- Enterprise SSO required in year one? (forces Keycloak or Clerk B2B if
-  yes — reopens the auth recommendation)
+## Constraints / Prohibited Decisions
 
-### 3. Open gates (UX-Researcher-surfaced)
+- Do not invent customer findings or conversion claims
+- Do not choose new stack, providers, or hosts
+- Do not skip mock-first in first-run / portfolio 60s script
+- Do not design enterprise billing, SSO, or collab-editing chrome
+- Do not require unmaintainable custom components when shadcn/Base UI
+  covers the need (Extension-First)
+- Cookbook is a settings/help surface, not a trust-boundary bypass
 
-- Demos: mock-only deterministic Ask, or a live provider? (experience-
-  first default prefers validated mocks before any production AI)
-- Public sample workspace for portfolio demos, or local-only fixtures?
-- UT-1…UT-14 remain **unrun hypotheses** — no action required now; they
-  do not block ADR-0001, only "validated UX" claims later
+## Acceptance Criteria
 
-### 4. Open gates (ADR-0001-added decision inputs)
+- Specs trace to REC-01…REC-19 and architecture ports
+- Four journeys + dual-mode surfaces have implementation-ready states
+- LTR-now excellence; RTL-readiness discipline documented
+- Accessibility is specified as a gate, not polish
+- No application source generated
+- No provider SDK implied in the client
 
-- Year-1 tenant count / corpus size? (affects RLS vs schema-per-tenant,
-  pgvector ceiling)
-- Real-time collaborative editing in v1, later, or never?
-- Note source of truth: markdown vs structured (ProseMirror/TipTap) JSON?
-- Always-on demo hosting required (no cold starts), or is sleep/cold-start
-  acceptable?
-- Are you open to Svelte, or is this React-only? (ADR-0001 assumes React)
-- Package manager preference (npm / pnpm / yarn), if any — research did
-  not evaluate this; Implementer will choose after acceptance if you have
-  no preference
+## Directionality / accessibility checks
 
-### 5. Standing (do not close without explicit reason)
+- Primary locale `en`; single `lang`/`dir` source
+- Logical CSS only except true exceptions
+- `bdi` for identifiers, keys, URLs, usage IDs, UGC fragments
+- Keyboard, visible focus, labels, contrast, `prefers-reduced-motion`
+  on Ask streaming chrome (REC-05, REC-11, REC-19)
 
-- **RTL locale support** — remains deferred, not closed. Say so
-  explicitly if you want it to stay deferred, or tell us if you want to
-  bring it forward.
-- **Production AI / provider activation** — remains open until the
-  Customer Experience First validation (mock-first premium UX) is done.
+## Dependencies / Risks
 
-## What is already unblocked (no need to wait for this decision)
-
-A human frontend contributor can start today per
-`docs/frontend/README.md` §"What you can start today": reviewing the
-onboarding pack, drafting API contract shapes, assembling a deterministic
-fixture-corpus outline, drafting an accessibility checklist per journey
-(a first pass now exists at `quality/ui-qa-checklist.md` — treat it as a
-starting point, not final), collecting design-token input, and
-enumerating UI states per journey. None of this requires a chosen stack.
-
-## What happens next (informational — do not act on this yet)
-
-Once you answer the above:
-
-1. `/commander` re-plans Phase 1 with `/designer` (visual system from
-   accepted UX research + accepted architecture) and `/implementer`
-   (construction behind the now-accepted ports), scoped to whichever
-   ADR-0001 categories you accepted.
-2. Any category you rejected or amended returns to `/architect` for a
-   revised ADR-0001 section (numbered as a new ADR if the decision theme
-   changes materially) before Phase 1 work in that area begins.
-3. DEF-001 and DEF-002 are already closed (remediated + re-verified);
-   they do not gate this decision or Phase 1 planning. See
-   `docs/reviews/phase-0-verification.md`.
-4. Production AI/provider activation and RTL locale shipping stay gated
-   regardless of your ADR-0001 answer, pending their own separate
-   confirmations.
-
-## Constraints
-
-- This handoff does not authorize any commit or push. Repository
-  initialization / remote creation is a separate action you control.
-- No agent may treat your silence as acceptance. If you do not answer a
-  gate, `/commander` must keep it open in the next `context.md` update
-  rather than assume a default.
-
-## Acceptance Criteria (for this handoff to be considered resolved)
-
-- [ ] You have stated accept / reject / amend for each of the 7 ADR-0001
-      categories (or explicitly deferred a subset with a reason)
-- [ ] You have answered (or explicitly deferred) each gate in sections
-      2–5 above
-- [ ] `/commander` receives your answers as the next main-track handoff
-      input and re-plans Phase 1 accordingly
+- Parallel with Task 1.2 (Nx scaffold). Specs must not assume generated
+  file names beyond ADR-0002 (`apps/web`, `packages/ui`).
+- Risk: live-AI-first onboarding — forbidden.
+- Risk: fake enterprise teams chrome — forbidden (REC-18).
 
 ## Gates
 
-All gates listed in sections 2–5 above, plus ADR-0001 acceptance itself,
-remain **open** until you answer them here.
+- Production AI activation remains gated
+- RTL locale remains deferred
+- UT-* remain unrun
+
+## Completion Instructions
+
+1. Write `docs/design/**` specs.
+2. Append Outcome; set this file `status: completed`.
+3. Durable lessons only in `docs/memory/designer.md`.
+4. Do not open the next Implementer journey task — Commander integrates
+   1.1 + 1.2 and opens Task 1.3.

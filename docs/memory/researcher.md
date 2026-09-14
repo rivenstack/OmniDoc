@@ -36,3 +36,17 @@
   point at `docs/research/version-ledger.md` — never "latest" or "observed"
 - TipTap documents `textDirection`; headless editors still require product
   a11y ownership — do not equate API presence with WCAG pass
+- AWS Free Tier after **2025-07-15** is **credits + 6-month Free plan**
+  (not legacy 12-month hours); Free plan expiry **closes** the account —
+  score against the project’s **6-month** demo horizon, not against a
+  missing year-long Free always-on
+- Distinguish **OmniDoc customer-BYOK** (key in project vault) from
+  **OpenRouter-upstream-BYOK** (keys in OpenRouter); they are different
+  trust and fee surfaces
+- OpenRouter `:free` + `GET /api/v1/key` (and management `/credits`,
+  `/activity`) can drive usage display without inventing billing; free
+  RPD caps rise after **$10** lifetime credits — do not treat chat
+  rumors as pins; re-fetch FAQ/limits
+- Lightsail 90-day Paid trial ≠ Free plan; App Runner sits on Paid-plan
+  lists for Sign up for AWS (new) — do not assume Free-plan eligibility
+  from brand familiarity

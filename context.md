@@ -7,18 +7,15 @@
 | Name | OmniDoc |
 | Slug | `omni-doc` |
 | Domain | Multi-tenant AI/RAG note and knowledge SaaS |
-| Platform | TypeScript web SaaS (concrete stack **pending ADR-0001**) |
+| Platform | TypeScript web SaaS — ADR-0001 §1–§7 `accepted`; ADR-0002/0003/0004 `accepted` |
 | Primary locale | `en` (LTR) |
-| Secondary locale | None in Phase 0 |
+| Secondary locale | None |
 | Target market | Global English-speaking |
-| Business context | Portfolio / freelancing credibility product — production quality; **no** commerce, payments, shipping, or SMS |
+| Business context | Portfolio / freelancing credibility product — production quality; **no** commerce, payments, shipping, or SMS. **6-month** hosted-demo horizon on AWS Free Tier. |
 
 **Identity note (2026-09-13):** Canonical name **OmniDoc** was confirmed by
-`@user`. Earlier Phase 0 docs used **OmniNote** / `omni-note`, inferred
-from the local workspace folder and never user-confirmed. Product
-definition is unchanged; only the name was corrected. See
-`docs/handoffs/archive/README.md` for why archived handoffs still say
-OmniNote.
+`@user`. Archived Phase 0 handoffs may still say OmniNote — see
+`docs/handoffs/archive/README.md`.
 
 CMS/commerce platform concepts are not applicable. See
 `TEMPLATE-PLACEHOLDERS.md`.
@@ -38,175 +35,97 @@ Validate at minimum:
 
 ## Current Phase
 
-**Phase 0 — Project Setup and Decision Baseline**
+**Phase 1 — Scaffold, visual system, mock journeys**
 
-Goal: de-templatize the operating layer, gather technical and UX evidence,
-land stack-agnostic frontend contributor docs, propose stack (ADR-0001),
-verify Phase 0, then `@user` accepts/rejects ADR-0001.
+Goal: Nx workspace + design system + core journeys on deterministic
+mocks, with dual-mode BYOK ports wired but production adapters dark.
+Hosted AWS Free-tier deploy and live OpenRouter stay later increments.
 
 ## Current Status
 
-- Tasks 0.1, 0.1b, 0.2, 0.3, 0.4, 0.5 completed (Wave B integrated;
-  architecture + ADR-0001 proposed)
-- **Task 0.6 completed** (`/phase-check`): independent Phase 0
-  verification — **Phase Decision: PASS**. Full report:
-  `docs/reviews/phase-0-verification.md`. New QA checklist:
-  `quality/ui-qa-checklist.md`.
-- **Re-verification completed (2026-09-13, `/phase-check`):** DEF-001
-  (Medium, `/implementer`) and DEF-002 (Low, `/commander`) remediations
-  independently re-verified against on-disk evidence (checksums,
-  section-accurate quoting, full-tree greps) — both **CLOSED**. **Phase
-  0 now exits with zero open defects** — only `@user` gates remain. A
-  pre-publish secrets/privacy sweep of the full tree found no keys,
-  tokens, personal data, or machine-identifying paths; **repository is
-  safe to push to a public GitHub remote.** No new defects raised. Full
-  evidence: re-verification section of `docs/reviews/phase-0-verification.md`.
-- **Identity-correction verification completed (2026-09-13,
-  `/phase-check`):** OmniNote → OmniDoc rename (63 files) independently
-  re-verified. **Complete and self-explanatory** — zero live `OmniNote`/
-  `omni-note` strings outside the dated, documented
-  `docs/handoffs/archive/README.md` exception; no phrasing damage found
-  across a broad sample; product definition, locale policy, port
-  definitions, ADR-0001 `proposed` status, the open-gate list, and the
-  20/22/14/12 evidence counts are all unchanged. Clone instructions
-  correct/followable; no machine-path leakage; no false CI claim.
-  Pre-publish secrets sweep re-run clean — **repository remains safe to
-  publish.** Full evidence: Identity-Correction-Verification section of
-  `docs/reviews/phase-0-verification.md`.
-- **DEF-003 CLOSED (2026-09-13, `/phase-check`):** `/commander`'s text
-  remediation (stale DEF-001/DEF-002 "still open" wording in
-  `docs/handoffs/current.md` and this file's Blockers section, corrected
-  to reflect both as closed, plus the OmniDoc/archived-OmniNote name
-  note) was independently re-verified against disk — accurate, no
-  `@user` gate removed/weakened/closed, ADR-0001 still `proposed`, no
-  vendor "chosen," frontmatter/single-ownership intact. Full evidence:
-  DEF-003 Closure Verification section of
-  `docs/reviews/phase-0-verification.md`.
-- **Phase 0 final defect ledger: DEF-001, DEF-002, DEF-003 all CLOSED —
-  zero open defects.** Phase Decision reaffirmed **PASS**. Repository
-  remains safe to publish.
-- **Research-review refinements landed (2026-09-14,
-  `@user`-directed):** `docs/research/version-ledger.md` created as the
-  single authority for version-bound claims (pinning + re-verify rules);
-  stale version cells across the technical package corrected after the
-  evidence set was found to have gone stale within a day of being
-  written — Next.js "v15+" → **16.3.5**, React Router 7 → **8**
-  (v8 had shipped 2026-06-17), TipTap 3.27.3 → **3.31.3**, Lexical
-  ~0.43 → **0.50.0**.
-- **ADR-0001 amended and partially accepted (2026-09-14, `@user`):**
-  category 1 (frontend framework) → **Next.js 16.3.5**, replacing the
-  proposal's React Router 7; category 2 (editor) → **TipTap 3.31.3**
-  with **ProseMirror JSON as the note source of truth** (markdown
-  produced only by one canonical serializer for export + chunking).
-  Categories 3–7 remain `proposed`. Decision record: ADR-0001
-  §Decision record.
-- **ADR-0002 `accepted` (2026-09-14):** **Nx 23.2.1** + **pnpm 12.4.1**
-  + **Node 24 LTS**, `apps/web` + `apps/api` + `packages/*`, with
-  `@nx/enforce-module-boundaries` making the ports-only invariant
-  mechanically checkable. **Supersedes** the previously "confirmed"
-  `frontend/` + `backend/` directory contract.
-- **ADR-0003 `accepted` (2026-09-14):** Tailwind CSS 4.3.3 + shadcn/ui
-  4.21.0 on Base UI 1.8.0; RSC + Server Actions first with Zustand
-  5.0.15 for editor/UI state (no client cache library in v1); Vitest
-  5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + axe 4.13.0 +
-  MSW 2.15.0 + Storybook 10.6.0.
-- **Active:** Task 0.7 → **`@user`** ADR-0001 decision gate —
-  **partially answered 2026-09-14**; the remaining categories and gates
-  in `docs/handoffs/current.md` are still live
-- Expected next: `/commander` re-plans Phase 1 with `/designer` and
-  `/implementer` on the accepted stack (Next.js 16 + Nx workspace),
-  and rolls Task 0.7 forward; scaffolding still requires an Implementer
-  handoff
+- Phase 0 complete: verification **PASS**; Task 0.7 gates answered;
+  Wave C evidence (0.8 / 0.8b); ADR-0001 §1–§7 and ADR-0004 `accepted`
+- **Active:** Task **1.1** `/designer` (main) visual system + journey
+  specs; Task **1.2** `/implementer` (parallel) Nx scaffold + boundary
+  enforcement
+- Scaffolding is **now authorized** by Task 1.2 (not before)
+- Production AI / OpenRouter live calls are **not** authorized
+- Nothing was scaffolded before Task 1.2; no secrets in the repo
 
-### Wave B packages (accepted evidence; do not rewrite)
+### Accepted stack (do not re-open)
+
+| ADR | Decision |
+|-----|----------|
+| ADR-0001 §1 | Next.js 16.3.5 App Router |
+| ADR-0001 §2 | TipTap 3.31.3; ProseMirror JSON SoT |
+| ADR-0001 §3 | PostgreSQL 18; shared schema + app scope + RLS DiD |
+| ADR-0001 §4 | pgvector in Postgres |
+| ADR-0001 §5 + ADR-0004 | Mocks first; OpenRouter operator free-tier gateway; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT |
+| ADR-0001 §6 | Better Auth + organization plugin; year-1 SSO not required |
+| ADR-0001 §7 | AWS Free-plan topology class: EC2 and/or ECS + RDS Postgres + pgvector; 6-month window in-scope; VPS fallback only if AWS cannot cover; Railway/Render not default |
+| ADR-0002 | Nx 23.2.1, pnpm 12.4.1, Node 24, `apps/` + `packages/`, boundary tags |
+| ADR-0003 | Tailwind 4.3.3 + shadcn/ui on Base UI; RSC + Server Actions; Vitest/Playwright/axe/MSW/Storybook |
+
+### Wave B + C evidence (do not rewrite as selection)
 
 | Stream | Path |
 |--------|------|
-| Technical evidence | `docs/research/technical/` |
-| UX evidence | `docs/research/ux/` |
-| Frontend onboarding | `README.md`, `docs/frontend/README.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig` |
-
-### Architecture package (proposed; not `@user`-accepted)
-
-| Artifact | Path |
-|----------|------|
-| Architecture baseline | `architecture.md` |
-| ADR index | `docs/adr/README.md` |
-| Stack ADR | `docs/adr/ADR-0001-frontend-and-platform-stack.md` (`proposed`) |
+| Technical | `docs/research/technical/` (Wave C amended 05, 07, 09) |
+| UX | `docs/research/ux/` (0.8b added 09 + REC-13…19) |
 
 ## Active Tasks
 
 | Task | Owner | Status | Handoff |
 |------|-------|--------|---------|
-| 0.1 Operating baseline & Wave-B plan | Commander | completed | `docs/handoffs/archive/H-2026-09-13-P0-T01-user-commander.md` |
-| 0.2 Technical platform evidence | Researcher | completed | `docs/handoffs/archive/H-2026-09-13-P0-T02-commander-researcher.md` |
-| 0.3 UX journey & trust evidence | UX Researcher | completed | `docs/handoffs/archive/H-2026-09-13-P0-T03-commander-ux_researcher.md` |
-| 0.4 Frontend contributor onboarding | Implementer | completed | `docs/handoffs/archive/H-2026-09-13-P0-T04-commander-implementer.md` |
-| 0.1b Integrate Wave B → open 0.5 | Commander | completed | `docs/handoffs/archive/H-2026-09-13-P0-T01B-commander-commander.md` |
-| 0.5 Architecture + ADR-0001 proposed | Architect | completed | `docs/handoffs/archive/H-2026-09-13-P0-T05-commander-architect.md` |
-| 0.6 Independent Phase 0 verification | Phase Check | completed (PASS) | `docs/handoffs/archive/H-2026-09-13-P0-T06-architect-phase-check.md` |
-| 0.7 `@user` ADR-0001 decision gate | `@user` | partially answered 2026-09-14 (categories 1–2; 3–7 + gates open) | `docs/handoffs/current.md` |
+| 0.1–0.9 | (see archive) | completed | `docs/handoffs/archive/` |
+| 1.1 Visual system + journey UI specs | Designer | ready | `docs/handoffs/current.md` |
+| 1.2 Nx workspace scaffold | Implementer | ready | `docs/handoffs/active/phase-1-task-1-2-implementer.md` |
+
+### Phase 1 program of record (downstream; not all opened)
+
+1. Designer visual system (1.1 — open)
+2. Implementer Nx scaffold (1.2 — open)
+3. Auth + honest workspaces (Better Auth)
+4. Notes + TipTap + JSON SoT
+5. Postgres + RLS + pgvector with mock embed/vector adapters
+6. Ask UI on deterministic mocks
+7. Public labelled sample workspace
+8. BYOK vault + cookbook/wizard + usage shells (adapters dark)
+9. AWS Free Tier deploy path for the 6-month hosted demo
+10. Production AI activation only after CX-first + `@user` / Phase Check
+
+Each later increment: Implementer → Phase Check. Commander opens one to
+three tasks per cycle after 1.1 + 1.2 land.
 
 ## Blockers
 
-- **ADR-0001 categories 3–7 remain `proposed`** (database, vector,
-  embedding/LLM posture, auth, hosting) — categories 1–2 are accepted
-  (2026-09-14)
-- Scaffolding is authorized in *shape* by ADR-0002 but still requires an
-  **Implementer handoff** before any app is generated
-- Production AI/provider activation remains gated
-- Phase 0 verification complete (PASS) with **zero open defects**
-  (DEF-001, DEF-002, DEF-003 all closed). Phase 0 fully closes once
-  `@user` finishes the ADR-0001 gate (Task 0.7)
+- Production AI/provider activation remains gated (mock-first CX)
+- RTL locale support remains deferred, not closed
+- AWS deploy and live OpenRouter are not in Tasks 1.1/1.2
+- TipTap / Better Auth / Postgres implementation wait for later
+  increments after scaffold + specs
 
 ## Open Gates
 
-**ADR / stack**
+**Closed 2026-09-14**
 
-- **ADR-0001** — `accepted (partial)` 2026-09-14: category 1 (frontend
-  framework) and category 2 (editor + note source of truth) accepted;
-  categories 3–7 remain `proposed` and await `@user`
-- **ADR-0002** — `accepted` 2026-09-14 (Nx workspace, pnpm, layout,
-  boundary enforcement)
-- **ADR-0003** — `accepted` 2026-09-14 (frontend application toolchain)
+- ADR-0001 all seven categories; ADR-0004 dual-mode BYOK
+- Budget, self-host preference, 30-day retention, BYOK v1, data region
+  none, no year-1 SSO, minimal tenants, collab much later, 6-month AWS
+  Free Tier window, mock-first then labelled live, public sample workspace
+- Nx Cloud remains local-cache-only
 
-**Researcher-surfaced `@user` gates**
+**Still open / standing**
 
-- Monthly budget ceiling (infra + AI)
-- Self-host vs managed preference (app, auth, vectors)
-- Privacy / zero-data-retention ambition vs standard abuse-retention
-- Customer BYOK yes / no / later
-- Data region preference (none / US / EU)
-- Enterprise SSO in year-1
-
-**UX-surfaced `@user` gates**
-
-- Mock-only deterministic Ask vs live provider for demos
-- Public sample workspace vs local-only fixtures
-- UT-1…UT-14 unrun — user-validation open
-
-**ADR-0001-added decision inputs**
-
-- **Answered 2026-09-14:** note source of truth → ProseMirror JSON
-  (markdown via one canonical serializer); React-only (Svelte closed);
-  package manager → pnpm 12.4.1
-- Still open: year-1 tenant count / corpus size; collaborative editing
-  in v1; always-on demo hosting required
-- **New inputs added by the 2026-09-14 decisions:** Nx generator choices
-  and `@nx/enforce-module-boundaries` tag taxonomy (ADR-0002); whether
-  Nx remote/cloud caching is ever enabled (currently **local cache
-  only**, data-ownership question)
-
-**Standing**
-
-- **RTL locale support** — deferred, **not closed**; RTL-readiness
-  discipline mandatory now
-- **Production AI / provider activation** — open
-- Architecture rewrite subject to Phase Check + ADR gate (not final
-  accepted truth until those complete)
+- **RTL locale support** — deferred, not closed
+- **Production AI / provider activation** — open until CX-first mock
+  validation
+- UT-1…UT-22 — unrun hypotheses (0.8b added UT-15…22)
+- Exact AWS Free-plan service graph / credit-burn PoC — later increment
+- Nx `@nx/next` generator vs Next 16.3.5 — Task 1.2 PoC
 
 ## Active Handoffs
 
-- Main track: `docs/handoffs/current.md` → `@user` (Task 0.7 — ADR-0001
-  decision gate)
-- Parallel: none (`docs/handoffs/active/` holds README only)
+- Main track: `docs/handoffs/current.md` → `/designer` (Task 1.1)
+- Parallel: `docs/handoffs/active/phase-1-task-1-2-implementer.md` →
+  `/implementer` (Task 1.2)

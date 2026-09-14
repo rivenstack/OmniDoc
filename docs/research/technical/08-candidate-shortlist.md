@@ -1,6 +1,6 @@
 # Candidate Shortlist (Non-Binding) — Tradeoffs Only
 
-**Research date:** 2026-09-13  
+**Research date:** 2026-09-13; **Wave C amend:** 2026-09-14  
 **Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Authority:** Evidence for `/architect` ADR-0001 — **no winners selected**.
 
@@ -53,12 +53,16 @@ Architect decision, not a Researcher selection.
 
 | Candidate pair | Why shortlisted | Primary tradeoff |
 |----------------|-----------------|------------------|
-| OpenAI embeddings + OpenAI or Anthropic LLM | Clear docs; embeddings ZDR-eligible; huge ecosystem | 30-day default abuse logs; ZDR is sales-gated; Assistants lock-in if used |
-| Voyage (or Cohere) embeddings + Anthropic/Gemini LLM | Embedding specialist pricing/opt-out; LLM swap story | Multi-vendor ops; confirm each retention mode on the actual account |
-| Operator-owned keys only vs customer BYOK | BYOK fits data-ownership narrative | Secret UX, abuse liability, billing complexity — `@user` |
+| **OpenRouter** `:free` (+ later ~$10 credits) as gateway for answers | Official free variants, rate-limit + usage APIs; fits operator free-tier-first budget | Low RPD; upstream retention still applies; quality/capacity vary; **not accepted** |
+| OpenAI embeddings + OpenAI or Anthropic LLM (direct) | Clear docs; embeddings ZDR-eligible; huge ecosystem | 30-day default abuse logs; ZDR sales-gated (`@user` declines ZDR motion); Assistants lock-in if used |
+| Voyage (or Cohere) embeddings + Anthropic/Gemini / OpenRouter LLM | Embedding specialist pricing/opt-out; LLM swap via ports | Multi-vendor ops; confirm retention on the actual account |
+
+**BYOK (v1, `@user`):** OmniDoc **customer-BYOK** (vault) is in product
+scope; distinct from **OpenRouter-upstream-BYOK**. Dual-mode =
+operator free-tier key + customer-entered key. See `05` + `09`.
 
 *Do not* treat free AI Studio / consumer chat terms as equivalent to paid
-API terms.
+API terms. *Do not* use Assistants / hosted `vector_stores` as corpus SoT.
 
 ## Auth / identity
 
@@ -76,31 +80,39 @@ than a third equal product unless Architect prefers it.
 
 | Candidate | Why shortlisted | Primary tradeoff |
 |-----------|-----------------|------------------|
-| Railway or Render | Web + worker + DB shapes match ingestion | Usage cost; free-tier sleep (Render) |
+| **AWS Free plan** topology (EC2 and/or ECS + RDS Postgres + pgvector) | Matches 6-month demo; $0 cash on Free plan; web+worker+DB feasible | Credit burn may end Free plan early; account closes at expiry; no SKU selected |
+| Railway or Render (**non-defaults**) | Web + worker + DB shapes match ingestion | `@user` rejected as default; usage cost; Render free sleep |
 | Vercel + external DB + external worker | Best Next DX | Split brain for jobs; platform coupling |
-| VPS/Docker self-host | Residency + portfolio narrative | Ops burden / uptime credibility |
+| VPS/Docker self-host | **Fallback only** if AWS cannot cover 6-mo workload | Ops burden / uptime credibility |
+
+Lightsail (Paid 90-day trial) and App Runner (Paid-plan list on new
+sign-up docs) are **documented** but not seated as Free-plan primaries
+(`07`).
 
 ## Open questions (explicit)
 
-1. Year-1 tenant count and corpus size?
-2. Real-time collaborative editing in scope for v1?
-3. Markdown-as-source-of-truth vs structured editor JSON?
-4. React vs openness to Svelte?
-5. Which privacy marketing claims are required for the portfolio?
-6. Always-on demo vs allow cold starts?
-7. Pinecone-class managed vector OK, or self-host mandatory?
+1. Year-1 tenant count and corpus size? *(minimal year-1 accepted — scale later)*
+2. Real-time collaborative editing in scope for v1? *(much later — `@user`)*
+3. ~~Markdown-as-source-of-truth vs structured editor JSON?~~ → ProseMirror JSON accepted
+4. ~~React vs openness to Svelte?~~ → React-only accepted
+5. Which privacy marketing claims are required for the portfolio? *(~30d abuse OK; no ZDR)*
+6. Always-on demo vs allow cold starts? *(AWS always-on preferred; credit burn is the risk)*
+7. Pinecone-class managed vector OK, or self-host mandatory? *(pgvector accepted pending Architect flip)*
+8. Exact AWS Free-plan service graph + credit-burn PoC result?
+9. OpenRouter-only vs hybrid embeddings (direct) + OR answers?
 
 ## @user gates (must not be closed by agents alone)
 
-| Gate | Why |
-|------|-----|
-| **Monthly budget ceiling** (infra + AI) | Changes managed vs self-host shortlist viability |
-| **Self-host vs managed preference** (app, auth, vectors) | Dominates portfolio narrative and ops load |
-| **Privacy / ZDR ambition** | Standard 30-day abuse logs vs sales-approved ZDR |
-| **Customer BYOK** yes/no/later | Secret handling and product scope |
-| **Data region preference** (none / US / EU) | Hosting + provider geography |
-| **Enterprise SSO year-1** | Clerk add-on vs Keycloak vs defer |
-| **ADR-0001 acceptance** | Stack selection remains closed until Architect + `@user` |
+| Gate | Status (2026-09-14) |
+|------|---------------------|
+| **Monthly budget ceiling** (infra + AI) | **Closed:** infra prefer $0 / ~$20 ceiling; AI = OR free then ~$10 |
+| **Self-host vs managed preference** | **Closed:** prefer self-host because free; managed OK if $0 |
+| **Privacy / ZDR ambition** | **Closed:** ~30-day abuse OK; no ZDR sales |
+| **Customer BYOK** | **Closed:** **yes in v1**; dual-mode |
+| **Data region preference** | **Closed:** none |
+| **Enterprise SSO year-1** | **Closed:** not required |
+| **Hosted demo horizon** | **Closed:** 6 months; AWS Free Tier 6-mo window in-scope |
+| **ADR-0001 §5 / §7 acceptance** | **Open** until Architect rewrite cites Wave C — Researcher does **not** select |
 
 ## What this package does *not* do
 

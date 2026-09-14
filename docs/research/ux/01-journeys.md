@@ -121,14 +121,40 @@ Detailed trust analysis: [02-citation-trust.md](./02-citation-trust.md).
 
 ---
 
+## Journey 5 — Dual-mode Ask (mock → live demo → BYOK)
+
+**Research date addendum:** 2026-09-14 (Task 0.8b)  
+**Job:** Progress through AI runtime modes without skipping Customer Experience First validation, and without provider selection in the UX layer.
+
+### Spine (Commander-aligned)
+
+```text
+Mock Ask → labelled live demo (operator free-tier) → customer BYOK scale
+```
+
+| Stage | Customer-facing mode | Prerequisite | Drop-off risk if violated |
+|-------|----------------------|--------------|---------------------------|
+| Mock | Mock / sample answers | None — default until CX gate | Live-first onboarding that demands a key before first cited Ask |
+| Live demo | Live · operator free-tier | CX-first mock path validated | Unlabelled live AI; implied ZDR; silent quota death |
+| BYOK | Live · your key | Cookbook: create elsewhere → paste → verify → first Ask | Invalid key; operator/customer quota confusion; enterprise billing chrome |
+
+**Corpus labelling (orthogonal to runtime):** **Sample** vs **Mine** on every Ask scope and citation path (REC-08, REC-17).
+
+**Design-facing implications:** REC-13–REC-17. Full step maps, cookbook, usage, failures, a11y: [09-byok-cookbook-and-dual-mode.md](./09-byok-cookbook-and-dual-mode.md).
+
+**Hypotheses (unrun):** UT-15…UT-21 — not findings.
+
+---
+
 ## Cross-journey activation path (SaaS framing)
 
 ```text
-Signup → first capture → first successful retrieve OR ask-with-citation
+Signup → first capture → first successful retrieve OR ask-with-citation (mock OK)
          → repeat capture → retention
+         → (post CX gate) optional labelled live demo → optional BYOK scale
 ```
 
-“Activated” for OmniDoc should mean more than account creation — see [03-onboarding-mobile.md](./03-onboarding-mobile.md).
+“Activated” for OmniDoc should mean more than account creation — see [03-onboarding-mobile.md](./03-onboarding-mobile.md). Activation must **not** require customer keys (REC-13).
 
 ---
 

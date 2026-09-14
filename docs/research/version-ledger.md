@@ -127,6 +127,24 @@ ADR-0003.
 | `@google/genai` | 2.22.0 | 2026-09-10 | 2026-09-14 | |
 | `voyageai` | 0.4.0 | 2026-06-15 | 2026-09-14 | |
 
+## Provider / Free Tier policy pins (Wave C — access 2026-09-14)
+
+These are **policy and offer** pins, not package versions. Re-confirm on
+the live account before any budget or privacy claim.
+
+| Offer / policy | Pin / fact | Effective / posted | Verified | Read from | Notes |
+|---|---|---|---|---|---|
+| AWS Free Tier (new customers) | Up to **$200** credits ($100 sign-up + up to $100 earnable); Free plan **6 months** or credits exhausted; ≥30 always-free | Announced **2025-07-16**; accounts **on/after 2025-07-15** | 2026-09-14 | aws.amazon.com/free/ ; what’s-new 2025/07; Billing Free Tier guide; free-tier-faqs | Free plan expiry **closes** account; 90-day Paid reopen for data. Credits calendar-expire at **12 months**. |
+| AWS EC2 Free-plan eligible types (≥2025-07-15) | `t3.micro`, `t3.small`, `t4g.micro`, `t4g.small`, `c7i-flex.large`, `m7i-flex.large` | Post–2025-07-15 model | 2026-09-14 | docs.aws.amazon.com EC2 free-tier-usage | Credits consume; Free plan cannot exceed limits. |
+| AWS EC2 On-Demand Linux us-east-1 (illustrative burn) | `t3.micro` **$0.0104**/hr; `t3.small` **$0.0208**/hr; `t4g.micro` **$0.0084**/hr; `t4g.small` **$0.0168**/hr | Price list as of fetch | 2026-09-14 | pricing.us-east-1.amazonaws.com AmazonEC2 current us-east-1 index | Shared tenancy, no preinstalled SW. Not a SKU selection. RDS/EBS/egress extra. |
+| AWS RDS Free plan engines/sizes | `db.t3.micro` / `db.t4g.micro`; MySQL, **PostgreSQL**, MariaDB, SQL Server Express | Current Free Tier RDS page | 2026-09-14 | aws.amazon.com/rds/free/ | pgvector listed in RDS PostgreSQL extensions matrix (e.g. 0.8.2). |
+| AWS Lightsail trial | **90-day** trial on **Paid** plan (selected $5–$12 Linux / Windows plans) | Current free/compute/lightsail | 2026-09-14 | aws.amazon.com/free/compute/lightsail/ | Not Free-plan 6-month path; Lightsail unsupported on Sign up for AWS (new) list. |
+| AWS App Runner | On **Paid Plan** service list for Sign up for AWS (new); provisioned memory pricing | Current accounts + pricing docs | 2026-09-14 | supported-services-sign-up-new; apprunner/pricing | Not Free Tier list item. |
+| OpenRouter `:free` rate limits | **20 RPM**; **50 RPD** if lifetime credits &lt; **$10**; **1000 RPD** if ≥ **$10** | Current FAQ + limits + OR tutorial | 2026-09-14 | openrouter.ai/docs/faq ; api-reference/limits ; OR blog tutorial | Limits page uses client-side constants; FAQ/blog state numbers. Do **not** spend $10 in Task 0.8. |
+| OpenRouter logging default | Metadata yes; prompts/completions **off** unless opt-in | Current data-collection guide | 2026-09-14 | openrouter.ai/docs/guides/privacy/data-collection | Upstream provider retention still applies. |
+| OpenRouter usage APIs | `GET /api/v1/key`; `GET /api/v1/credits` + `/activity` (management key) | Current API reference | 2026-09-14 | openrouter.ai/docs/api-reference/limits ; credits + activity docs | Sufficient for usage display without billing product. |
+| OpenRouter-upstream-BYOK fee | **5%** of list price above plan allowance (PAYG allowance **$25k**/mo per FAQ) | Current BYOK + FAQ | 2026-09-14 | openrouter.ai/docs/guides/overview/auth/byok ; faq | Distinct from OmniDoc customer-BYOK. |
+
 ---
 
 ## Compatibility floors
@@ -225,12 +243,11 @@ pin below is from the tables above.
 
 **Still open — no default assumed**
 
-Categories 3–7 of ADR-0001 (database, vector, embedding/LLM posture,
-auth, hosting); budget ceiling; self-host vs managed; privacy/ZDR
-ambition; customer BYOK; data region; year-1 enterprise SSO; demo
-posture (mock vs live Ask, public vs local fixtures); year-1 tenant
-count; collaborative editing in v1; always-on demo hosting; **RTL
-locale** (deferred, not closed); production AI activation; UT-1…UT-14.
+Architect flip of ADR-0001 categories 3–4 and 6 (user accepted; status
+pending 0.9); **§5 Embedding/LLM** and **§7 Hosting** await Wave C
+evidence (Task 0.8) then Architect rewrite — Researcher does **not**
+select OpenRouter or an AWS SKU. Collaborative editing; RTL locale
+(deferred); production AI activation; UT-1…UT-14.
 
 **Where the decisions are captured**
 

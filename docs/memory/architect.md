@@ -27,3 +27,13 @@
 - When `docs/frontend/README.md` already published a directory or tooling
   contract, ADR must confirm or explicitly flag Implementer reconciliation
   — do not silently diverge
+- Split stack vs dual-mode BYOK: ADR-0001 stays stack-level; vault /
+  usage / key-resolution belong in a dedicated ADR (ADR-0004 pattern)
+- OmniDoc customer-BYOK ≠ OpenRouter-upstream-BYOK — never conflate
+- `quota_exhausted` must name the mode (`operator_free_tier` vs
+  `customer_key`); silent key mix is a contract violation
+- Hosting ADRs pick a **topology class**, not an un-evidenced SKU; AWS
+  Free-plan credit-burn and account-close-at-expiry are honesty, not
+  automatic blockers for a 6-month demo window
+- Cookbook/wizard is UX; Architect owns verify/rotate/revoke vault ports
+- Usage port: `unavailable` is first-class — never invent billing

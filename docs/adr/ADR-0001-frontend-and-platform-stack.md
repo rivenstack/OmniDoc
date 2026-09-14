@@ -1,15 +1,19 @@
 # ADR-0001 — Frontend and Platform Stack
 
-- **Status:** `accepted (partial)` — categories 1 and 2 accepted by `@user` on 2026-09-14; categories 3–7 remain `proposed`. Full record: §Decision record (2026-09-14).
+- **Status:** `accepted` — categories 1–7 accepted (1–2 on 2026-09-14;
+  3–7 recorded `accepted` 2026-09-14 from `@user` Task 0.7 answers +
+  Wave C evidence). Dual-mode BYOK / vault / usage / key-resolution
+  detail: **ADR-0004** (`accepted`). Full record: §Decision record.
 - **Date:** 2026-09-13 (amended 2026-09-14)
 - **Deciders:** Architect proposes; `@user` accepts / rejects / amends
-- **Consulted evidence:** `docs/research/technical/` (Wave B) + `docs/research/version-ledger.md` (pins, verified 2026-09-14);
-  UX package as **experience constraints** only
-  (`docs/research/ux/`, REC-01…REC-12, citation-trust). UT-1…UT-14 are
+- **Consulted evidence:** `docs/research/technical/` (Wave B + Wave C
+  amend 2026-09-14) + `docs/research/version-ledger.md` (pins, verified
+  2026-09-14); UX package as **experience constraints** only
+  (`docs/research/ux/`, REC-01…REC-19, citation-trust). UT-* are
   **unrun hypotheses** and are not used as justification.
 
-> This ADR does **not** close production AI activation, RTL locale
-> shipping, or any `@user` gate listed below.
+> This ADR does **not** close production AI activation or RTL locale
+> shipping. Those remain standing gates.
 
 ---
 
@@ -49,20 +53,17 @@ From `docs/research/ux/08-design-facing-recommendations.md` and
   experience-first)
 - Accessibility of trust controls (REC-11)
 
-### Open research questions treated as decision inputs
+### Open research questions — closed by `@user` 2026-09-14
 
-From shortlist §Open questions — **not guessed away**:
-
-1. Year-1 tenant count and corpus size
-2. Real-time collaborative editing in v1?
-3. Markdown-as-source-of-truth vs structured editor JSON?
-4. React vs openness to Svelte?
-5. Privacy marketing claims required for the portfolio?
-6. Always-on demo vs cold starts allowed?
-7. Managed-only vector OK, or self-host mandatory?
-
-Where a category cannot be finalized without `@user`, the recommendation
-is labelled **conditional** and the blocking gate is listed.
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Year-1 tenant count / corpus size | **Minimal** year-1 tenants; honest workspaces; design to scale later |
+| 2 | Real-time collaborative editing in v1? | **Much later** — collab path reserved only |
+| 3 | Markdown vs structured editor JSON | **ProseMirror JSON** SoT (§2) |
+| 4 | React vs Svelte | **React-only** (§1) |
+| 5 | Privacy / ZDR ambition | ~**30-day** abuse-log honesty; **no** ZDR sales motion (ADR-0004) |
+| 6 | Always-on demo / hosting | AWS Free-plan **6-month** window in-scope (§7) |
+| 7 | Managed-only vector vs self-host | **pgvector** in Postgres accepted (§4) |
 
 ---
 
@@ -117,8 +118,8 @@ Two corrections moved the decision:
 - Authenticated, editor-heavy app: the note surface is largely Client
   Components regardless of framework, so RSC benefit concentrates in
   shell/marketing surfaces (`01-frontend-frameworks.md`)
-- Hosting optionality: Node/PaaS portable (Railway/Render per §7) *and*
-  Vercel available, with self-host still possible
+- Hosting optionality: Node-portable containers (AWS Free-plan topology
+  class per §7) *and* Vercel available, with VPS fallback still possible
 - Extension-First: TipTap/Lexical React ecosystems documented as mature
   relative to Svelte for this product shape (`01`, `02`)
 
@@ -209,7 +210,8 @@ CodeMirror 6 inside it for fenced code.
   (`ltr` \| `rtl` \| `auto`) supporting RTL-readiness without shipping
   RTL locale (`02-rich-text-editors.md`).
 - Yjs / Hocuspocus path preserves collab **option value** without paying
-  Cloud now (`02`, shortlist) — collab v1 remains an open question.
+  Cloud now (`02`, shortlist) — collaborative editing is **much later**
+  (`@user` 2026-09-14).
 - Extension-First: headless editor + project-owned a11y chrome matches
   REC-11 (a11y is implementer-owned; TipTap does not claim “included”
   a11y — evidence `02`).
@@ -269,8 +271,9 @@ over markdown-as-SoT and over storing both.
 
 ### 3. Relational database
 
-**Decision (proposed):** **PostgreSQL** as the system of record for
-tenants, notes/versions, jobs, and (initially) vectors via extension.
+**Decision (accepted by `@user` 2026-09-14; Architect status flip
+2026-09-14):** **PostgreSQL 18** as the system of record for tenants,
+notes/versions, jobs, and (with §4) vectors via extension.
 
 **Drivers**
 
@@ -278,6 +281,8 @@ tenants, notes/versions, jobs, and (initially) vectors via extension.
   RLS (`03-multi-tenant-isolation.md`).
 - pgvector co-location option reduces dual-write early (`04-vector-storage.md`).
 - Portfolio self-host and managed Postgres both available (`07`).
+- Minimal year-1 tenants still keep shared-schema + RLS — schema-per-
+  tenant is not justified at this scale (`@user`; shortlist).
 
 **Alternatives considered**
 
@@ -286,17 +291,18 @@ tenants, notes/versions, jobs, and (initially) vectors via extension.
 | MySQL / MariaDB | Weaker fit for documented RLS + pgvector path in Wave B evidence set (not shortlisted). |
 | SQLite | Fine for single-tenant mocks; insufficient as multi-tenant production SoT for this scope. |
 | Serverless-only proprietary stores | Lock-in without evidence advantage for notes + RLS story. |
+| Schema-per-tenant now | Deferred — ops cost at minimal year-1 scale; reopen only if isolation/ops evidence demands it. |
 
-**Tenancy mechanism (proposed default)**
+**Tenancy mechanism (accepted)**
 
 Shared schema + `tenant_id` **and** Postgres RLS with a non-owner,
 non-`BYPASSRLS` role (`03`, shortlist). App filters remain mandatory;
-RLS is defense-in-depth. Schema-per-tenant deferred unless year-1
-tenant/ops gates demand it (open question Q1).
+RLS is defense-in-depth.
 
 **Consequences**
 
-- Liked: one operational mental model; SQL tenant filters.
+- Liked: one operational mental model; SQL tenant filters; scales later
+  without rewriting the tenancy story.
 - Disliked: RLS pool/GUC footguns; owner bypass if misconfigured (`03`)
   — must use FORCE RLS patterns and fail-closed missing tenant GUC.
 
@@ -320,24 +326,27 @@ tenant/ops gates demand it (open question Q1).
 
 ### 4. Vector storage
 
-**Decision (proposed):** **Postgres + pgvector** as the default vector
-store for Phase 1, behind the vector-search port.
+**Decision (accepted by `@user` 2026-09-14; Architect status flip
+2026-09-14):** **Postgres + pgvector** (ledger pin **0.8.6**; RDS may
+ship a matrix-listed 0.8.x — confirm at scaffold) as the default vector
+store, behind the vector-search port.
 
 **Drivers**
 
 - One datastore for notes + vectors; SQL tenant filters; HNSW/IVFFlat
   documented; iterative scans ≥0.8 for filtered ANN
   (`04-vector-storage.md`, `00-evidence-matrix.md`).
-- Aligns with portfolio/self-host narrative options (`07`, shortlist).
+- Aligns with Free-plan RDS PostgreSQL + pgvector extension feasibility
+  (`07`).
 - Store choice never removes tenant filter requirement (`04`).
 
 **Alternatives considered**
 
 | Option | Why not primary now |
 |--------|---------------------|
-| Qdrant | Strong filtered search + self-host (`04`); lost as default because second system + consistency/outbox cost before scale evidence (Q1 open). Escalate if pgvector filter/recall fails eval. |
-| Weaviate | Hybrid + MT features (`04`); managed minimums may blow budget (`04`, shortlist) — blocked on budget/self-host gates. |
-| Pinecone | Managed convenience (`04`); **no self-host**; namespace soft isolation (`04`) — reject as default while self-host gate open; incompatible if `@user` mandates self-host vectors. |
+| Qdrant | Strong filtered search + self-host (`04`); lost as default because second system + consistency/outbox cost before scale evidence. Escalate if pgvector filter/recall fails eval. |
+| Weaviate | Hybrid + MT features (`04`); managed minimums may blow budget (`04`, shortlist). |
+| Pinecone | Managed convenience (`04`); **no self-host**; namespace soft isolation (`04`) — reject as default. |
 
 **Consequences**
 
@@ -362,81 +371,92 @@ store for Phase 1, behind the vector-search port.
 - Falsify if filtered HNSW under-returns on realistic tenant sparsity
   after iterative-scan tuning — then reopen Qdrant.
 
-**Conditional on `@user`:** if self-host is mandatory for vectors, this
-recommendation strengthens; if managed-only Pinecone-class is required,
-**reject this ADR section** and rewrite — do not silently adopt Pinecone.
-
 ---
 
 ### 5. Embedding and LLM provider posture (including BYOK)
 
-**Decision (proposed):**
+**Decision (rewritten and accepted 2026-09-14; `@user` + Wave C):**
 
-1. **Ports-first, mock-first** until production AI gate closes.
-2. **Operator-owned provider keys** in server secret storage for early
-   demos/production — **not** customer BYOK in v1 unless `@user` says
-   yes.
-3. **Default provider pairing (when activated):** OpenAI
-   `text-embedding-3-small` (or current small embedding) for embeddings
-   + **Anthropic Claude API** *or* OpenAI Chat Completions for answers —
-   both behind ports; exact LLM pick at activation time by price/quality
-   re-fetch.
-4. **Forbid** OpenAI Assistants / hosted `vector_stores` as corpus SoT
-   (ZDR-ineligible / lock-in — `05-embedding-llm-providers.md`).
-5. **BYOK:** architecture-ready vault patterns only; product scope =
-   **later** unless gate says yes now.
+1. **Ports + mocks first** until the Customer Experience First /
+   production-AI gate closes.
+2. **Customer BYOK is v1** (not later) — detail in **ADR-0004**.
+3. **Dual-mode key resolution:** `mock` | `operator_free_tier` |
+   `customer_key` — never silently mix (ADR-0004; REC-13/16).
+4. **Operator free-tier gateway:** **OpenRouter** behind answer/embed
+   ports for the labelled live-demo path (`05`, shortlist; Architect
+   decision). Prefer `:free` first; ~$10 credit only after operational.
+5. **Forbid** OpenAI Assistants / hosted `vector_stores` (and gateway
+   equivalents) as corpus SoT (`05`).
+6. **Distinguish** OmniDoc customer-BYOK vs OpenRouter-upstream-BYOK
+   (ADR-0004; `05`, `09`).
+7. **Usage/metering port** wraps provider usage APIs (e.g. OpenRouter
+   `GET /api/v1/key`) — no billing product (ADR-0004; `09`).
+8. Accept ~**30-day** abuse-log retention honesty; **no** ZDR sales
+   motion (`@user`; `05`).
+9. Cookbook/wizard is a **UX surface**; Architect owns verify / rotate /
+   revoke vault ports (ADR-0004; REC-14).
+
+Stack-level default pairing at activation time may still use direct
+OpenAI embeddings and/or non-OpenRouter LLMs via ports — OpenRouter is
+the **accepted operator free-tier gateway**, not a permanent exclusive
+vendor lock. Exact model IDs are not pinned here.
 
 **Drivers**
 
-- UI must not call providers; CORS/ZDR notes reinforce backend proxy
-  (`05` Anthropic CORS note).
-- Embeddings are cheap vs LLM tokens (`05`); LLM dominates Ask cost.
-- OpenAI embeddings documented ZDR-eligible; default abuse retention
-  still up to 30 days without sales ZDR (`05`).
-- Assistants/vector_stores not ZDR eligible (`05`) — conflicts with
-  data-ownership narrative if over-claimed.
+- UI must not call providers; backend proxy only (`05`).
+- `@user` closed BYOK=v1, dual-mode, OpenRouter free-first, ~30-day
+  retention honesty.
+- Wave C documents OpenRouter `:free`, rate limits, usage APIs, and the
+  two BYOK meanings (`05`, `09`).
+- Experience constraints REC-13…REC-17 require mode chrome, verify≠Ask,
+  honest usage/`unavailable`, no silent payer mix.
 
 **Alternatives considered**
 
 | Option | Why not default |
 |--------|-----------------|
-| Voyage/Cohere embeddings + Anthropic/Gemini | Valid specialist path (`05`, shortlist); lost as default to reduce multi-vendor ops until budget/privacy gates settle. Keep swap-ready via ports. |
-| Customer BYOK in v1 | Fits ownership narrative (`05`); lost until secret UX, abuse liability, billing complexity answered (`@user` gate). |
-| Free AI Studio / consumer chat terms | Explicitly non-equivalent to paid API terms (`05`, shortlist). |
+| BYOK later / operator-only in v1 | Rejected by `@user` 2026-09-14 |
+| OpenAI embeddings + Anthropic/OpenAI direct as operator free path | Valid paid path (`05`); lost as **operator free-tier** default — no comparable documented free-variant + usage APIs; remain swap-ready |
+| Voyage/Cohere embeddings + Anthropic/Gemini | Valid specialist path (`05`, shortlist); keep swap-ready via ports |
+| Free AI Studio / consumer chat terms | Explicitly non-equivalent to paid API terms (`05`, shortlist) |
+| OpenRouter-upstream-BYOK as customer product | Wrong vault owner (`05`, `09`) |
 
 **Consequences**
 
-- Liked: portable ports; mock Ask for experience-first (REC-08).
-- Disliked: without formal ZDR, honest marketing must admit default
-  abuse-log retention (`05`) — do not claim zero-retention casually.
-- Disliked: dual-vendor (OpenAI embed + Anthropic LLM) possible ops
-  overhead if that pairing is chosen at activation.
+- Liked: portable ports; mock Ask for experience-first (REC-08/13);
+  dual-mode matches portfolio → scale.
+- Disliked: OpenRouter sub-processor + free-model variance (`05`);
+  encrypted-column vault maturity tradeoff (ADR-0004).
+- Detail ownership: vault, usage, key-resolution → **ADR-0004**.
 
 **Migration / rollback**
 
 - Store model ids with embeddings; never mix incompatible vectors.
-- Swap LLM adapter without UI change; re-eval citation/refusal behavior.
+- Swap LLM/gateway adapter without UI change; re-eval citation/refusal
+  behavior (ADR-0004).
 
 **Security / privacy**
 
-- Keys never in repo/client; prompt construction treats notes as
-  untrusted evidence (ai-content-safety).
-- BYOK if later: vault, rotation, revoke; no key in logs.
+- Keys never in repo/client; notes = untrusted evidence.
+- Vault / rotation / revoke: ADR-0004 + `architecture.md` §5.9 / §6.
 
 **Verification**
 
 - Mock Ask fixtures include refusal/partial before any live key.
-- Production activation checklist: retention mode of the **actual**
-  account, no Assistants corpus, tenant filters on chunks sent to model.
-- Falsify if `@user` requires customer BYOK or contractual ZDR before
-  any live demo — then demos stay mock-only.
+- Mode-stamp and vault checks per ADR-0004.
+- Production activation remains a **separate open gate**.
 
 ---
 
 ### 6. Auth / identity
 
-**Decision (proposed):** **Better Auth** (self-hosted TypeScript library)
+**Decision (accepted by `@user` 2026-09-14; Architect status flip
+2026-09-14):** **Better Auth 1.7.4** (self-hosted TypeScript library)
 with the **organization plugin** for workspace membership/RBAC.
+
+**Year-1 enterprise SSO is not required** — the prior SSO-reopen
+conditional is **removed**. Revisit SSO only if `@user` later mandates
+it.
 
 **Drivers**
 
@@ -446,13 +466,15 @@ with the **organization plugin** for workspace membership/RBAC.
   sessions/DB app-owned (`06`, shortlist).
 - Avoids SMS product flows (out of scope) and keeps org context
   server-side (`06` checklist).
+- Minimal year-1 tenants: honest workspace chrome (REC-18); org plugin
+  still fits without fake enterprise scale.
 
 **Alternatives considered**
 
 | Option | Why not primary |
 |--------|-----------------|
-| Clerk | Fast org UX; Hobby tier (`06`); lost on managed lock-in, residency uncertainty, and SSO/B2B add-on cost cliffs (`06`) while self-host and SSO gates are open. **Fallback** if `@user` prefers managed auth and accepts sub-processor. |
-| Keycloak | Full IdP (`06`); lost on ops burden for solo/portfolio (`06`, shortlist) unless enterprise SSO year-1 is mandatory. |
+| Clerk | Fast org UX; Hobby tier (`06`); lost on managed lock-in, residency uncertainty, and SSO/B2B add-on cost cliffs (`06`). **Fallback** if `@user` prefers managed auth and accepts sub-processor. |
+| Keycloak | Full IdP (`06`); lost on ops burden for solo/portfolio (`06`, shortlist) while year-1 SSO is not required. |
 | Auth.js alone | Viable DIY (`06`); lost because org/RBAC is push-to-project — treat as style under Better Auth, not equal product. |
 
 **Consequences**
@@ -475,65 +497,81 @@ with the **organization plugin** for workspace membership/RBAC.
 **Verification**
 
 - PoC invite + role-gated note list; logout revoke; session flags.
-- Falsify if `@user` requires managed IdP or year-1 enterprise SSO
-  without accepting Keycloak ops — then switch recommendation to Clerk
-  or Keycloak explicitly.
-
-**Conditional:** Enterprise SSO year-1 gate may force Keycloak or Clerk
-B2B — **do not accept this section until that gate is answered** if SSO
-is in-scope for year-1.
+- Falsify if Better Auth org plugin cannot express workspace ACL for
+  retrieval-time isolation without disproportionate custom work.
 
 ---
 
 ### 7. Hosting / deployment
 
-**Decision (proposed):** **Railway** (primary) or **Render** (equivalent
-shape) for web + worker + Postgres co-location; region chosen after
-data-region gate.
+**Decision (rewritten and accepted 2026-09-14; `@user` + Wave C):**
+
+1. **Railway / Render are not the default** (`@user` rejected).
+2. **Preferred topology CLASS** (not a specific instance SKU): **AWS Free
+   plan** — **EC2 and/or ECS** + **RDS PostgreSQL** + **pgvector** for
+   the accepted **6-month** hosted-demo window (`07`, shortlist).
+3. **VPS / Docker Compose fallback only if** a concrete PoC shows AWS
+   cannot host web + worker + Postgres(+pgvector) for those 6 months
+   within Free-plan eligibility / credits — **not** because 6 months is
+   “too short.”
+4. Document **credit-burn** and **account-close-at-expiry** honestly;
+   these are ops risks, **not** a current blocker for choosing this
+   topology (`07`).
+5. **Containerize** web + worker early; **no** platform-proprietary
+   bindings in app code.
+6. **Data region:** none (`@user`).
+
+Exact EC2/ECS instance types and RDS sizes remain **Implementer PoC**
+choices within Free-plan-eligible surfaces — this ADR does not pin a
+SKU.
 
 **Drivers**
 
-- OmniDoc workload needs long-running ingestion/embed workers;
-  serverless-only platforms conflict unless jobs externalized
-  (`07-hosting-deployment.md`).
-- Railway/Render explicitly fit web + worker + DB (`07`, shortlist).
-- Always-on demo vs sleep: Render free sleep called out as demo risk
-  (`07`) — prefer paid always-on if demos matter (open Q6).
+- Workload needs long-running ingestion/embed workers (`07`).
+- Wave C: Free plan (credits + 6 months) can host EC2/ECS + RDS +
+  pgvector at **$0 cash** while the Free plan lasts; credit exhaustion
+  may end the plan early; expiry **closes** the account (`07`).
+- `@user`: 6-month demo horizon is an accepted fit; prefer AWS Free
+  Tier; infra prefer $0 / ~$20 ceiling.
 
 **Alternatives considered**
 
 | Option | Why not primary |
 |--------|-----------------|
-| Vercel + external DB + external worker | Best Next DX (`07`); lost as default because split-brain jobs + function limits (`07`) and this ADR proposes RR7 not Next. Reopen with Next fallback. |
+| Railway / Render | Explicitly **rejected as default** (`@user`); retain as compared non-defaults (`07`). |
+| Vercel + external DB + external worker | Best Next DX (`07`); lost as default because split-brain jobs + function limits (`07`). |
 | Fly.io | Capable (`07`); more knobs for solo maintainer. |
 | Cloudflare Workers/Pages | Edge/static strengths (`07`); Node/Postgres worker patterns may need redesign. |
-| Self-host VPS/Docker | Max residency/narrative (`07`); lost as **default** due to uptime/ops credibility risk for solo portfolio — **elevate to primary** if `@user` mandates self-host app. |
+| Lightsail / App Runner as Free-plan defaults | Lightsail trial ≠ Free plan; App Runner on Paid lists (`07`). |
+| VPS/Docker as default | Max control (`07`); demoted to **fallback-only** per `@user` rule. |
 
 **Consequences**
 
-- Liked: one project for API + worker + DB; matches ingestion shape.
-- Disliked: usage-cost unpredictability (`07`); still own backups unless
-  external managed DB.
+- Liked: always-on compute shape matches workers; aligns with pgvector
+  on RDS; portable containers.
+- Disliked: credit monitoring is mandatory demo ops; Free plan end closes
+  account (90-day Paid-upgrade recovery window) (`07`).
+- Soft Vercel coupling from §1 remains actively resisted via containers.
 
 **Migration / rollback**
 
-- Containerize web/worker early; avoid proprietary platform bindings in
-  app code.
-- Rollback to VPS: same images; to Vercel: only if UI is Next and workers
-  stay external.
+- Same container images → VPS if AWS PoC fails eligibility/burn.
+- Rollback to Railway/Render: possible as paid non-default; not preferred.
+- Export/backup drill before Free plan end date.
 
 **Security / privacy**
 
-- Record snapshot region + provider processing regions honestly
-  (`07`); do not claim “data stays in VPC” on shared PaaS.
+- Record snapshot region + provider processing regions honestly even
+  when data-region preference is none (`07`).
+- Do not claim “data stays in VPC” without evidence on shared managed
+  services.
 
 **Verification**
 
-- Deploy web + worker + Postgres; run mock embed job > request timeout;
-  confirm demo Ask path under always-on plan if gate requires it.
-- Falsify if monthly budget cannot sustain PaaS — fall back to VPS.
-
----
+- Deploy web + worker + Postgres(+pgvector) on Free-plan-eligible
+  topology; run mock embed job > request timeout; track credit burn.
+- Falsify only if Free-plan path cannot host the workload — then time-
+  box VPS Compose fallback.
 
 ## Summary table
 
@@ -541,21 +579,20 @@ data-region gate.
 |---|----------|--------|--------|
 | 1 | Frontend | **Next.js 16.3.5** (App Router) | `accepted` 2026-09-14 |
 | 2 | Editor | **TipTap 3.31.3** (ProseMirror) + CodeMirror 6 for fenced code; **ProseMirror JSON as SoT**, markdown via one canonical serializer | `accepted` 2026-09-14 |
-| 3 | Database | PostgreSQL 18 (+ app scope + RLS defense-in-depth) | `proposed` |
-| 4 | Vector | pgvector 0.8.6 in Postgres | `proposed` |
-| 5 | Embedding/LLM | Ports + mocks first; operator keys; OpenAI embeddings; Anthropic or OpenAI LLM at activation; no Assistants vector_store SoT; BYOK later | `proposed` |
-| 6 | Auth | Better Auth 1.7.4 + organization plugin | `proposed` — conditional on the year-1 SSO answer |
-| 7 | Hosting | Railway (or Render); VPS if self-host mandated | `proposed` — demo-hosting gate still open |
+| 3 | Database | **PostgreSQL 18** + shared schema + app scoping + RLS defense-in-depth | `accepted` 2026-09-14 |
+| 4 | Vector | **pgvector** in Postgres (ledger **0.8.6**; confirm RDS matrix at scaffold) | `accepted` 2026-09-14 |
+| 5 | Embedding/LLM | Ports + mocks first; OpenRouter operator free-tier **gateway**; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT — detail **ADR-0004** | `accepted` 2026-09-14 |
+| 6 | Auth | **Better Auth 1.7.4** + organization plugin; year-1 SSO **not** required | `accepted` 2026-09-14 |
+| 7 | Hosting | AWS Free-plan topology class: **EC2 and/or ECS + RDS Postgres + pgvector**; Railway/Render not default; VPS fallback only if AWS cannot cover 6 months; data region none | `accepted` 2026-09-14 |
 
 ---
 
 ## Decision record (2026-09-14)
 
-`@user` answered the Task 0.7 gate (`docs/handoffs/current.md`) during
-research review. Exact pins come from
-`docs/research/version-ledger.md`.
+### Part A — Categories 1–2 + toolchain (earlier same day)
 
-### Accepted
+`@user` answered the Task 0.7 gate during research review. Exact pins
+come from `docs/research/version-ledger.md`.
 
 | Decision | Exact pin |
 |----------|-----------|
@@ -570,86 +607,86 @@ research review. Exact pins come from
 | Data + state | **RSC + Server Actions first**; Zustand 5.0.15 for editor/UI state only; no client cache library in v1 → ADR-0003 |
 | Testing | **Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + @axe-core/playwright 4.13.0 + MSW 2.15.0 + Storybook 10.6.0** → ADR-0003 |
 
-### Explicitly still open — no default assumed
+### Part B — Categories 3–7 (Task 0.9; Architect 2026-09-14)
 
-- Categories 3–7 above (database, vector, embedding/LLM posture, auth,
-  hosting)
-- Budget ceiling; self-host vs managed; privacy / ZDR ambition; customer
-  BYOK; data region; year-1 enterprise SSO
-- Demo posture: mock-only deterministic Ask vs live provider; public
-  sample workspace vs local fixtures
-- Year-1 tenant count / corpus size; collaborative editing in v1;
-  always-on demo hosting
-- **RTL locale** — remains deferred, **not closed**; `@user` did not
-  bring it forward
-- **Production AI / provider activation** — remains gated
-- **UT-1…UT-14** — still unrun hypotheses
+`@user` directed acceptance in Task 0.7 archive
+(`docs/handoffs/archive/H-2026-09-13-P0-T07-phase-check-user.md`).
+Wave C evidence: `05`, `07`, `09`, shortlist. UX constraints: REC-13…19.
 
-### Follow-through owned elsewhere (not done by this amendment)
+| Decision | Record |
+|----------|--------|
+| Relational DB | PostgreSQL 18; shared schema + app scoping + RLS DiD |
+| Vector | pgvector in Postgres |
+| Embedding/LLM | See §5 + **ADR-0004** (`accepted`) |
+| Auth | Better Auth 1.7.4 + org plugin; year-1 SSO not required |
+| Hosting | AWS Free-plan EC2/ECS + RDS + pgvector topology class; no SKU pin |
+| Year-1 tenants | Minimal; honest workspaces; collab much later |
+| Demo corpus | Public labelled sample workspace + clone-and-run fixtures |
+| Mock-first | Until CX validated; production AI still gated |
+| Privacy | ~30-day abuse-log honesty; no ZDR sales motion |
+| Data region | None |
+| Nx Cloud | Local cache only (unchanged) |
 
-- `docs/handoffs/current.md` Task 0.7 is **partially answered** and must
-  be rolled forward by `/commander`; gates 2–5 in that handoff are still
-  live.
-- `docs/frontend/README.md` needs a refresh for the now-known stack
-  (package manager, directory contract, prerequisites).
-- `context.md` live status and open gates need the same update.
+### Standing gates (still open — not closed by this ADR)
+
+- **RTL locale support** — deferred, **not closed**
+- **Production AI / provider activation** — open until CX-first mock
+  validation
+- **UT-*** — still unrun hypotheses
+- Exact AWS Free-plan credit-burn PoC and OpenRouter model-quality PoC
+  — Implementer / activation-time work, not ADR blockers for accepting
+  topology class / gateway choice
+- Nx generator / boundary tag taxonomy — Implementer PoC at scaffold
+
+### Follow-through owned elsewhere
+
+- Commander integrates Task 0.9 and opens Phase 1 (Designer + Implementer
+  loops); Architect does **not** scaffold or open those handoffs here.
+- `docs/frontend/README.md` may still need a refresh for known stack
+  (Implementer / Commander coordination).
+- `context.md` live status is Commander-owned after this task.
 
 ---
 
-## `@user` gates that block acceptance
+## Closed `@user` gates (2026-09-14)
 
-These remain **open**. Accepting ADR-0001 without answering them either
-requires explicit `@user` waiver or leaves the related section
-conditional.
+Previously blocking acceptance of §3–§7; now closed:
 
-### From Researcher
+1. Monthly budget ceiling (infra prefer $0 / ~$20; AI = OpenRouter free
+   then ~$10 after operational)
+2. Self-host vs managed (prefer free; managed OK if $0)
+3. Privacy / ZDR (~30-day abuse OK; no ZDR sales)
+4. Customer BYOK — **yes in v1**; dual-mode
+5. Data region — none
+6. Enterprise SSO year-1 — **not required**
+7. Hosted demo horizon — **6 months**; AWS Free Tier window in-scope
+8. Year-1 tenants — minimal; honest workspaces
+9. Collaborative editing — much later
+10. Mock-first until CX validated; public labelled sample + fixtures
+11. ADR-0001 categories 3–7 — **accepted** this amendment
 
-1. Monthly budget ceiling (infra + AI) — **open**
-2. Self-host vs managed preference (app, auth, vectors) — may flip
-   auth/hosting/vector sections — **open**
-3. Privacy / zero-data-retention ambition vs standard abuse retention
-   — **open**
-4. Customer BYOK: yes / no / **later** (this ADR assumes later) — **open**
-5. Data region preference (none / US / EU) — **open**
-6. Enterprise SSO in year one (may force Keycloak/Clerk B2B) — **open**
-7. **ADR-0001 acceptance** itself — **partially answered 2026-09-14**
-   (categories 1–2 accepted; 3–7 open)
+### Standing / not closed
 
-### From UX Researcher
-
-8. Mock-only deterministic Ask vs live provider for demos
-9. Public sample workspace vs local-only fixtures
-10. UT-1…UT-14 remain unrun (user-validation open — not ADR blockers
-    for *proposing* stack, but block claiming UX “validated”)
-
-### Standing / ADR-added
-
-11. RTL locale support — deferred, not closed (unchanged by the
-    2026-09-14 review; `@user` did not bring it forward)
-12. Production AI / provider activation — open
-13. Year-1 tenant count / corpus size (affects RLS vs schema-per-tenant
-    and pgvector ceiling) — **open**
-14. Collaborative editing in v1? (editor collab path reserved only) —
-    **open**
-15. Markdown vs structured JSON as note SoT — **answered 2026-09-14:
-    ProseMirror JSON is the SoT, markdown is a serializer projection**
-16. Always-on demo hosting required? — **open**
-17. React-only vs openness to Svelte — **answered 2026-09-14:
-    React-only**
-18. Package manager preference — **answered 2026-09-14: pnpm 12.4.1**
-    (ADR-0002)
+- RTL locale support — deferred, not closed
+- Production AI / provider activation — open
+- UT-1…UT-22 (and related) — unrun hypotheses
+- Nx Cloud / remote caching — local cache only unless `@user` enables
 
 ---
 
 ## What this ADR does not do
 
-- Does not mark itself `accepted`
-- Does not authorize `package.json` scaffolding
+- Does not authorize `package.json` scaffolding (needs Implementer
+  handoff after Commander opens Phase 1)
 - Does not activate production providers
 - Does not treat UT-* as findings
 - Does not invent legal/compliance certification
+- Does not pick a specific EC2/ECS/RDS SKU
+- Does not enable Nx Cloud
 - Does not rewrite `docs/frontend/README.md` (Implementer reconciles
   after acceptance if needed)
+- Does not own cookbook chrome (Designer later) — ports only via
+  ADR-0004
 
 ## References
 
@@ -657,7 +694,10 @@ conditional.
 - `docs/research/technical/01-frontend-frameworks.md` …
   `07-hosting-deployment.md`
 - `docs/research/technical/08-candidate-shortlist.md`
+- `docs/research/technical/09-byok-and-usage-metering.md`
 - `docs/research/ux/02-citation-trust.md`
 - `docs/research/ux/08-design-facing-recommendations.md`
+- `docs/research/ux/09-byok-cookbook-and-dual-mode.md`
 - `architecture.md`
+- `docs/adr/ADR-0004-dual-mode-byok-and-usage.md`
 - `docs/frontend/README.md`

@@ -1,11 +1,11 @@
 # OmniDoc — Architecture Baseline
 
-> Status: **architecture-ready draft** for Phase 0. Not final accepted
-> truth until Phase Check + `@user` acceptance of ADR-0001 where marked.
-> Stack-specific choices live in
-> [`docs/adr/`](docs/adr/README.md) — ADR-0001 (frontend + platform stack)
-> is `accepted (partial)` for categories 1–2, ADR-0002 (workspace and
-> tooling) and ADR-0003 (frontend application toolchain) are `accepted`.
+> Status: **architecture baseline** for Phase 0 close-out. ADR-0001
+> categories 1–7 are `accepted` (2026-09-14); dual-mode BYOK detail in
+> ADR-0004 (`accepted`). ADR-0002 (workspace) and ADR-0003 (frontend
+> toolchain) remain `accepted`. Production AI activation and RTL locale
+> remain **gated / deferred**. Stack-specific choices live in
+> [`docs/adr/`](docs/adr/README.md).
 
 OmniDoc is a multi-tenant AI/RAG note and knowledge SaaS: capture notes
 and documents, chunk and embed them, then search and ask questions that
@@ -39,8 +39,10 @@ External providers (embedding, LLM, vector, storage, IdP, …)
 other external providers directly. Production adapters appear only behind
 ports after evidence, ADR acceptance, and production-activation gates.
 
-**Architecture-ready:** boundary and ports.
-**ADR-0001-dependent:** concrete framework, hosting, and adapter packages.
+**Architecture-ready:** boundary and ports (incl. vault, usage, mode).
+**ADR-accepted stack:** framework, DB, vector, auth, hosting topology,
+provider posture (ADR-0001 / ADR-0004). **Still gated:** production AI
+activation; RTL locale. **Not yet authorized:** scaffolding.
 
 ---
 
@@ -78,12 +80,13 @@ critical defects.
 Apply continuous review with
 [`.cursor/skills/tenant-security-review/SKILL.md`](.cursor/skills/tenant-security-review/SKILL.md).
 
-**Isolation posture (architecture preference, ADR detail):** shared
-schema with application scoping **plus** defense-in-depth (e.g. Postgres
-RLS with a non-owner, non-`BYPASSRLS` role) is the intended early path
-per research (`docs/research/technical/03-multi-tenant-isolation.md`).
-Schema-per-tenant remains an alternative if year-1 scale and ops gates
-demand it — undecided until `@user` scale/ops answers + ADR acceptance.
+**Isolation posture (ADR-0001 §3 `accepted`):** shared schema with
+application scoping **plus** defense-in-depth (Postgres RLS with a
+non-owner, non-`BYPASSRLS` role) per
+`docs/research/technical/03-multi-tenant-isolation.md`. **Minimal year-1
+tenants** keep this shape — do not over-engineer schema-per-tenant now;
+reopen only if isolation/ops evidence demands it. Honest workspace/team
+chrome at n≈1–few (REC-18); collaborative editing is **much later**.
 
 ---
 
@@ -91,10 +94,9 @@ demand it — undecided until `@user` scale/ops answers + ADR acceptance.
 
 ### Notes and documents
 
-- **Note:** primary capture unit (title + body). Body storage format
-  (markdown vs structured editor JSON) is an open decision input to
-  ADR-0001; architecture requires **one durable source of truth** plus
-  export paths.
+- **Note:** primary capture unit (title + body). Body durable SoT is
+  **TipTap/ProseMirror JSON** (ADR-0001 §2); markdown is an export /
+  chunking projection via one canonical serializer.
 - **Document:** imported file or pasted blob that becomes one or more
   notes / versions under the same tenant.
 - Version identity is durable: answers and citations reference a
@@ -200,7 +202,7 @@ sketch, mock path, production path, failure states.
 | **Out** | note/version DTOs; list pages |
 | **Invariants** | tenant re-check on every op; UI never invents authz |
 | **Mock** | Fixture corpus under agreed fixture ids; deterministic CRUD in-memory/file |
-| **Production** | Relational store adapter (Postgres per ADR-0001 proposal) |
+| **Production** | Relational store adapter (PostgreSQL per ADR-0001 §3 `accepted`) |
 | **Failures** | `not_found`, `conflict` (version), `forbidden`, `validation`, `unavailable` |
 
 ### 5.2 Ingestion and chunking
@@ -220,12 +222,12 @@ sketch, mock path, production path, failure states.
 | | |
 |--|--|
 | **Ops** | `embedTexts`, `embedChunks` |
-| **In** | texts/chunk ids, `embedding_model_id` |
+| **In** | texts/chunk ids, `embedding_model_id`, runtime mode from §5.11 |
 | **Out** | vectors + model/version metadata |
-| **Invariants** | model id stored with vectors; no browser keys |
-| **Mock** | Deterministic pseudo-vectors from hash; fixed dims |
-| **Production** | Provider HTTP adapter (operator keys or BYOK vault — gated) |
-| **Failures** | `timeout`, `quota_exhausted`, `unavailable`, `invalid_model` |
+| **Invariants** | model id stored with vectors; no browser keys; key from §5.11 only — never silent mix of operator vs customer credentials |
+| **Mock** | Deterministic pseudo-vectors from hash; fixed dims (`mock` mode) |
+| **Production** | Dual-mode path after CX / production-AI gate: `operator_free_tier` via OpenRouter (or swap) gateway adapter, or `customer_key` via vault (§5.9); Assistants/`vector_stores` forbidden as corpus SoT (ADR-0001 §5, ADR-0004) |
+| **Failures** | `timeout`, `quota_exhausted` (**must distinguish** `operator_free_tier` vs `customer_key`), `unavailable`, `invalid_model`, `mode_forbidden` |
 
 ### 5.4 Vector search
 
@@ -236,7 +238,7 @@ sketch, mock path, production path, failure states.
 | **Out** | ranked chunk hits (tenant-verified) |
 | **Invariants** | tenant filter mandatory; zero cross-tenant hits tolerated |
 | **Mock** | Fixture ranking tables keyed by query id |
-| **Production** | pgvector or dedicated store adapter per ADR-0001 |
+| **Production** | Postgres + pgvector adapter (ADR-0001 §4 `accepted`) |
 | **Failures** | `timeout`, `unavailable`, `empty`, `partial` (degraded topK) |
 
 ### 5.5 Lexical / hybrid search
@@ -256,12 +258,12 @@ sketch, mock path, production path, failure states.
 | | |
 |--|--|
 | **Ops** | `ask` (optionally streaming) |
-| **In** | question, tenant, optional source scope, locale |
+| **In** | question, tenant, optional source scope, locale, runtime mode from §5.11 |
 | **Out** | one of the answer states in §4 + citations |
-| **Invariants** | only authorized chunks sent to model; retrieved text is **data**, not instructions; refusal is success; no auto-persist to corpus |
-| **Mock** | Deterministic Q→answer map including refusal/partial/conflict |
-| **Production** | LLM adapter + citation assembler; never Assistants-hosted corpus as SoT |
-| **Failures** | `timeout`, `quota_exhausted`, `unavailable`, `partial` (stream truncated with explicit flag) — distinct from `no_supported_answer` / `refused_policy` |
+| **Invariants** | only authorized chunks sent to model; retrieved text is **data**, not instructions; refusal is success; no auto-persist to corpus; never silent operator↔customer key mix |
+| **Mock** | Deterministic Q→answer map including refusal/partial/conflict (`mock` mode) |
+| **Production** | Dual-mode LLM adapter + citation assembler after CX / production-AI gate: OpenRouter operator free-tier gateway or customer vault key (ADR-0004); never Assistants-hosted / `vector_stores` corpus as SoT |
+| **Failures** | `timeout`, `quota_exhausted` (**must distinguish** `operator_free_tier` vs `customer_key`), `unavailable`, `partial` (stream truncated with explicit flag), `mode_forbidden` — distinct from `no_supported_answer` / `refused_policy` |
 
 ### 5.7 Identity / tenancy
 
@@ -272,7 +274,7 @@ sketch, mock path, production path, failure states.
 | **Out** | principal, memberships, roles |
 | **Invariants** | server authority; org context not client-trusted |
 | **Mock** | Fixed users/tenants in fixtures |
-| **Production** | Auth adapter per ADR-0001 |
+| **Production** | Better Auth + organization plugin (ADR-0001 §6 `accepted`) |
 | **Failures** | `unauthenticated`, `forbidden`, `unavailable` |
 
 ### 5.8 Export
@@ -287,6 +289,54 @@ sketch, mock path, production path, failure states.
 | **Production** | Exporter worker |
 | **Failures** | `timeout`, `too_large`, `unavailable`, `forbidden` |
 
+### 5.9 Credential vault
+
+Server-only secret storage for OmniDoc **customer-BYOK** keys (and
+metadata). Distinct from OpenRouter-upstream-BYOK (ADR-0004). Cookbook
+UX is Designer-owned later; this port owns store / verify / rotate /
+revoke.
+
+| | |
+|--|--|
+| **Ops** | `store`, `rotate`, `revoke`, `verify`, `getMetadata` (masked prefix, provider/tool chapter id, status) |
+| **In** | tenant-bound actor, plaintext key (write ops only on server), tool/chapter id, optional label |
+| **Out** | vault record metadata (never full plaintext after store); `verify` → ok / invalid / wrong_scope |
+| **Invariants** | decrypt only in API/worker; never log raw keys; never return full key to UI after save; tenant-keyed rows; write-once display (masked prefix); verify ≠ Ask |
+| **Mock** | In-memory map of fixture keys; deterministic verify outcomes by key id |
+| **Production** | App-encrypted column (year-1 preferred) or managed secrets adapter; operator key stays in env/deploy secrets, not customer vault rows (ADR-0004) |
+| **Failures** | `invalid_key`, `wrong_scope`, `forbidden`, `unavailable`, `encryption_error` |
+
+### 5.10 Usage / metering
+
+Read remaining limits and attributed usage from provider APIs (e.g.
+OpenRouter `GET /api/v1/key`) and/or local token sums. **Not** a billing
+product.
+
+| | |
+|--|--|
+| **Ops** | `getUsage`, `getRemainingLimits` |
+| **In** | tenant, runtime mode, optional period |
+| **Out** | usage DTO **or** explicit `unavailable`; never invent currency burn |
+| **Invariants** | attribute honestly (shared operator key ≠ per-customer); secrets excluded; management keys stored like other secrets |
+| **Mock** | Fixture counters / fixed `unavailable` cases |
+| **Production** | Thin wrappers over provider usage APIs; local attribution for direct providers (ADR-0004) |
+| **Failures** | `unavailable` (first-class success-shaped empty), `forbidden`, `timeout` |
+
+### 5.11 Runtime key-resolution / mode
+
+Resolves which credentials (if any) may be used for embed/ask on a
+request. Modes: `mock` | `operator_free_tier` | `customer_key`.
+
+| | |
+|--|--|
+| **Ops** | `resolveMode`, `assertModeAllowed`, `stampOutbound` |
+| **In** | tenant, actor, requested mode (selector), feature (`embed` or `ask`) |
+| **Out** | resolved mode + opaque credential handle (not raw key to UI) |
+| **Invariants** | never silently fall back across modes; CX gate blocks live modes until closed; production AI gate still applies; mode stamped on every outbound provider call |
+| **Mock** | Always `mock`; live modes return `mode_forbidden` until fixtures enable labelled demos |
+| **Production** | Policy from ADR-0004 + env; operator key from deploy secrets; customer key via §5.9 |
+| **Failures** | `mode_forbidden`, `vault_missing`, `unauthenticated`, `forbidden` |
+
 Mock and production adapters must not be simultaneous writable
 authorities for the same domain entity.
 
@@ -300,7 +350,8 @@ and [`.cursor/skills/ai-content-safety/SKILL.md`](.cursor/skills/ai-content-safe
 ### Assets
 
 User notes/versions, chunks/embeddings, identity/session material,
-BYOK/provider secrets (if adopted), audit/telemetry, quota state.
+BYOK/provider secrets (**in scope for v1** — ADR-0004), audit/telemetry,
+quota / usage state.
 
 ### Trust boundaries (high level)
 
@@ -317,7 +368,7 @@ providers; optional external fetch for import.
 | Cross-tenant IDOR | Server membership + retrieval-time checks; negative tests required |
 | Provider/tool trust | Model output untrusted for privileged actions; no auto tool elevation |
 | Secret leakage | No provider/BYOK keys in repo, client bundles, or error payloads |
-| BYOK (if `@user` yes) | Server-side vault only; rotation/revocation; never log raw keys |
+| BYOK (v1, OmniDoc vault) | Server-side vault only (§5.9); rotation/revocation/verify; never log raw keys; dual-mode key resolution (§5.11); distinguish from OpenRouter-upstream-BYOK (ADR-0004) |
 
 Note content is **untrusted input** end-to-end.
 
@@ -385,7 +436,14 @@ second fixture authority).
 | Markdown tables | Retrieve + ask rendering |
 | Mixed-case tokens (`pgvector`, `BYOK`) | Search/display edge |
 | Very long unbroken strings | Overflow safety |
-| Sample vs “mine” labelling | Portfolio demo gate (REC-08; `@user` public vs local) |
+| Sample vs “mine” labelling | **First-class** corpus labelling (REC-08, REC-17) |
+| Public labelled sample workspace | Required portfolio demo path (`@user` YES) plus clone-and-run fixtures — not a substitute for “mine” |
+| Runtime mode labelling | Mock vs live·operator free-tier vs live·your key near Ask (REC-13, REC-17) |
+
+**Sample vs mine** is a first-class domain/API concern: list, Ask scope,
+and citation surfaces must carry an explicit corpus ownership label.
+The public sample workspace is labelled non-personal; clone-and-run
+fixtures remain a separate engineer path.
 
 Determinism: same inputs → same outputs. Fixture ids stable across
 docs and mock adapters.
@@ -414,26 +472,30 @@ docs and mock adapters.
 
 ---
 
-## 11. Architecture-ready vs ADR-0001-dependent
+## 11. Architecture-ready vs ADR-dependent
 
-| Topic | Architecture-ready now | Depends on ADR-0001 `@user` acceptance |
-|-------|------------------------|----------------------------------------|
-| Ports, answer states, tenancy rules | Yes | Adapter implementations |
-| Fixture themes | Yes | Fixture file format in app tree |
+| Topic | Architecture-ready / accepted | Still gated or Implementer-owned |
+|-------|------------------------------|----------------------------------|
+| Ports, answer states, tenancy rules | Yes (incl. §5.9–§5.11) | Adapter implementations |
+| Fixture themes + sample vs mine | Yes | Fixture file format in app tree |
 | Threat / safety / RAG eval bars | Yes | Concrete libraries |
-| Frontend framework, editor + note SoT | **Accepted** (ADR-0001 §1–2) | Adapter implementations |
-| DB, vector, auth, hosting, provider posture | Constraints only | **Proposed** in ADR-0001 §3–7 |
-| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted`) | Confirm or adjust in ADR |
+| Frontend framework, editor + note SoT | **Accepted** (ADR-0001 §1–2) | Scaffolding via Implementer handoff |
+| DB / vector / auth | **Accepted** (ADR-0001 §3, §4, §6) | Migrations, PoCs, boundary tags |
+| Embedding/LLM dual-mode + BYOK | **Accepted** (ADR-0001 §5 + ADR-0004) | Production AI activation gate; model PoC |
+| Hosting topology class | **Accepted** (ADR-0001 §7 — AWS Free-plan EC2/ECS + RDS + pgvector) | SKU PoC; credit-burn monitoring; no scaffold yet |
+| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted`) | Nx generator PoC at scaffold |
 | Package manager | **Decided: pnpm 12.4.1** (ADR-0002) | — |
+| Production AI / RTL locale | **Not claimed** | Production AI open; RTL deferred not closed |
 
 ---
 
 ## 12. Related documents
 
 - ADR index: [`docs/adr/README.md`](docs/adr/README.md)
-- Stack: [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md) (`accepted (partial)`)
+- Stack: [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md) (`accepted`)
 - Workspace + tooling: [`docs/adr/ADR-0002-workspace-and-tooling.md`](docs/adr/ADR-0002-workspace-and-tooling.md) (`accepted`)
 - Frontend application toolchain: [`docs/adr/ADR-0003-frontend-application-toolchain.md`](docs/adr/ADR-0003-frontend-application-toolchain.md) (`accepted`)
+- Dual-mode BYOK + usage: [`docs/adr/ADR-0004-dual-mode-byok-and-usage.md`](docs/adr/ADR-0004-dual-mode-byok-and-usage.md) (`accepted`)
 - Technical evidence: `docs/research/technical/`
 - UX evidence (input): `docs/research/ux/`
 - Frontend contributor contract: `docs/frontend/README.md`

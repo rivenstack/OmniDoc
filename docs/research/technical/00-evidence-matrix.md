@@ -1,9 +1,10 @@
-# Evidence Matrix — OmniDoc Platform (2026-09-13)
+# Evidence Matrix — OmniDoc Platform (2026-09-13; Wave C amend 2026-09-14)
 
 Access date for sources cited below: **2026-09-13** unless a different
-publication or effective date is stated. Confidence: **H** high (primary
-official source), **M** medium (reputable secondary + corroboration),
-**L** low (community / marketing / undated).
+publication or effective date is stated. **Wave C** rows (OpenRouter,
+AWS Free Tier) use access date **2026-09-14**. Confidence: **H** high
+(primary official source), **M** medium (reputable secondary +
+corroboration), **L** low (community / marketing / undated).
 
 Version pins in this file come from
 [`../version-ledger.md`](../version-ledger.md) (last verified
@@ -50,11 +51,12 @@ Version pins in this file come from
 
 | Provider surface | Train on API data (default) | Default retention | ZDR path | BYOK feasibility | Portability | Conf. |
 |------------------|----------------------------|-------------------|----------|------------------|-------------|-------|
-| OpenAI API | No (since 2023-03-01 unless opt-in) | Abuse logs up to 30 days | Sales-approved ZDR/Modified Abuse Monitoring; embeddings ZDR-eligible | Customer API key in app vault = BYOK pattern | High if port behind project port | H |
-| Anthropic Claude API | No without express permission | Feature-dependent; Covered Models may require 30d | Sales-enabled ZDR per org | Same BYOK pattern | High behind port | H |
+| OpenAI API | No (since 2023-03-01 unless opt-in) | Abuse logs up to 30 days | Sales-approved ZDR/Modified Abuse Monitoring; embeddings ZDR-eligible | OmniDoc customer-BYOK = key in app vault | High if port behind project port | H |
+| Anthropic Claude API | No without express permission | Feature-dependent; Covered Models may require 30d | Sales-enabled ZDR per org | Same OmniDoc vault pattern | High behind port | H |
 | Google Gemini paid API | No for Paid Services (ToS) | Abuse logging; Search grounding forces 30d store | ZDR request; avoid grounding/store features | Same | High behind port | H |
 | Voyage embeddings | Opt-out of store/train for zero-day | Files API 30d | Dashboard opt-out (paid method required) | Same | High | H |
 | Cohere | SaaS logs ~30d; ZDR enterprise | Enterprise commitments page | Contact for ZDR | Same | High | H |
+| **OpenRouter** (Wave C, 2026-09-14) | OR default: no prompt/completion store; **upstream** training/retention still apply | OR: metadata always; content opt-in. Upstream often ~30d abuse | Enterprise in-region / ZDR filters exist; `@user` = no ZDR sales | **Two kinds:** OmniDoc vault key → OR API; vs **OR-upstream-BYOK** (keys in OR; 5% fee above allowance) | High as OpenAI-compatible gateway behind ports; **not accepted** | H |
 
 ## 6. Auth / identity
 
@@ -69,16 +71,20 @@ Version pins in this file come from
 
 | Option | Fit for solo/portfolio | Background jobs | Data residency | Conf. |
 |--------|------------------------|-----------------|----------------|-------|
+| **AWS Free plan / Free Tier** (Wave C, ≥2025-07-15; access 2026-09-14) | Up to **$200** credits; Free plan **6 months** or credits exhausted (fits demo horizon); EC2+RDS(+pgvector) eligible shapes; **credit burn** can end plan early; account **closes** at Free plan end (90d Paid reopen) | EC2/ECS long-running; Lambda alone weak for embed | Region none required (`@user`); choose any participating region | H |
 | Vercel (+ external DB) | Excellent Next DX; function time limits | Cron → HTTP; long workers elsewhere | Region choice limited by plan/product | H/M |
-| Railway | App + worker + DB in one project | Native long-running services/cron | Region-dependent | H/M |
-| Render | Explicit web/worker/cron | First-class workers | Region-dependent | H/M |
+| Railway (**non-default**) | App + worker + DB; `@user` rejected as default | Native long-running services/cron | Region-dependent | H/M |
+| Render (**non-default**) | Explicit web/worker/cron; rejected as default | First-class workers; free sleep risk | Region-dependent | H/M |
 | Fly.io | Machines near users; more ops | Machines/processes | Multi-region control | M |
 | Cloudflare Workers/Pages | Edge/static; cold-start friendly | Queues/cron; not classic Node workers | Edge network | M |
-| Self-host VPS/Docker | Max story control | Full control (queues, workers) | You choose region | H (practice) |
+| Lightsail | 90-day trial on **Paid**; not Free-plan 6-mo path; may be unsupported on new sign-up experience | Instance always-on | Region-dependent | H |
+| App Runner | **Paid-plan** list on new sign-up docs; idle provisioned memory cost | Request-driven; pause/resume | Region caveats | H |
+| Self-host VPS/Docker | **Fallback only** if AWS cannot cover 6-mo web+worker+Postgres(+pgvector) | Full control | You choose region | H (practice) |
 
 ## Open questions rolled up
 
 See [08-candidate-shortlist.md](./08-candidate-shortlist.md) and category
-files. Material `@user` gates: monthly budget ceiling; self-host vs managed
-preference; privacy/ZDR ambition; whether collaborative editing is Phase-1;
-data-residency story for portfolio demos.
+files. Many former `@user` gates closed 2026-09-14 (budget, BYOK v1,
+privacy ~30d, AWS 6-mo Free Tier preference, data region none). Still
+open for Architect: exact AWS SKU graph (no Researcher selection);
+OpenRouter vs direct provider pairing; vault pattern (see `09`).

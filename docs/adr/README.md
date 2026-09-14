@@ -46,6 +46,7 @@ Until acceptance, Implementer must not scaffold a stack “as decided.”
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `accepted (partial)` — categories 1–2 accepted 2026-09-14; 3–7 `proposed` |
+| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `accepted` — §1–§7 (2026-09-14); §5 detail via ADR-0004 |
 | [ADR-0002](./ADR-0002-workspace-and-tooling.md) | Workspace and tooling (Nx, pnpm, app/package layout, boundary enforcement) | `accepted` |
 | [ADR-0003](./ADR-0003-frontend-application-toolchain.md) | Frontend application toolchain (styling/components, data + state, testing, supporting libraries) | `accepted` |
+| [ADR-0004](./ADR-0004-dual-mode-byok-and-usage.md) | Dual-mode BYOK, vault, usage metering, and key resolution | `accepted` |

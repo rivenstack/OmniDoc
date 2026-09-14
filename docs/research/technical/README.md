@@ -1,15 +1,15 @@
-# OmniDoc — Technical Platform Evidence (Task 0.2)
+# OmniDoc — Technical Platform Evidence (Task 0.2 + Wave C 0.8)
 
 **Owner:** `/researcher`  
-**Phase / Task:** 0 / 0.2  
-**Research date:** 2026-09-13  
-**Access date for all web sources unless noted:** 2026-09-13  
+**Phase / Task:** 0 / 0.2 (baseline); **0.8 Wave C** amends `05`, `07`,
+matrix, shortlist, optional `09`  
+**Research date:** 2026-09-13; Wave C access **2026-09-14**  
 **Version pins:** [`../version-ledger.md`](../version-ledger.md) — last verified 2026-09-14; re-verify before each Phase Check  
 **Status:** Evidence and shortlists only — **not** an architecture decision
 
 ## Purpose
 
-Bounded, dated evidence so `/architect` can draft ADR-0001. No stack,
+Bounded, dated evidence so `/architect` can draft / amend ADR-0001. No stack,
 vendor, or provider is selected here.
 
 ## Package Contents
@@ -22,10 +22,11 @@ vendor, or provider is selected here.
 | [02-rich-text-editors.md](./02-rich-text-editors.md) | TipTap/ProseMirror, Lexical, CodeMirror, Milkdown |
 | [03-multi-tenant-isolation.md](./03-multi-tenant-isolation.md) | RLS vs app scoping vs schema-per-tenant + RAG implications |
 | [04-vector-storage.md](./04-vector-storage.md) | pgvector vs dedicated stores |
-| [05-embedding-llm-providers.md](./05-embedding-llm-providers.md) | Embeddings/LLMs, retention, BYOK, portability |
+| [05-embedding-llm-providers.md](./05-embedding-llm-providers.md) | Embeddings/LLMs, retention, BYOK, OpenRouter (Wave C) |
 | [06-auth-identity.md](./06-auth-identity.md) | Self-hosted vs managed auth |
-| [07-hosting-deployment.md](./07-hosting-deployment.md) | Solo/portfolio hosting + background jobs |
+| [07-hosting-deployment.md](./07-hosting-deployment.md) | Solo/portfolio hosting + AWS Free Tier (Wave C) |
 | [08-candidate-shortlist.md](./08-candidate-shortlist.md) | Non-binding shortlists with tradeoffs |
+| [09-byok-and-usage-metering.md](./09-byok-and-usage-metering.md) | OmniDoc vs OR-upstream BYOK; vault patterns; usage APIs (Wave C) |
 
 ## Project Constraints Applied
 

@@ -27,3 +27,9 @@
 - Portfolio demos need sample corpus + citation click + refusal path within ~60s to read as production-grade
 - “Conversion” for OmniDoc = signup completion, first-note activation, retrieval trust, retention — never checkout
 - RTL locale findings are out of scope while RTL is deferred; still call out mixed-content and RTL-readiness discipline
+- Dual-mode spine is mock Ask → labelled operator free-tier live demo → customer BYOK; never live-AI-first that skips mocks
+- Refer to operator free-tier / customer key in UX — provider names are not UX decisions
+- Cookbook is chapter-based and grows as tools are added; create key elsewhere → paste → verify → first Ask
+- Do not imply zero-retention when ~30-day abuse-log retention is the accepted posture; sample vs mine and runtime mode must be labelled
+- Year-1 workspace/team chrome stays honest at minimal tenant count — no fake enterprise scale or billing consoles
+- Usage/charges UX is a compact strip with honest “unavailable,” not enterprise billing IA

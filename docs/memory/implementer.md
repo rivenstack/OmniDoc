@@ -29,8 +29,10 @@
 
 - After Architect rewrites `architecture.md`, refresh onboarding docs in
   the same wave or immediately after — stale “starter skeleton” wording
-  is a Medium defect (DEF-001 class). Point at `docs/adr/` for decisions;
-  keep ADR-0001 framed as `proposed` until `@user` accepts.
+  is a Medium defect (DEF-001 class). Point at `docs/adr/` for decisions.
+- **2026-09-14:** ADR-0001 §1–§7 and ADR-0004 are `accepted`. Task 1.2
+  may scaffold the Nx workspace. Keep production adapters dark. Do not
+  frame the stack as `proposed` in new onboarding text.
 - Fixture work for humans should cross-reference `architecture.md` mock
   corpus requirements rather than duplicating a second authority.
 - Answer-port `no_supported_answer` / `refused_policy` are success

@@ -44,6 +44,17 @@
 - Archived handoffs stay immutable historical records; record later
   identity corrections in `docs/handoffs/archive/README.md` rather than
   rewriting archive bodies (preserves `/phase-check` ledger integrity)
+- `@user` 2026-09-14: 6-month AWS Free Tier window is an accepted fit
+  for the 6-month project horizon — do not treat credit duration as a
+  reason to prefer VPS; VPS is only fallback if AWS cannot host the
+  workload for those 6 months
+- Rejected ADR-0001 categories return to Researcher evidence then
+  Architect rewrite — Commander never invents AWS/OpenRouter/BYOK
+  topology in the handoff
+- Phase 1 opens Designer (specs) and Implementer (scaffold) in parallel
+  with non-overlapping writes (`docs/design/**` vs `apps/**`+`packages/**`);
+  later journey increments stay Implementer → Phase Check one-to-three
+  at a time
 
 ## Phase-Boundary Stewardship
 
