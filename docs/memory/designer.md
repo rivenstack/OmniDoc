@@ -13,3 +13,6 @@
 - Motion supports hierarchy; honor `prefers-reduced-motion`
 - Consider design/motion MCPs when beneficial; never treat MCP as gate closure
 - Citation UI and empty states are first-class, not afterthoughts
+- **2026-09-14:** Visual system work is track **D-01** (`lane: frontend`,
+  `docs/handoffs/current.md`). Write `docs/design/**` only — no `apps/`
+  or `packages/`. Backend does not wait on D-01. F-01 does.

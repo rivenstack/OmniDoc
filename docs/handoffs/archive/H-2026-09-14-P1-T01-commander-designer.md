@@ -1,27 +1,42 @@
 ---
-handoff_id: H-2026-09-14-P1-D01
+handoff_id: H-2026-09-14-P1-T01
 affinity: design
 track: main
-status: ready
+status: blocked
 phase: "1"
-task: "D-01"
-lane: frontend
+task: "1.1"
 from: commander
 to: designer
 created: 2026-09-14
 ---
 
-# D-01 — Visual System and Journey UI Specs
+# Phase 1 — Task 1.1 Visual System and Journey UI Specs (ARCHIVED)
+
+## Outcome Summary
+
+**Superseded 2026-09-14 before execution.** `@user` rejected the serial
+Phase 1 Implementer loop (1.1 → 1.2 → single-owner 1.3…10). Commander
+replaced the assignment with track **D-01** (`lane: frontend`) in
+`docs/handoffs/current.md`. Scope of the visual-system work is unchanged;
+only numbering, lane metadata, and “open Task 1.3 next” completion
+instructions were corrected. This archive is **not** a design failure.
+
+Successor: `docs/handoffs/current.md` (D-01). Program of record:
+`docs/planning/implementation-tracks.md`.
+
+---
+
+# Phase 1 — Task 1.1 Visual System and Journey UI Specs
 
 ## Start Command
 
 ```text
-/designer Read docs/handoffs/current.md and execute D-01 exactly. Produce implementation-ready visual system and journey UI specs from accepted UX + architecture. Do not invent customer findings. Do not scaffold application code.
+/designer Read docs/handoffs/current.md and execute Task 1.1 exactly. Produce implementation-ready visual system and journey UI specs from accepted UX + architecture. Do not invent customer findings. Do not scaffold application code.
 ```
 
 ## Objective
 
-Owner: `/designer`. **Lane:** `frontend` (frontend developer).
+Owner: `/designer`
 
 Create the OmniDoc visual system and implementation-ready UI specs for
 the four core journeys (capture, organize, retrieve, ask) plus dual-mode
@@ -30,11 +45,8 @@ honest workspace chrome — from **accepted** UX research and **accepted**
 architecture. Specs must be implementable on Next.js 16 + Tailwind 4 +
 shadcn/ui (Base UI) in `packages/ui` (ADR-0002/0003).
 
-This is the last **planning** deliverable. It finishes design so the
-frontend lane can implement F-01+ from specs. A parallel **S-01**
-Implementer task scaffolds the Nx workspace. Do **not** wait for S-01.
-Do **not** write `apps/` or `packages/`. Backend B-01+ does **not** wait
-on these specs.
+A parallel Implementer task (1.2) scaffolds the Nx workspace. Do not
+wait for it. Do not write `apps/` or `packages/`.
 
 Consider Figma MCP (`plugin-figma-figma`) if authenticated and useful
 for design-system fidelity; GSAP Master only if motion specs need it;
@@ -45,18 +57,17 @@ note that and continue with repo-native Markdown/spec files.
 ## Required Reading
 
 1. `context.md` (read-only)
-2. `docs/planning/implementation-tracks.md` (D-01 row; do not edit)
-3. `architecture.md` (accepted ports, answer states, locale, §5.9–§5.11)
-4. `AGENTS.md` Design Scope
-5. `docs/memory/designer.md`
-6. ADR-0001, ADR-0002, ADR-0003, ADR-0004 (all `accepted`)
-7. `docs/research/ux/08-design-facing-recommendations.md` (REC-01…REC-19)
-8. `docs/research/ux/09-byok-cookbook-and-dual-mode.md`
-9. `docs/research/ux/01-journeys.md`, `02-citation-trust.md`,
+2. `architecture.md` (accepted ports, answer states, locale, §5.9–§5.11)
+3. `AGENTS.md` Design Scope
+4. `docs/memory/designer.md`
+5. ADR-0001, ADR-0002, ADR-0003, ADR-0004 (all `accepted`)
+6. `docs/research/ux/08-design-facing-recommendations.md` (REC-01…REC-19)
+7. `docs/research/ux/09-byok-cookbook-and-dual-mode.md`
+8. `docs/research/ux/01-journeys.md`, `02-citation-trust.md`,
    `03-onboarding-mobile.md`, `06-portfolio-credibility.md`,
    `07-accessibility-friction.md`
-10. `quality/ui-qa-checklist.md` (starting point, not final)
-11. This handoff
+9. `quality/ui-qa-checklist.md` (starting point, not final)
+10. This handoff
 
 ## Inputs / Evidence
 
@@ -78,8 +89,8 @@ note that and continue with repo-native Markdown/spec files.
 - This file: append Outcome; set `status: completed` when done
 
 **Must not touch:** `context.md`, `architecture.md`, `docs/adr/**`,
-`docs/research/**`, `docs/planning/**`, `apps/**`, `packages/**`,
-workspace scaffold files, `docs/handoffs/active/**` (S-01).
+`docs/research/**`, `apps/**`, `packages/**`, workspace scaffold files,
+`docs/handoffs/active/**` (Implementer 1.2).
 
 ## Deliverables
 
@@ -131,10 +142,8 @@ workspace scaffold files, `docs/handoffs/active/**` (S-01).
 
 ## Dependencies / Risks
 
-- Parallel with **S-01** (Nx scaffold). Specs must not assume generated
+- Parallel with Task 1.2 (Nx scaffold). Specs must not assume generated
   file names beyond ADR-0002 (`apps/web`, `packages/ui`).
-- Does **not** block Backend B-01+.
-- Blocks Frontend F-01+ (tokens and journey UI).
 - Risk: live-AI-first onboarding — forbidden.
 - Risk: fake enterprise teams chrome — forbidden (REC-18).
 
@@ -149,6 +158,5 @@ workspace scaffold files, `docs/handoffs/active/**` (S-01).
 1. Write `docs/design/**` specs.
 2. Append Outcome; set this file `status: completed`.
 3. Durable lessons only in `docs/memory/designer.md`.
-4. Do **not** open F-01, S-02, or any Implementer journey task —
-   Commander integrates D-01 + S-01 and opens the next **frontend** live
-   handoff (F-01) from `docs/planning/implementation-tracks.md`.
+4. Do not open the next Implementer journey task — Commander integrates
+   1.1 + 1.2 and opens Task 1.3.

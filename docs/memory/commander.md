@@ -2,8 +2,10 @@
 
 ## Durable Responsibilities
 
-- Read live context before planning
-- Keep each phase to one to three concrete tasks
+- Read live context and `docs/planning/implementation-tracks.md`
+  before planning
+- Keep **one live handoff per lane**; the full owned backlog lives in
+  the program of record — do not hide remaining work as “downstream”
 - Preserve dependency order and explicit gates
 - Return major outputs to Commander for validation and routing
 - Curate shared memory at phase boundaries
@@ -11,7 +13,10 @@
 ## Recurring Checks
 
 - Customer experience first: validate premium UX before production AI/provider activation
-- One primary owner per handoff; Researcher ≠ UX Researcher co-ownership
+- One primary owner per handoff (`to:`) plus one human `lane:`;
+  Researcher ≠ UX Researcher co-ownership
+- Two `/implementer` sessions are allowed when `lane` and write paths
+  differ (frontend vs backend)
 - Route technical/legal/provider questions to Researcher; customer-behavior
   UX to UX Researcher
 - Architecture approval before implementation of undecided boundaries
@@ -21,15 +26,13 @@
 - Every next-agent assignment must exist as a Markdown handoff
 - Design/implementation may consider design/motion/asset MCPs when
   beneficial; MCP never closes gates; note auth/availability and continue
-- Parallel Wave write paths must not overlap; parallel agents do not
+- Parallel write paths must not overlap; parallel agents do not
   overwrite `docs/handoffs/current.md` unless authorized
 - Stack selection waits for Researcher evidence + Architect ADR-0001 +
   `@user` gate — Commander never selects vendors
 - Wave integration: verify `status: completed` **and** claimed artifacts
   on disk before accepting parallel packages; missing deliverables are
   defects, not completions
-- Planning cycle cap is one to three tasks; after Wave integration open
-  only the next main-track task (e.g. 0.5), note 0.6+ as downstream
 - UX package feeds Architect as input only — never co-own ADR/architecture
   handoffs with `/ux_researcher`
 - Consolidate every researcher-surfaced `@user` gate into `context.md`
@@ -51,10 +54,14 @@
 - Rejected ADR-0001 categories return to Researcher evidence then
   Architect rewrite — Commander never invents AWS/OpenRouter/BYOK
   topology in the handoff
-- Phase 1 opens Designer (specs) and Implementer (scaffold) in parallel
-  with non-overlapping writes (`docs/design/**` vs `apps/**`+`packages/**`);
-  later journey increments stay Implementer → Phase Check one-to-three
-  at a time
+- `@user` 2026-09-14: two developers, each with their own agents.
+  Frontend owns D-* / F-*; Backend owns B-* (and recommended S-01);
+  DevOps I-* stay unassigned until they split them. Local Compose
+  Postgres is Backend-owned; AWS hosted demo is I-*. Phase 1 exit is
+  mock journeys, not AWS. Phase Check at Build exit, not every ticket.
+- Do not funnel frontend and backend through a single Implementer
+  1–3-task queue. Open only the next live handoff per lane from the
+  tracks file (D-01 + S-01 this cycle; do not pre-open F-02+ / B-02+)
 
 ## Phase-Boundary Stewardship
 

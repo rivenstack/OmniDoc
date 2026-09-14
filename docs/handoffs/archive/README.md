@@ -45,3 +45,10 @@ When reading an archived Phase 0 handoff that says OmniNote, treat the
 product as OmniDoc — same multi-tenant AI/RAG note and knowledge SaaS
 scope; only the name was wrong. Do not treat the archive wording as a
 live identity conflict.
+
+## Phase 1 numbering correction (2026-09-14)
+
+`H-2026-09-14-P1-T01-commander-designer.md` and
+`H-2026-09-14-P1-T02-commander-implementer.md` were **superseded before
+execution** (`status: blocked`). Live successors are **D-01** and
+**S-01**. See `docs/planning/implementation-tracks.md`.

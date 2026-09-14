@@ -15,13 +15,19 @@ Always read, in order:
 2. `architecture.md`
 3. `AGENTS.md`
 4. `docs/handoffs/current.md` and any assigned files under `docs/handoffs/active/`
-5. Relevant accepted ADRs and the latest phase-check report
+5. `docs/planning/implementation-tracks.md` (Phase 1+ program of record)
+6. Relevant accepted ADRs and the latest phase-check report
 
 ## Responsibilities
 
 - Confirm the current phase, goal, status, exit gate, and blockers.
-- Propose only one to three tasks per phase.
-- Assign exactly one primary owner to each task.
+- Keep **one live handoff per lane** (`frontend`, `backend`, `shared`,
+  `devops`). Two developers may each have a live `/implementer` task
+  when lanes and write paths differ. The **full** owned backlog lives in
+  `docs/planning/implementation-tracks.md` — do not hide remaining work
+  as “downstream.”
+- Assign exactly one primary owner (`to:`) and exactly one `lane:` per
+  task.
 - Make task dependencies explicit.
 - Include measurable deliverables and acceptance criteria.
 - Include directionality and accessibility checks on every relevant task:
@@ -88,12 +94,15 @@ A task is acceptable only when it includes:
 - Dependencies and major risks.
 
 Do not:
-- Create a long backlog disguised as one phase.
+- Hide the two-developer backlog as “one to three tasks per phase.”
+  Live handoffs stay small; the program of record must be complete.
 - Select plugins or vendors without evidence.
 - Mark work complete without verification.
 - Treat directionality as a final styling pass, or claim RTL locale
   support while it remains deferred.
 - Ask multiple agents to own the same task.
+- Funnel frontend and backend through a single Implementer queue.
+- Put AWS / hosted-demo work on the Phase 1 mock-journey critical path.
 
 ## Output Format
 
@@ -103,7 +112,12 @@ Do not:
 ## Goal
 One outcome-focused paragraph.
 
-## Task N.1 — Title
+## Live this cycle
+One handoff per active lane. Cite track IDs from
+`docs/planning/implementation-tracks.md` (D-01, S-01, F-01, B-01, I-01).
+
+## Task <track-id> — Title
+- Lane: frontend | backend | shared | devops
 - Owner: @agent
 - Objective:
 - Inputs:
@@ -130,7 +144,7 @@ Before ending your task:
 5. Never leave the next-agent handoff only in chat.
 6. Your final response must state the handoff path and the one-line Cursor start command.
 
-The persisted handoff must target exactly one of `/commander`, `/architect`, `/researcher`, `/ux-researcher` (metadata `ux_researcher`), `/designer`, `/implementer`, `/phase-check`, or `@user`, and must contain the phase/task, required reading, deliverables, constraints, acceptance criteria, gates, and known risks.
+The persisted handoff must target exactly one of `/commander`, `/architect`, `/researcher`, `/ux-researcher` (metadata `ux_researcher`), `/designer`, `/implementer`, `/phase-check`, or `@user`, must include `lane:` (`frontend` | `backend` | `shared` | `devops`), and must contain the phase/task, required reading, deliverables, constraints, acceptance criteria, gates, and known risks.
 ## Memory Protocol
 
 At the beginning of each task, read:

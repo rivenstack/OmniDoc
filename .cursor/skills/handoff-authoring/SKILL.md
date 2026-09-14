@@ -13,13 +13,15 @@ Use when creating/replacing/returning a persistent handoff.
 
 1. Read `docs/handoffs/README.md`.
 2. Identify:
-   - phase/task;
-   - one owner;
+   - phase/task (Phase 1+ uses track IDs: `D-01`, `S-01`, `F-01`,
+     `B-01`, `I-01` from `docs/planning/implementation-tracks.md`);
+   - one owner (`to:`);
+   - one human `lane:` (`frontend` | `backend` | `shared` | `devops`);
    - main vs parallel track;
    - source handoff being consumed;
    - required inputs;
    - allowed write paths.
-3. Write YAML metadata with exactly one `to:`.
+3. Write YAML metadata with exactly one `to:` and exactly one `lane:`.
 4. Include:
    - Objective;
    - Required Reading;
@@ -43,6 +45,7 @@ Use when creating/replacing/returning a persistent handoff.
 Repair a handoff if it contains:
 
 - `to:` with multiple agents;
+- missing `lane:` on a Phase 1+ implementation handoff;
 - vague "research everything" scope;
 - acceptance criteria without evidence requirements;
 - no write boundary under parallel execution;

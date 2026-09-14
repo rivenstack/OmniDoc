@@ -35,22 +35,32 @@ Validate at minimum:
 
 ## Current Phase
 
-**Phase 1 — Scaffold, visual system, mock journeys**
+**Design close-out + Phase 1 Build (two lanes)**
 
-Goal: Nx workspace + design system + core journeys on deterministic
-mocks, with dual-mode BYOK ports wired but production adapters dark.
-Hosted AWS Free-tier deploy and live OpenRouter stay later increments.
+Goal: finish visual specs (D-01), scaffold the Nx workspace (S-01),
+then implement core journeys on deterministic mocks in parallel
+**frontend** and **backend** lanes. Dual-mode BYOK ports wired;
+production adapters dark. Hosted AWS and live OpenRouter are DevOps /
+Phase 3–4 — **not** on the Phase 1 critical path.
+
+Program of record:
+[`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
 
 ## Current Status
 
 - Phase 0 complete: verification **PASS**; Task 0.7 gates answered;
   Wave C evidence (0.8 / 0.8b); ADR-0001 §1–§7 and ADR-0004 `accepted`
-- **Active:** Task **1.1** `/designer` (main) visual system + journey
-  specs; Task **1.2** `/implementer` (parallel) Nx scaffold + boundary
-  enforcement
-- Scaffolding is **now authorized** by Task 1.2 (not before)
+- **2026-09-14:** serial Implementer loop (old 1.1 → 1.2 → 1.3…10)
+  superseded. Two-developer tracks are the plan of record
+- **Active:** **D-01** `/designer` (`lane: frontend`) visual system +
+  journey specs; **S-01** `/implementer` (`lane: shared`, recommended
+  Backend) Nx scaffold + boundary CI
+- Scaffolding is **authorized** by S-01 (not before). S-01 does **not**
+  include full ports (B-01), OpenAPI (S-02), or the §9 mock corpus (S-03)
 - Production AI / OpenRouter live calls are **not** authorized
-- Nothing was scaffolded before Task 1.2; no secrets in the repo
+- Nothing is scaffolded yet; no secrets in the repo
+- DevOps I-* remain **unassigned** (split later); local Compose Postgres
+  is Backend-owned (B-02)
 
 ### Accepted stack (do not re-open)
 
@@ -75,35 +85,24 @@ Hosted AWS Free-tier deploy and live OpenRouter stay later increments.
 
 ## Active Tasks
 
-| Task | Owner | Status | Handoff |
-|------|-------|--------|---------|
-| 0.1–0.9 | (see archive) | completed | `docs/handoffs/archive/` |
-| 1.1 Visual system + journey UI specs | Designer | ready | `docs/handoffs/current.md` |
-| 1.2 Nx workspace scaffold | Implementer | ready | `docs/handoffs/active/phase-1-task-1-2-implementer.md` |
+| Task | Lane | Owner | Status | Handoff |
+|------|------|-------|--------|---------|
+| 0.1–0.9 | — | (see archive) | completed | `docs/handoffs/archive/` |
+| D-01 Visual system + journey UI specs | frontend | Designer | ready | `docs/handoffs/current.md` |
+| S-01 Nx workspace + boundary CI | shared (recommended Backend) | Implementer | ready | `docs/handoffs/active/phase-1-task-s-01-implementer.md` |
 
-### Phase 1 program of record (downstream; not all opened)
-
-1. Designer visual system (1.1 — open)
-2. Implementer Nx scaffold (1.2 — open)
-3. Auth + honest workspaces (Better Auth)
-4. Notes + TipTap + JSON SoT
-5. Postgres + RLS + pgvector with mock embed/vector adapters
-6. Ask UI on deterministic mocks
-7. Public labelled sample workspace
-8. BYOK vault + cookbook/wizard + usage shells (adapters dark)
-9. AWS Free Tier deploy path for the 6-month hosted demo
-10. Production AI activation only after CX-first + `@user` / Phase Check
-
-Each later increment: Implementer → Phase Check. Commander opens one to
-three tasks per cycle after 1.1 + 1.2 land.
+Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
+[`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
+Commander opens the next **live** handoff per lane when dependencies
+land. Do not treat unopened IDs as unplanned.
 
 ## Blockers
 
 - Production AI/provider activation remains gated (mock-first CX)
 - RTL locale support remains deferred, not closed
-- AWS deploy and live OpenRouter are not in Tasks 1.1/1.2
-- TipTap / Better Auth / Postgres implementation wait for later
-  increments after scaffold + specs
+- F-01 waits on D-01 + S-01; B-01 waits only on S-01 (not design)
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not D-01/S-01
+- DevOps I-* have no human owner yet
 
 ## Open Gates
 
@@ -114,6 +113,7 @@ three tasks per cycle after 1.1 + 1.2 land.
   none, no year-1 SSO, minimal tenants, collab much later, 6-month AWS
   Free Tier window, mock-first then labelled live, public sample workspace
 - Nx Cloud remains local-cache-only
+- Two-developer track model accepted (serial Implementer loop superseded)
 
 **Still open / standing**
 
@@ -121,11 +121,12 @@ three tasks per cycle after 1.1 + 1.2 land.
 - **Production AI / provider activation** — open until CX-first mock
   validation
 - UT-1…UT-22 — unrun hypotheses (0.8b added UT-15…22)
-- Exact AWS Free-plan service graph / credit-burn PoC — later increment
-- Nx `@nx/next` generator vs Next 16.3.5 — Task 1.2 PoC
+- Exact AWS Free-plan service graph / credit-burn PoC — I-03 (unassigned)
+- Nx `@nx/next` generator vs Next 16.3.5 — S-01 PoC
+- DevOps I-* human split — later
 
 ## Active Handoffs
 
-- Main track: `docs/handoffs/current.md` → `/designer` (Task 1.1)
-- Parallel: `docs/handoffs/active/phase-1-task-1-2-implementer.md` →
-  `/implementer` (Task 1.2)
+- Main track: `docs/handoffs/current.md` → `/designer` (D-01, `lane: frontend`)
+- Parallel: `docs/handoffs/active/phase-1-task-s-01-implementer.md` →
+  `/implementer` (S-01, `lane: shared`, recommended Backend)

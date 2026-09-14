@@ -30,6 +30,11 @@ Supporting context only — not authority for live status or architecture.
   still limit scope
 - `context.md` = live status · `docs/handoffs/current.md` = main assignment
 - Parallel work uses `docs/handoffs/active/`
+- Phase 1+ program of record:
+  `docs/planning/implementation-tracks.md` (frontend / backend / shared /
+  devops). One live handoff **per lane**; do not hide remaining work as
+  “downstream.” Local Compose Postgres is backend-owned; AWS is DevOps
+  (unassigned until the two developers split I-*)
 - Research evidence is not an architecture decision
 - Evaluate native platform capabilities and mature extensions before
   custom work; adopt only through evidence, ports, PoCs, and gates

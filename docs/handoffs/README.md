@@ -9,10 +9,15 @@ docs/handoffs/
 ├── README.md
 ├── current.md                         # Main critical-path handoff
 ├── active/                            # Parallel task handoffs
-│   └── phase-N-task-N-N-agent.md
+│   └── phase-N-task-<id>-<agent>.md
 └── archive/                           # Completed/consumed immutable handoffs
     └── H-YYYY-MM-DD-PN-TNN-from-to.md
 ```
+
+The **complete owned backlog** (frontend / backend / shared / devops)
+lives in [`docs/planning/implementation-tracks.md`](../planning/implementation-tracks.md).
+Live handoffs stay small; that file must stay complete and visible. Do
+not treat unopened track IDs as “not planned.”
 
 ## Starting a new Cursor session
 
@@ -43,14 +48,26 @@ handoff_id: H-YYYY-MM-DD-PN-TNN
 track: main | parallel
 status: ready | in-progress | completed | blocked
 phase: "N"
-task: "N.N"
+task: "N.N" | "D-01" | "S-01" | "F-01" | "B-01" | "I-01"
+lane: frontend | backend | shared | devops
 from: commander | architect | researcher | ux_researcher | designer | implementer | phase-check | user
 to: commander | architect | researcher | ux_researcher | designer | implementer | phase-check | user
 created: YYYY-MM-DD
 ```
 
+`lane` is the **human** owner track. `to` is the **agent**. Two
+`/implementer` sessions may run at once when `lane` values differ **and**
+Allowed Write Paths do not overlap.
+
+Phase 1+ `task` values use track IDs from
+`docs/planning/implementation-tracks.md` (`D-01`, `S-01`, `F-01`,
+`B-01`, `I-01`, …). Historical Phase 0 handoffs keep `"N.N"` numbering.
 Use `"N.N.N"` only for a bounded inserted prerequisite that preserves
 accepted historical numbering, such as Task `"0.5.1"`.
+
+`lane: shared` may name a **recommended** human owner in the Objective
+(S-01 recommends Backend). Recommendation is not dual ownership — the
+handoff still has exactly one `to:`.
 
 The body must include:
 
@@ -84,9 +101,14 @@ assigned work failed or completed.
 ## Parallel-track lifecycle
 
 - Commander creates one file per parallel assignment under `active/`.
+- Preferred name: `phase-N-task-<track-id>-<owner>.md` (for example
+  `phase-1-task-s-01-implementer.md`).
+- Each **lane** may have one live handoff at a time (frontend, backend,
+  shared, devops). Two developers may each run `/implementer` when lanes
+  and write paths differ.
 - The assigned agent updates that same file with status and outcome.
 - A parallel agent must not overwrite `current.md` unless the main-track handoff explicitly authorizes it.
-- When the task is complete, Commander or the assigned agent moves/copies the file to `archive/` and Commander incorporates the result into the main track.
+- When the task is complete, Commander or the assigned agent moves/copies the file to `archive/` and Commander incorporates the result into the main track and updates `docs/planning/implementation-tracks.md` status.
 
 ## Safety rules
 
@@ -96,3 +118,8 @@ assigned work failed or completed.
 - Do not silently change accepted architecture or evidence classifications in a handoff.
 - Do not store credentials, private keys, BYOK secrets, or personal data in handoff files.
 - Parallel handoffs must not share overlapping write paths.
+- Do not open a second live handoff in the same `lane` until the current
+  one is completed or blocked.
+- Do not treat `docs/planning/implementation-tracks.md` as a second
+  assignment — it is the backlog; only `current.md` / `active/` files
+  authorize work.
