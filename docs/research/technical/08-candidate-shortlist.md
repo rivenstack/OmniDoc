@@ -1,6 +1,7 @@
 # Candidate Shortlist (Non-Binding) — Tradeoffs Only
 
 **Research date:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Authority:** Evidence for `/architect` ADR-0001 — **no winners selected**.
 
 Each category lists up to three serious candidates. Popularity is not a
@@ -11,7 +12,7 @@ vote. Selection requires ADR-0001 + `@user` gate.
 | Candidate | Why it stays on the shortlist | Primary tradeoff |
 |-----------|-------------------------------|------------------|
 | Next.js App Router | Mature React full-stack; RSC/streaming ecosystem; editor Client Components | Soft Vercel coupling; RSC complexity for an editor-heavy app |
-| React Router 7 | Vite-native Remix successor; portable adapters; clear data APIs | Docs/hiring transition; less RSC depth than Next |
+| React Router 8 | Vite-native Remix successor; portable adapters; clear data APIs | Docs/hiring transition; less RSC depth than Next |
 | Vite + React SPA | Max portability; natural editor SPA | You own BFF/auth/SSR/SEO; secrets must stay server-side |
 
 *Watchlist (not seating a fourth unless Architect expands):* SvelteKit

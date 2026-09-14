@@ -4,6 +4,7 @@
 **Phase / Task:** 0 / 0.2  
 **Research date:** 2026-09-13  
 **Access date for all web sources unless noted:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) — last verified 2026-09-14; re-verify before each Phase Check  
 **Status:** Evidence and shortlists only — **not** an architecture decision
 
 ## Purpose
@@ -15,8 +16,9 @@ vendor, or provider is selected here.
 
 | File | Scope |
 |------|--------|
+| [../version-ledger.md](../version-ledger.md) | Pinned versions + re-verify rules (authority for every version claim) |
 | [00-evidence-matrix.md](./00-evidence-matrix.md) | Cross-category matrix + confidence labels |
-| [01-frontend-frameworks.md](./01-frontend-frameworks.md) | Next.js, React Router 7, Vite+React SPA, SvelteKit (+ brief exclusion) |
+| [01-frontend-frameworks.md](./01-frontend-frameworks.md) | Next.js, React Router 8, Vite+React SPA, SvelteKit (+ brief exclusion) |
 | [02-rich-text-editors.md](./02-rich-text-editors.md) | TipTap/ProseMirror, Lexical, CodeMirror, Milkdown |
 | [03-multi-tenant-isolation.md](./03-multi-tenant-isolation.md) | RLS vs app scoping vs schema-per-tenant + RAG implications |
 | [04-vector-storage.md](./04-vector-storage.md) | pgvector vs dedicated stores |

@@ -1,6 +1,7 @@
 # Hosting and Deployment Options
 
 **Research date / access date:** 2026-09-13  
+**Version pins / pricing dates:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14; host free-tier and usage-pricing rows are volatile — re-confirm before any budget claim)  
 **Question:** Solo/small-team, portfolio-budget hosts for OmniDoc —
 implications for background ingestion/embedding jobs and data residency.
 No selection.

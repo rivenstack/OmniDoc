@@ -1,6 +1,7 @@
 # Vector Storage — pgvector vs Dedicated Stores
 
 **Research date / access date:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Question:** Compare Postgres+pgvector with dedicated vector databases for
 OmniDoc multi-tenant RAG — indexes, tenant filters, scale, re-embed cost,
 self-host vs managed. No selection.
@@ -11,7 +12,7 @@ self-host vs managed. No selection.
 |-------|----------|-------|-------|
 | Indexes | HNSW (better speed/recall tradeoff, more memory, slower build; can build empty) and IVFFlat (faster build, less memory, needs training data) | Verified technical | H |
 | Filtering | `WHERE` on tenant/ACL columns; with approx indexes, filter applied **after** index scan — sparse tenants can under-return without iterative scans | Verified technical | H |
-| Iterative scans | pgvector ≥0.8.0 can expand scan until enough filtered results | Verified technical | H |
+| Iterative scans | pgvector ≥0.8.0 can expand scan until enough filtered results (latest **0.8.6**, verified 2026-09-14) | Verified technical | H |
 | Multitenancy | SQL partial indexes / partitioning strategies documented in README “Filtering / Multitenancy” sections | Verified technical | H |
 | Self-host | Extension on existing Postgres — one datastore for notes+vectors | Verified technical | H |
 | Managed | Available on many Postgres hosts that ship pgvector (verify per host version) | Common practice | M |

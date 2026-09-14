@@ -16,6 +16,7 @@ phase/task status belongs in `context.md`. Evidence packages live under
 |--------|---------|
 | `proposed` | Architect recommendation; **not** binding until accepted |
 | `accepted` | Binding after the required acceptance path |
+| `accepted (partial)` | Named categories/sections accepted by `@user`; the rest remain `proposed` until answered. The ADR must list which is which. |
 | `superseded` | Replaced by a later ADR (link both ways) |
 | `rejected` | Explicitly declined; retained for history |
 
@@ -45,4 +46,6 @@ Until acceptance, Implementer must not scaffold a stack “as decided.”
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `proposed` |
+| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `accepted (partial)` — categories 1–2 accepted 2026-09-14; 3–7 `proposed` |
+| [ADR-0002](./ADR-0002-workspace-and-tooling.md) | Workspace and tooling (Nx, pnpm, app/package layout, boundary enforcement) | `accepted` |
+| [ADR-0003](./ADR-0003-frontend-application-toolchain.md) | Frontend application toolchain (styling/components, data + state, testing, supporting libraries) | `accepted` |

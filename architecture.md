@@ -3,8 +3,9 @@
 > Status: **architecture-ready draft** for Phase 0. Not final accepted
 > truth until Phase Check + `@user` acceptance of ADR-0001 where marked.
 > Stack-specific choices live in
-> [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md)
-> (`status: proposed`).
+> [`docs/adr/`](docs/adr/README.md) — ADR-0001 (frontend + platform stack)
+> is `accepted (partial)` for categories 1–2, ADR-0002 (workspace and
+> tooling) and ADR-0003 (frontend application toolchain) are `accepted`.
 
 OmniDoc is a multi-tenant AI/RAG note and knowledge SaaS: capture notes
 and documents, chunk and embed them, then search and ask questions that
@@ -420,16 +421,19 @@ docs and mock adapters.
 | Ports, answer states, tenancy rules | Yes | Adapter implementations |
 | Fixture themes | Yes | Fixture file format in app tree |
 | Threat / safety / RAG eval bars | Yes | Concrete libraries |
-| Frontend framework, editor, DB, vector, auth, hosting, provider posture | Constraints only | **Proposed** in ADR-0001 |
-| Directory names `frontend/` / `backend/` | Predictability contract (see frontend guide) | Confirm or adjust in ADR |
-| Package manager | Undecided in research | Confirm at implementation handoff |
+| Frontend framework, editor + note SoT | **Accepted** (ADR-0001 §1–2) | Adapter implementations |
+| DB, vector, auth, hosting, provider posture | Constraints only | **Proposed** in ADR-0001 §3–7 |
+| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted`) | Confirm or adjust in ADR |
+| Package manager | **Decided: pnpm 12.4.1** (ADR-0002) | — |
 
 ---
 
 ## 12. Related documents
 
 - ADR index: [`docs/adr/README.md`](docs/adr/README.md)
-- Proposed stack: [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md)
+- Stack: [`docs/adr/ADR-0001-frontend-and-platform-stack.md`](docs/adr/ADR-0001-frontend-and-platform-stack.md) (`accepted (partial)`)
+- Workspace + tooling: [`docs/adr/ADR-0002-workspace-and-tooling.md`](docs/adr/ADR-0002-workspace-and-tooling.md) (`accepted`)
+- Frontend application toolchain: [`docs/adr/ADR-0003-frontend-application-toolchain.md`](docs/adr/ADR-0003-frontend-application-toolchain.md) (`accepted`)
 - Technical evidence: `docs/research/technical/`
 - UX evidence (input): `docs/research/ux/`
 - Frontend contributor contract: `docs/frontend/README.md`

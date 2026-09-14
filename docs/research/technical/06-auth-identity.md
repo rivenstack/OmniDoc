@@ -1,6 +1,7 @@
 # Auth and Identity Options
 
 **Research date / access date:** 2026-09-13  
+**Version pins / pricing dates:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14; Clerk pricing rows read 2026-09-13 — re-confirm before any budget claim)  
 **Question:** Self-hosted vs managed auth for multi-tenant OmniDoc —
 org support, session security posture, small-scale cost. No selection.
 

@@ -1,6 +1,7 @@
 # Multi-Tenant Isolation Approaches
 
 **Research date / access date:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Question:** Compare Postgres RLS, application-layer scoping, and
 schema-per-tenant for OmniDoc — including failure modes, ops cost, and
 retrieval-time isolation for RAG. No selection.

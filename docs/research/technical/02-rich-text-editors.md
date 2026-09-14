@@ -1,6 +1,7 @@
 # Rich-Text / Markdown Editor Libraries
 
 **Research date / access date:** 2026-09-13  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) (verified 2026-09-14)  
 **Question:** Which editor foundations fit a notes product (capture →
 structure → retrieve), under license, a11y, collab path, extensibility,
 and RTL-readiness — without selecting a winner?
@@ -17,7 +18,7 @@ and RTL-readiness — without selecting a winner?
 | Collaborative editing | Yjs binding (`@tiptap/y-tiptap`); Hocuspocus OSS backend | Verified technical | H |
 | Extensibility | Extension architecture; schema control via ProseMirror | Verified technical | H |
 | RTL-readiness | Official `textDirection`: `ltr` \| `rtl` \| `auto`; per-node commands | Verified technical | H |
-| Version signal | GitHub latest release observed v3.27.3 (2026-07-07) | Verified technical | H |
+| Version signal | npm latest **v3.31.3** (2026-09-04; verified 2026-09-14) | Verified technical | H |
 
 **Adverse:** Cloud features create upsell pressure; a11y quality is not
 “included” — product must own it. Mixed BiDi in notes still needs PoC
@@ -34,7 +35,7 @@ beyond setting `textDirection`.
 | Collaborative editing | `@lexical/yjs` + your provider | Verified technical | H |
 | Extensibility | Plugin architecture; immutable editor state | Verified technical | H |
 | RTL-readiness | No OmniDoc PoC; do not treat marketing as BiDi proof | Unresolved | L |
-| Ecosystem | Official React bindings; version signal ~v0.43.0 (2026-04) | Verified technical | H |
+| Ecosystem | Official React bindings; npm latest **v0.50.0** (2026-09-02; verified 2026-09-14) | Verified technical | H |
 
 **Adverse:** Still relatively low major version; plugin quality varies;
 markdown serialization often custom.
