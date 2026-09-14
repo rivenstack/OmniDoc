@@ -62,6 +62,7 @@ OmniDoc/
 ├── AGENTS.md                 # Agent operating contract
 ├── AGENTS-GUIDE.md           # Phase/task workflow patterns
 ├── CURSOR-SETUP.md           # Cursor subagent registration tips
+├── OPENCODE-SETUP.md         # opencode agent/command/skill registration
 ├── MEMORY.md                 # Shared durable lessons (not live status)
 ├── TEMPLATE-PLACEHOLDERS.md  # Resolved identity; do not reintroduce template tokens
 ├── docs/
@@ -74,6 +75,7 @@ OmniDoc/
 ├── apps/                     # Nx apps — web (Next.js) + api/workers (not present yet)
 ├── packages/                 # Nx shared packages: ui, contracts, domain, mocks (not present yet)
 ├── .cursor/                  # Cursor agents, skills, rules, mcp.json
+├── .opencode/                # opencode agents + slash commands (skills reuse .cursor/skills)
 └── references/               # Reference-capture pattern (optional)
 ```
 
@@ -93,7 +95,8 @@ scaffolding.
 
 ## Agent operating system (at a glance)
 
-OmniDoc is built with a multi-agent Cursor workflow. Humans and agents
+OmniDoc is built with a multi-agent workflow that runs on Cursor,
+GitHub Copilot, and opencode. Humans and agents
 share the same handoff protocol.
 
 | Role | Owns |
@@ -118,6 +121,7 @@ Exactly **one** owner per handoff. Chat-only handoffs are invalid.
 - Live status: [`context.md`](context.md)
 - Handoff protocol: [`docs/handoffs/README.md`](docs/handoffs/README.md)
 - Cursor setup: [`CURSOR-SETUP.md`](CURSOR-SETUP.md)
+- opencode setup: [`OPENCODE-SETUP.md`](OPENCODE-SETUP.md)
 - Workflow patterns: [`AGENTS-GUIDE.md`](AGENTS-GUIDE.md)
 
 Main track: `docs/handoffs/current.md`. Parallel work:
