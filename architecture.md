@@ -1,18 +1,23 @@
 # OmniDoc — Architecture Baseline
 
 > Status: **architecture baseline** for Phase 0 close-out. ADR-0001
-> categories 1–7 are `accepted` (2026-09-14); dual-mode BYOK detail in
-> ADR-0004 (`accepted`). ADR-0002 (workspace) and ADR-0003 (frontend
-> toolchain) remain `accepted`. Production AI activation and RTL locale
-> remain **gated / deferred**. Stack-specific choices live in
+> categories 1–5 and 7 are `accepted` (2026-09-14); §6 **library**
+> reopened 2026-09-15 (ADR-0005 `proposed`). Dual-mode BYOK detail in
+> ADR-0004 (`accepted`). ADR-0002 (workspace) remains `accepted` for
+> the **frontend Nx graph**; Node `apps/api` is **not** authorized
+> until U-BE. ADR-0003 (frontend toolchain) remains `accepted`.
+> Production AI activation and RTL locale remain **gated / deferred**.
+> Stack-specific choices live in
 > [`docs/adr/`](docs/adr/README.md).
 
 OmniDoc is a multi-tenant AI/RAG note and knowledge SaaS: capture notes
 and documents, chunk and embed them, then search and ask questions that
 return answers cited to the user’s own sources. Platform class:
-TypeScript web SaaS. Primary locale: `en` (LTR). RTL / mixed-BiDi
-support is **deferred, not closed** — RTL-readiness remains an invariant.
-No commerce, payments, shipping, or SMS.
+**TypeScript frontend** (Next.js) + **backend application stack pending
+ADR-0005** (Java/Spring `proposed`; Node API not authorized). Primary
+locale: `en` (LTR). RTL / mixed-BiDi support is **deferred, not closed**
+— RTL-readiness remains an invariant. No commerce, payments, shipping,
+or SMS.
 
 ---
 
@@ -40,9 +45,11 @@ other external providers directly. Production adapters appear only behind
 ports after evidence, ADR acceptance, and production-activation gates.
 
 **Architecture-ready:** boundary and ports (incl. vault, usage, mode).
-**ADR-accepted stack:** framework, DB, vector, auth, hosting topology,
-provider posture (ADR-0001 / ADR-0004). **Still gated:** production AI
-activation; RTL locale. **Not yet authorized:** scaffolding.
+**ADR-accepted stack:** frontend framework, DB, vector, hosting topology,
+provider posture (ADR-0001 §1–§5, §7 / ADR-0004). Auth **library** and
+API language: ADR-0005 `proposed`. **Still gated:** production AI
+activation; RTL locale; backend scaffold until U-BE. **Not yet
+authorized:** Node `apps/api` or Java API module scaffold.
 
 ---
 
@@ -274,7 +281,7 @@ sketch, mock path, production path, failure states.
 | **Out** | principal, memberships, roles |
 | **Invariants** | server authority; org context not client-trusted |
 | **Mock** | Fixed users/tenants in fixtures |
-| **Production** | Better Auth + organization plugin (ADR-0001 §6 `accepted`) |
+| **Production** | Identity adapter behind this port. **Recorded 2026-09-14:** Better Auth + organization plugin (ADR-0001 §6). **Reopened 2026-09-15:** that library is TypeScript-native; Java API disposition is ADR-0005 (`proposed`) — Spring Security session cookies proposed. Do not implement Better Auth in a JVM API. |
 | **Failures** | `unauthenticated`, `forbidden`, `unavailable` |
 
 ### 5.8 Export
@@ -480,10 +487,11 @@ docs and mock adapters.
 | Fixture themes + sample vs mine | Yes | Fixture file format in app tree |
 | Threat / safety / RAG eval bars | Yes | Concrete libraries |
 | Frontend framework, editor + note SoT | **Accepted** (ADR-0001 §1–2) | Scaffolding via Implementer handoff |
-| DB / vector / auth | **Accepted** (ADR-0001 §3, §4, §6) | Migrations, PoCs, boundary tags |
+| DB / vector | **Accepted** (ADR-0001 §3, §4) | Migrations, RLS role PoC |
+| Auth **port** | Ready (`architecture.md` §5.7) | **Library** reopened — ADR-0005; no Better Auth scaffold until U-BE |
 | Embedding/LLM dual-mode + BYOK | **Accepted** (ADR-0001 §5 + ADR-0004) | Production AI activation gate; model PoC |
 | Hosting topology class | **Accepted** (ADR-0001 §7 — AWS Free-plan EC2/ECS + RDS + pgvector) | SKU PoC; credit-burn monitoring; no scaffold yet |
-| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted`) | Nx generator PoC at scaffold |
+| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted` for FE Nx). Node `apps/api` **not** authorized | ADR-0005 polyglot path after U-BE; S-01a Nx PoC |
 | Package manager | **Decided: pnpm 12.4.1** (ADR-0002) | — |
 | Production AI / RTL locale | **Not claimed** | Production AI open; RTL deferred not closed |
 
@@ -496,6 +504,7 @@ docs and mock adapters.
 - Workspace + tooling: [`docs/adr/ADR-0002-workspace-and-tooling.md`](docs/adr/ADR-0002-workspace-and-tooling.md) (`accepted`)
 - Frontend application toolchain: [`docs/adr/ADR-0003-frontend-application-toolchain.md`](docs/adr/ADR-0003-frontend-application-toolchain.md) (`accepted`)
 - Dual-mode BYOK + usage: [`docs/adr/ADR-0004-dual-mode-byok-and-usage.md`](docs/adr/ADR-0004-dual-mode-byok-and-usage.md) (`accepted`)
+- Backend application stack: [`docs/adr/ADR-0005-backend-application-stack.md`](docs/adr/ADR-0005-backend-application-stack.md) (`proposed`)
 - Technical evidence: `docs/research/technical/`
 - UX evidence (input): `docs/research/ux/`
 - Frontend contributor contract: `docs/frontend/README.md`

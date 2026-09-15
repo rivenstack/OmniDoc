@@ -2,7 +2,7 @@
 
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
-**Last verified:** 2026-09-14
+**Last verified:** 2026-09-15 (Java/Spring R-BE rows); 2026-09-14 (FE/data/tooling)
 **Status:** Evidence — pins are not stack decisions until an accepted ADR says so
 
 This file is the **single authority for version-bound claims** in this
@@ -46,7 +46,7 @@ still reading as authoritative.
 
 | Package / runtime | Version | Released | Verified | Read from | Notes |
 |---|---|---|---|---|---|
-| Node.js (production target) | **24.21.0 LTS "Krypton"** | 2026-09-07 | 2026-09-14 | nodejs.org/dist/index.json | Current (non-LTS) line is 26.8.2. Machine runs 26.4.0. See compatibility floors below. |
+| Node.js (production target) | **24.21.0 LTS "Krypton"** | 2026-09-07 | 2026-09-14 | nodejs.org/dist/index.json | Current (non-LTS) line is 26.8.2. Machine runs 26.4.0. See compatibility floors below. **Frontend / Nx graph.** Backend JVM pins are a separate R-BE block. |
 | Next.js | **16.3.5** | 2026-09-11 | 2026-09-14 | npm `dist-tags.latest` | 16.4.0-canary.29 in flight (2026-09-14). App Router runs a React canary build — see §Notes for the tradeoff. |
 | React / React DOM | **19.3.0** | 2026-09-09 | 2026-09-14 | npm | |
 | React Router | **8.3.1** | 2026-08-28 | 2026-09-14 | npm + GitHub release | v7 line still patched (7.18.3, same day) but v8 is the current major for new work. ESM-only; Vite 7+ required. |
@@ -69,6 +69,20 @@ still reading as authoritative.
 | Clerk | n/a (managed) | — | 2026-09-13 | vendor pricing page | Pricing rows in `06-auth-identity.md` were read 2026-09-13; re-confirm before any budget claim. |
 | Drizzle ORM / Kit | 0.45.2 / 0.31.10 | 2026-03-27 / 2026-03-17 | 2026-09-14 | npm | Illustrative only — ORM is not an ADR-0001 category. |
 | `pg` (node driver) | 8.23.0 | 2026-08-08 | 2026-09-14 | npm | |
+
+## Backend JVM candidates (R-BE — not ADR-accepted)
+
+Evidence only. Do not treat these as stack decisions until ADR-0005 is
+`accepted`.
+
+| Package / runtime | Version | Released | Verified | Read from | Notes |
+|---|---|---|---|---|---|
+| Spring Boot (current project page) | **4.1.1** | — | 2026-09-15 | spring.io/projects/spring-boot | Boot 4.0.0 GA 2025-11-20 (spring.io blog). 3.5.x still patched (e.g. 3.5.16 on GitHub releases). |
+| Spring AI | **2.0.1** | 2026-08-21 (GitHub release) | 2026-09-15 | spring.io/projects/spring-ai + GitHub releases | Docs: Spring AI **2.0.x** supports Boot **4.0.x and 4.1.x**. Getting-started BOM snippet may still show 2.0.0 — pin the project page version. |
+| Java SE LTS | **21** and **25** | 25 GA 2025-09-16 | 2026-09-15 | oracle.com Java SE support roadmap; openjdk.org/projects/jdk/25 | Choose one LTS in ADR-0005; do not float. |
+| springdoc-openapi | **3.1.1** | — | 2026-09-15 | springdoc.org | Boot 4 requires springdoc **3.x**. |
+| Spring Security CSRF SPA helper | Security **7** `csrf.spa()` | — | 2026-09-15 | docs.spring.io/spring-security/reference/7.0/servlet/exploits/csrf.html | Candidate for cookie-session BFF. |
+| `com.pgvector:pgvector` | **0.1.6** | — | 2026-09-15 | github.com/pgvector/pgvector-java | JDBC helper; not a SoT. |
 
 ## Tooling
 

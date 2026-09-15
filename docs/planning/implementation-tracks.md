@@ -1,14 +1,19 @@
 # OmniDoc — Implementation Tracks (Program of Record)
 
-**Authority:** Commander, 2026-09-14. This file is the durable backlog
+**Authority:** Commander, 2026-09-15 (Backend Stack Close-out). This file is the durable backlog
 for two human developers (frontend and backend), each running their own
 agents. Live handoffs stay small; **this list must stay complete and
 visible.** Do not hide remaining work as “downstream.”
 
-**Do not reopen:** Phase 0 research, UX package, ADR-0001 §1–§7,
-ADR-0002/0003/0004, or architecture ports. Stack, providers, and hosting
-**class** are accepted. Production AI activation and RTL locale remain
+**Do not reopen:** Phase 0 UX package, ADR-0001 §1–§5 and §7, ADR-0003,
+ADR-0004, or architecture **ports** (§5 contracts). Providers and hosting
+**class** stay accepted. Production AI activation and RTL locale remain
 gated / deferred.
+
+**Reopened 2026-09-15 (`@user`):** backend **application** stack — Node
+`apps/api`, Better Auth (ADR-0001 §6), ADR-0002 API-as-Node /
+`packages/domain` TypeScript SoT. Close-out: **R-BE → A-BE → U-BE**
+before any API scaffold. Do **not** execute archived S-01.
 
 Live status: root [`context.md`](../../context.md). Active assignments:
 [`docs/handoffs/current.md`](../handoffs/current.md) and
@@ -21,8 +26,8 @@ Live status: root [`context.md`](../../context.md). Active assignments:
 | Lane | Human | Typical agents | Write path (implementation) |
 |------|-------|----------------|-----------------------------|
 | `frontend` | Frontend developer | `/designer`, then `/implementer` | `docs/design/**` (D-01 only); then `apps/web`, `packages/ui` |
-| `backend` | Backend developer | `/implementer` | `apps/api`, `packages/domain`, `packages/mocks` (producer), `packages/contracts` (with S-02) |
-| `shared` | Either; **S-01 recommended Backend** | `/implementer` | Nx workspace + CI skeleton; Frontend reviews `apps/web` + boundary tags |
+| `backend` | Backend developer | `/implementer` | Java API module (path per ADR-0005 after U-BE); `packages/mocks` (producer) + `packages/contracts` (with S-02). **Not** Node `apps/api` until/unless U-BE keeps Node |
+| `shared` | Either; **S-01a** after U-BE; R-BE/A-BE/U-BE during close-out | `/researcher` then `/architect` then `@user`; then `/implementer` | Close-out evidence/ADR; then FE Nx scaffold (S-01a) |
 | `devops` | Unassigned — split later | — | AWS / deploy / prod secrets. **Not** on the Phase 1 critical path |
 
 **Live concurrency:** one live handoff **per lane**. Two developers may
@@ -31,7 +36,8 @@ differ. Parallel handoffs must not overlap writes.
 
 **API handshake:** Backend authors `docs/api/` + `packages/contracts`.
 Frontend consumes via MSW / `packages/ui` / `apps/web` and must **not**
-import `packages/domain` or provider SDKs (ADR-0002). Contract changes
+import Java domain packages, Spring AI, or provider SDKs. `packages/domain`
+as a TypeScript backend SoT is **reopened** (ADR-0005). Contract changes
 follow [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md).
 
 **Local Docker Postgres** is Backend-owned (developer machine). **AWS /
@@ -52,7 +58,8 @@ handoff yet.
 |-------|--------|---------|
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **in progress** | Last planning artifact — visual system + journey specs |
-| 1 Build | **ready** after D-01 + S-01 for journey UI; Backend after S-01 | Parallel FE / BE on mocks |
+| Backend Stack Close-out | **in progress** | R-BE → A-BE → U-BE before any API scaffold |
+| 1 Build | **ready** after D-01 + S-01a for journey UI; Backend after U-BE + S-01b | Parallel FE / BE on mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -66,15 +73,21 @@ I-*.
 
 ```text
 Phase 0 (closed)
-    → D-01 (frontend /designer)     // parallel with S-01
-    → S-01 (shared /implementer)    // recommended Backend owner
-         → S-02 (backend authors; frontend reviews)
-         → B-01
-         → B-02 (local Compose Postgres — backend, not DevOps)
-    D-01 + S-01 → F-01
+    → D-01 (frontend /designer)              // continues; no BE-stack dep
+    → R-BE (/researcher)                     // Backend Stack Close-out
+         → A-BE (/architect, ADR-0005 proposed)
+              → U-BE (@user accept/reject/change)
+                   → C-BE done: tracks below apply
+                        → S-01a FE Nx scaffold
+                        → S-01b Java API scaffold (if Java accepted)
+                             → S-02 OpenAPI/SSE
+                             → B-01 ports (in API language)
+                             → B-02 local Compose Postgres
+    D-01 + S-01a → F-01
     S-02 → F-02+, B-03+, B-04+
-    S-02 + S-01 → S-03
+    S-02 + S-01a/S-01b → S-03
     B-01 does not wait on D-01
+    Archived S-01 (Node apps/api) MUST NOT run
     I-* do not block Phase 1 mocks
 ```
 
@@ -89,7 +102,7 @@ Phase 0 (closed)
 | **Status** | **live** — `docs/handoffs/current.md` |
 | **Lane / agent** | `frontend` / `/designer` |
 | **Depends on** | Phase 0 (done) |
-| **Blocks** | F-01+ journey UI. Does **not** block S-01 or B-01+ |
+| **Blocks** | F-01+ journey UI. Does **not** block R-BE, S-01a, or B-01+ |
 | **Write path** | `docs/design/**`; may extend `quality/ui-qa-checklist.md` without weakening it |
 
 Create implementation-ready specs for capture, organize, retrieve, ask,
@@ -106,32 +119,90 @@ or `packages/` source.
 
 ---
 
-## Shared foundation
+## Backend Stack Close-out — before any API scaffold
 
-### S-01 — Nx workspace + boundary CI
+Inserted 2026-09-15. **D-01 continues in parallel.** Node `apps/api`
+scaffold is forbidden until U-BE. Spring Boot is a **candidate**, not
+accepted, until ADR-0005 is `accepted`.
+
+### R-BE — Backend language / Spring / auth / ops evidence
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/phase-1-task-s-01-implementer.md` |
-| **Lane / agent** | `shared` / `/implementer` — **recommended human: Backend**; Frontend reviews `apps/web` + boundary tags |
-| **Depends on** | Phase 0 (done). **Parallel with D-01** |
-| **Blocks** | All F-* and B-* source work |
-| **Write path** | workspace config, `apps/**`, `packages/**` placeholders, typecheck/lint/test CI only |
+| **Status** | **completed** — `docs/handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md` |
+| **Lane / agent** | `shared` / `/researcher` |
+| **Depends on** | Phase 0 (done); `@user` reopen 2026-09-15 |
+| **Blocks** | A-BE |
+| **Write path** | `docs/research/technical/10–15-*`, ledger, matrix/shortlist supplements |
 
-Nx 23.2.1, pnpm 12.4.1, Node 24; `apps/web`, `apps/api`,
-`packages/ui|contracts|domain|mocks`. `@nx/enforce-module-boundaries`
-must **fail** on an illegal `apps/web` → provider SDK import (then
-revert). CI: typecheck/lint/test — **no AWS, no secrets**. Placeholder
-packages only: health route on `apps/api`; shadcn primitives in
-`packages/ui`; empty/stub `contracts`, `domain`, `mocks` so the graph
-exists.
+Classified evidence only. No vendor selection.
 
-**Defer to later tasks:** full §5 port interfaces (B-01), canonical
-OpenAPI/SSE (S-02), architecture §9 fixture corpus (S-03), TipTap,
-Better Auth, Postgres migrations, AWS.
+### A-BE — ADR-0005 backend application stack
 
-This is **workspace bootstrap**, not AWS DevOps. It must not wait for
-the I-* split.
+| | |
+|--|--|
+| **Status** | **completed** — `docs/handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md`; ADR-0005 `proposed` |
+| **Lane / agent** | `shared` / `/architect` |
+| **Depends on** | R-BE |
+| **Blocks** | U-BE |
+| **Write path** | `docs/adr/ADR-0005-*` (`proposed`); amend notes on ADR-0001 §6 / ADR-0002; `architecture.md` reopen banners |
+
+### U-BE — `@user` accept / reject / change ADR-0005
+
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/phase-0b-task-u-be-user.md` |
+| **Lane** | `shared` (`to: user`) |
+| **Depends on** | A-BE `proposed` |
+| **Blocks** | S-01a, S-01b, B-01+, Java-shaped B-03 |
+
+MUST-NOW questions and where to read benefits/adverse: U-BE handoff +
+`docs/research/technical/10–15`.
+
+---
+
+## Shared foundation
+
+### S-01 — Nx workspace + Node `apps/api` (superseded)
+
+| | |
+|--|--|
+| **Status** | **blocked** — archived `docs/handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md` |
+| **Lane / agent** | `shared` / `/implementer` — **do not execute** |
+| **Depends on** | — |
+| **Blocks** | nothing (replaced by S-01a + S-01b) |
+
+Original S-01 assumed a Node `apps/api` health route and TypeScript
+`packages/domain` stubs. **Superseded before execution.** Split below
+after U-BE.
+
+### S-01a — Frontend Nx workspace + boundary CI
+
+| | |
+|--|--|
+| **Status** | listed — gated on U-BE |
+| **Lane / agent** | `shared` / `/implementer` — Frontend reviews `apps/web` + TS tags |
+| **Depends on** | U-BE (ADR-0005 accepted or explicit FE-only amend) |
+| **Blocks** | F-01+ source work |
+| **Write path** | workspace config, `apps/web`, `packages/ui|contracts|mocks` stubs, TS typecheck/lint/test CI |
+
+Nx 23.2.1, pnpm 12.4.1, Node 24 for the **JS graph only**.
+`@nx/enforce-module-boundaries` must still **fail** on an illegal
+`apps/web` → provider SDK import. **No** Node API app. Java module
+boundaries are ArchUnit + CI (S-01b / ADR-0005), not Nx tags.
+
+### S-01b — Java API module scaffold
+
+| | |
+|--|--|
+| **Status** | listed — gated on U-BE accepting a JVM API |
+| **Lane / agent** | `backend` / `/implementer` |
+| **Depends on** | U-BE (ADR-0005 `accepted` with Java API) |
+| **Blocks** | B-01, B-02 (Compose may start here or with B-02), S-02 authoring from a running health endpoint |
+| **Write path** | Java API module path per ADR-0005; health endpoint; build tool per ADR |
+
+Spring Boot (candidate) health + module layout. **No** production
+OpenRouter adapters. **No** Better Auth.
 
 ### S-02 — Canonical HTTP / OpenAPI / SSE contracts
 
@@ -139,7 +210,7 @@ the I-* split.
 |--|--|
 | **Status** | listed — Backend authors; Frontend reviews |
 | **Lane** | `backend` (author) + Frontend review (no overlapping write: review via PR) |
-| **Depends on** | S-01 |
+| **Depends on** | S-01a and S-01b (or enough of each that OpenAPI can be authored) |
 | **Blocks** | F-03+ and B-03+ / B-04+ that speak HTTP |
 | **Write path** | `docs/api/**`, `packages/contracts` |
 
@@ -154,7 +225,7 @@ mine), export stub.
 |--|--|
 | **Status** | listed |
 | **Lane** | `backend` produces `packages/mocks`; Frontend consumes via MSW |
-| **Depends on** | S-01, S-02 |
+| **Depends on** | S-01a, S-02 (and S-01b if fixtures are served from the API) |
 | **Blocks** | F-07 Ask UI; B-08 mock ask adapter |
 | **Write path** | `packages/mocks` (producer). Frontend must not fork a second fixture authority |
 
@@ -169,14 +240,14 @@ Write path: `apps/web`, `packages/ui`, Playwright / Storybook / axe,
 `docs/frontend/README.md`. **Must not** touch `apps/api`,
 `packages/domain`, `docs/adr/**`, or AWS.
 
-May start **F-01** as soon as D-01 + S-01 land. Do not wait for Postgres
-or AWS.
+May start **F-01** as soon as D-01 + **S-01a** land. Do not wait for
+Postgres, AWS, or S-01b.
 
 ### F-01 — Design tokens + shadcn primitives
 
-Depends: D-01, S-01. Map D-01 tokens into `packages/ui` (Tailwind 4 +
+Depends: D-01, S-01a. Map D-01 tokens into `packages/ui` (Tailwind 4 +
 shadcn/Base UI). Refresh stale ADR status in `docs/frontend/README.md`
-(categories 3–7 are `accepted`, not `proposed`).
+(§6 auth implementation may still be in ADR-0005 close-out).
 
 ### F-02 — App shell, nav, locale, honest workspace switcher
 
@@ -233,29 +304,36 @@ Depends: F-04–F-09. Feeds Phase 2 CX gate.
 
 ## Backend lane — `backend` / `/implementer`
 
-Write path: `apps/api`, `packages/domain`, `packages/mocks` (producer),
-`packages/contracts` (with S-02), migrations. **Must not** implement
-production OpenRouter adapters until Phase 3. **Must not** own visual
-tokens.
+Write path: Java API module (path per ADR-0005 after U-BE),
+`packages/mocks` (producer), `packages/contracts` (with S-02),
+migrations. **Must not** implement production OpenRouter adapters until
+Phase 3. **Must not** own visual tokens. **Must not** start on TypeScript
+`packages/domain` ports or Better Auth while ADR-0005 is not `accepted`.
 
-May start **B-01** as soon as S-01 lands — **no design dependency**.
+May start **B-01** as soon as **S-01b** lands — **no design dependency**.
 
 ### B-01 — Domain port interfaces
 
-Depends: S-01. TypeScript interfaces for `architecture.md` §5.1–§5.11 in
-`packages/domain`. No production adapters.
+Depends: S-01b. Language-native port interfaces for `architecture.md`
+§5.1–§5.11 **inside the API module** (Java if ADR-0005 accepts JVM),
+aligned with S-02 OpenAPI. No production adapters. **Not** TypeScript
+interfaces in `packages/domain` as the backend SoT.
 
 ### B-02 — Postgres schema + RLS + local Compose
 
-Depends: S-01. PostgreSQL 18; tenants/workspaces/membership;
+Depends: S-01b. PostgreSQL 18; tenants/workspaces/membership;
 notes/versions; RLS on a non-owner, non-`BYPASSRLS` role (ADR-0001 §3).
 **Local Docker Compose Postgres+pgvector is this lane**, not DevOps.
+Migration tool class from ADR-0005 (Flyway vs Liquibase is CAN-WAIT
+unless ADR pins it).
 
-### B-03 — Better Auth + organization plugin
+### B-03 — Identity adapter (Java auth class per ADR-0005)
 
-Depends: B-02, S-02 identity. Server-authoritative membership; client
-workspace id is a selector (`architecture.md` §2). Year-1 SSO not
-required.
+Depends: B-02, S-02 identity, U-BE. Server-authoritative membership;
+client workspace id is a selector (`architecture.md` §2). Year-1 SSO
+not required. **Replaces** “Better Auth + organization plugin” —
+Better Auth is TypeScript-native and is not the Java implementation.
+First-party org/membership tables remain required.
 
 ### B-04 — Notes CRUD + version concurrency
 
@@ -313,13 +391,14 @@ as a Phase 1 live handoff.
 ## DevOps / infra — `devops` (unassigned)
 
 Split between the two developers later. **Do not** put these on the FE
-or BE critical path except as noted. Hosted demo needs S-01 images and
-enough of B-02/B-03 to boot, but that does not block mock journeys.
+or BE critical path except as noted. Hosted demo needs S-01a + S-01b images and enough of B-02/B-03 to boot,
+but that does not block mock journeys.
 
-### I-01 — GitHub Actions beyond S-01
+### I-01 — GitHub Actions beyond S-01a/S-01b
 
-Depends: S-01. Caching policy, required checks. Optional early. Nx
-Cloud remains **off** (see I-09).
+Depends: S-01a (and S-01b when Java CI exists). Dual CI: pnpm/Nx for FE
++ Maven/Gradle for BE. Caching policy, required checks. Optional early.
+Nx Cloud remains **off** (see I-09).
 
 ### I-02 — AWS account + Free-plan eligibility / credit clock
 
@@ -328,18 +407,19 @@ fit (do not prefer VPS because duration is 6 months).
 
 ### I-03 — SKU PoC (EC2 and/or ECS + RDS Postgres + pgvector)
 
-Depends: I-02, S-01 images. Topology class already accepted (ADR-0001
-§7). Exact SKUs remain PoC. **Does not block Phase 1 mocks.**
+Depends: I-02, S-01a/S-01b images. Topology class already accepted (ADR-0001
+§7). Exact SKUs remain PoC. JVM RAM on Free Tier (`t3.micro` = 1 GiB)
+is a PoC risk. **Does not block Phase 1 mocks.**
 
 ### I-04 — Container images + deploy path
 
-Depends: S-01, I-03, enough of B-02/B-03 to boot. `apps/web` +
-`apps/api` + worker.
+Depends: S-01a, S-01b, I-03, enough of B-02/B-03 to boot. Next.js web +
+JVM API (+ optional worker).
 
 ### I-05 — Secrets / env in deploy
 
 Depends: I-04. Operator key in deploy secrets only; no keys in repo.
-`.env.example` placeholders belong in S-01. **Production OpenRouter key
+`.env.example` placeholders belong in S-01a/S-01b. **Production OpenRouter key
 still gated by CX.**
 
 ### I-06 — Credit-burn / always-on monitoring
@@ -380,20 +460,24 @@ only with `@user`. Then Phase 4 hosted demo from the I-* list.
 
 ## Live handoffs (this cycle only)
 
-Commander opened **only** D-01 and S-01 so both developers can start.
-F-02+ and B-02+ stay **listed** here until dependencies land and
-Commander issues a handoff.
+Commander froze Node S-01. **D-01 continues.** Close-out **U-BE** is
+the live shared assignment. F-* / B-* / S-01a / S-01b stay **listed**
+until U-BE and Commander issues the next implementer handoff.
 
 | ID | Handoff |
 |----|---------|
 | D-01 | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| S-01 | [`docs/handoffs/active/phase-1-task-s-01-implementer.md`](../handoffs/active/phase-1-task-s-01-implementer.md) |
+| U-BE | [`docs/handoffs/active/phase-0b-task-u-be-user.md`](../handoffs/active/phase-0b-task-u-be-user.md) |
+| R-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md`](../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md) |
+| A-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md`](../handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md) |
+| S-01 (Node API) | archived blocked — [`../handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md) |
 
 ---
 
 ## Related
 
 - [`architecture.md`](../../architecture.md) — ports, tenancy, fixtures
-- [`docs/adr/README.md`](../adr/README.md) — accepted decisions
+- [`docs/adr/README.md`](../adr/README.md) — accepted and proposed decisions
+- [`docs/adr/ADR-0005-backend-application-stack.md`](../adr/ADR-0005-backend-application-stack.md) — backend stack (`proposed`)
 - [`docs/handoffs/README.md`](../handoffs/README.md) — `lane:` protocol
 - [`quality/ui-qa-checklist.md`](../../quality/ui-qa-checklist.md)

@@ -29,6 +29,8 @@
   — do not silently diverge
 - Split stack vs dual-mode BYOK: ADR-0001 stays stack-level; vault /
   usage / key-resolution belong in a dedicated ADR (ADR-0004 pattern)
+- Backend **application** language is ADR-0005; do not scaffold Node
+  `apps/api` or treat Better Auth as a JVM adapter; `proposed` ≠ accepted
 - OmniDoc customer-BYOK ≠ OpenRouter-upstream-BYOK — never conflate
 - `quota_exhausted` must name the mode (`operator_free_tier` vs
   `customer_key`); silent key mix is a contract violation

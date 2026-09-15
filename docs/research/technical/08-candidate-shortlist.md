@@ -76,6 +76,18 @@ Auth.js remains a viable DIY baseline but pushes org features onto the
 project — treat as implementation style under Better Auth/Keycloak rather
 than a third equal product unless Architect prefers it.
 
+### Java API (R-BE, 2026-09-15) — additional shortlist, no selection
+
+| Candidate | Why shortlisted | Primary tradeoff |
+|-----------|-----------------|------------------|
+| Spring Security session cookies | Matches retrieval-API as membership authority; SPA CSRF documented (`csrf.spa()`) | Project-owned session/CSRF ops; no org plugin |
+| JWT resource server | Simple horizontal API | Browser token storage; still need membership tables |
+| Spring Authorization Server (Security 7) or Keycloak | Full OIDC | Overkill if year-1 SSO is not required; realms ≠ OmniDoc ACL |
+| Hybrid Better Auth in Next + Java API | Reuses ADR-0001 §6 | **Tenant-authority split** — high IDOR risk; not a default |
+
+Better Auth + org plugin remains the TypeScript-app shortlist row above;
+it is **unfit** as a Java implementation (`12`).
+
 ## Hosting / deployment
 
 | Candidate | Why shortlisted | Primary tradeoff |
@@ -100,10 +112,13 @@ sign-up docs) are **documented** but not seated as Free-plan primaries
 7. Pinecone-class managed vector OK, or self-host mandatory? *(pgvector accepted pending Architect flip)*
 8. Exact AWS Free-plan service graph + credit-burn PoC result?
 9. OpenRouter-only vs hybrid embeddings (direct) + OR answers?
+10. API/worker language: Java Spring Boot vs keep Node? *(R-BE; `@user` intent 2026-09-15 = Java — not an ADR)*
+11. Java auth class if JVM API: sessions vs JWT vs SAS/Keycloak vs hybrid Better Auth?
+12. Spring AI behind ports vs as domain; Python sidecar policy?
 
 ## @user gates (must not be closed by agents alone)
 
-| Gate | Status (2026-09-14) |
+| Gate | Status (2026-09-14 / 2026-09-15) |
 |------|---------------------|
 | **Monthly budget ceiling** (infra + AI) | **Closed:** infra prefer $0 / ~$20 ceiling; AI = OR free then ~$10 |
 | **Self-host vs managed preference** | **Closed:** prefer self-host because free; managed OK if $0 |
@@ -112,7 +127,8 @@ sign-up docs) are **documented** but not seated as Free-plan primaries
 | **Data region preference** | **Closed:** none |
 | **Enterprise SSO year-1** | **Closed:** not required |
 | **Hosted demo horizon** | **Closed:** 6 months; AWS Free Tier 6-mo window in-scope |
-| **ADR-0001 §5 / §7 acceptance** | **Open** until Architect rewrite cites Wave C — Researcher does **not** select |
+| **ADR-0001 §5 / §7** | **Closed** 2026-09-14 (Architect) |
+| **Backend application stack** | **Open** — R-BE evidence; ADR-0005 + `@user` U-BE. Researcher does **not** select |
 
 ## What this package does *not* do
 

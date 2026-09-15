@@ -32,6 +32,14 @@
 - Long-running embed/ingest jobs favor worker-capable hosts; function-only
   platforms need an external worker story
 - Remix new-project path is React Router 8; cite RR8 not legacy Remix alone
+- Better Auth is a TypeScript library — it cannot be the identity
+  implementation inside a Java API; hybrid Next-auth + Java retrieval
+  is a tenant-authority split unless designed as a true BFF
+- Spring AI ChatClient/PgVectorStore convenience can become accidental
+  corpus SoT; keep adapters behind architecture ports and forbid
+  `initialize-schema` on the app role
+- Nx module-boundary tags do not enforce Java imports — ArchUnit is the
+  substitute
 - Version claims rot: cite the exact version + release date + read date, or
   point at `docs/research/version-ledger.md` — never "latest" or "observed"
 - TipTap documents `textDirection`; headless editors still require product

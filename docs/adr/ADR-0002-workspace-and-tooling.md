@@ -1,6 +1,11 @@
 # ADR-0002 — Workspace and Tooling
 
-- **Status:** `accepted` (accepted by `@user` 2026-09-14)
+- **Status:** `accepted` (accepted by `@user` 2026-09-14) with
+  **`apps/api` as Node + `packages/domain` TypeScript SoT reopened
+  2026-09-15** — see
+  [ADR-0005](./ADR-0005-backend-application-stack.md) (`proposed`).
+  Nx + pnpm + Node 24 + `apps/web` + `packages/ui` **remain** accepted
+  for the frontend graph.
 - **Date:** 2026-09-14
 - **Deciders:** Architect proposes; `@user` accepts / rejects / amends
 - **Supersedes:** the `frontend/` + `backend/` directory contract that
@@ -32,18 +37,31 @@ Verified pins come from `docs/research/version-ledger.md`
 
 ## Decision
 
-**Nx 23.2.1** as the monorepo build system, **pnpm 12.4.1** as the
-package manager, **Node 24 LTS** as the pinned runtime, with an
-`apps/` + `packages/` layout:
+> **2026-09-15 reopen (API module only).** The layout below recorded a
+> **Node** `apps/api` and TypeScript `packages/domain` as the backend
+> SoT. `@user` declined a Node API. Until ADR-0005 is `accepted`, do
+> **not** scaffold Node `apps/api`. Nx enforcement for `apps/web`
+> remains the reason Nx earns its place for the **JS** graph. Java
+> import boundaries (if a JVM API is accepted) are ArchUnit + CI, not
+> Nx tags.
+
+**Nx 23.2.1** as the monorepo build system for the **JavaScript /
+TypeScript** graph, **pnpm 12.4.1** as the package manager, **Node 24
+LTS** as the pinned **frontend** runtime, with an `apps/` + `packages/`
+layout:
 
 ```text
 apps/
   web/          # Next.js 16.3.5 UI application (ADR-0001 §1, ADR-0003)
-  api/          # API / BFF / ingestion + embedding workers (ADR-0001 §7 hosting TBD)
+  api/          # API / workers — **Node placeholder reopened** (ADR-0005).
+                # Do not scaffold as Node until U-BE. If Java is accepted,
+                # this directory is a JVM module (or `backend/` per ADR-0005).
 packages/
   ui/           # shadcn/ui components + design tokens (ADR-0003)
   contracts/    # API request/response/stream types shared by web + api
-  domain/       # provider-neutral ports + domain orchestration (architecture.md §5)
+  domain/       # **Reopened:** was TS ports SoT. If ADR-0005 Java is
+                # accepted, ports live in the API module; this package
+                # is not the backend SoT.
   mocks/        # deterministic fixture adapters + MSW handlers (architecture.md §9)
 docs/
   api/          # canonical HTTP/OpenAPI/SSE contracts (unchanged)
@@ -58,7 +76,8 @@ mechanically rather than by review discipline:
   production paths, or any provider SDK.
 - Provider SDKs (`openai`, `@anthropic-ai/sdk`, `@google/genai`,
   `voyageai`, and any vector/storage SDK) are allowed only inside
-  `apps/api` adapter code, never in the `web` dependency graph.
+  **API adapter** code (Node `apps/api` only if U-BE keeps Node; otherwise
+  the JVM API module), never in the `web` dependency graph.
 - `packages/domain` must not depend on a framework or on `apps/*`.
 
 A dependency-graph violation is a CI failure, not a code-review opinion.

@@ -50,5 +50,12 @@ live identity conflict.
 
 `H-2026-09-14-P1-T01-commander-designer.md` and
 `H-2026-09-14-P1-T02-commander-implementer.md` were **superseded before
-execution** (`status: blocked`). Live successors are **D-01** and
-**S-01**. See `docs/planning/implementation-tracks.md`.
+execution** (`status: blocked`). Live successor for design is **D-01**.
+
+## Backend Stack Close-out (2026-09-15)
+
+`H-2026-09-15-P1-S01-commander-implementer.md` (Node `apps/api`) was
+**superseded before execution** (`status: blocked`). R-BE and A-BE
+completed the same day. Live shared successor is **U-BE** (ADR-0005
+gate), then **S-01a** / **S-01b**. See
+`docs/planning/implementation-tracks.md`.

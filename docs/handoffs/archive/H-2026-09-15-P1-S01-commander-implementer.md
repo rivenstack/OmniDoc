@@ -2,14 +2,45 @@
 handoff_id: H-2026-09-14-P1-S01
 affinity: implementation
 track: parallel
-status: ready
+status: blocked
 phase: "1"
 task: "S-01"
 lane: shared
 from: commander
 to: implementer
 created: 2026-09-14
+blocked: 2026-09-15
 ---
+
+# S-01 — Nx Workspace Scaffold (ARCHIVED — superseded before execution)
+
+## Outcome Summary
+
+**Blocked 2026-09-15 by `/commander`.** This handoff was `ready` and
+had **not** been executed. `@user` reopened the backend application
+stack: the API must not be a Node.js `apps/api` placeholder. Better
+Auth (ADR-0001 §6) and ADR-0002's Node API assumption are in
+**Backend Stack Close-out** (R-BE → A-BE / ADR-0005 `proposed` →
+U-BE).
+
+This records a **workflow correction**, not Implementer failure.
+Nothing was scaffolded.
+
+**Do not execute** the original body below. Successors: **S-01a**
+(frontend Nx) and **S-01b** (Java API) are listed in
+`docs/planning/implementation-tracks.md` and stay gated on U-BE
+acceptance of ADR-0005. Live parallel work: D-01 remains on
+`docs/handoffs/current.md`.
+
+---
+
+# Original handoff body (immutable historical record)
+
+The original S-01 body follows. Live status is in `context.md`.
+
+---
+
+handoff_id: H-2026-09-14-P1-S01 (original)
 
 # S-01 — Nx Workspace Scaffold and Boundary Enforcement
 

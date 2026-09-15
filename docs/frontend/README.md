@@ -48,7 +48,7 @@ RTL-readiness discipline (see [Non-negotiables](#stack-independent-non-negotiabl
 ### Settled (do not re-litigate)
 
 - Product identity: multi-tenant AI/RAG note & knowledge SaaS
-- Platform class: TypeScript web SaaS
+- Platform class: TypeScript **frontend**; API language pending [ADR-0005](../adr/ADR-0005-backend-application-stack.md) (`proposed`)
 - Primary locale: `en` (LTR); no secondary locale in Phase 0
 - Customer-experience-first: validate journeys with realistic mocks before
   production AI/provider activation
@@ -73,7 +73,7 @@ pin below was registry-verified on 2026-09-14).
 | Note source of truth | TipTap/ProseMirror **JSON**; markdown only via one canonical serializer (export + chunking) | ADR-0001 §2 |
 | Workspace | Nx 23.2.1, `apps/` + `packages/`, boundaries enforced | [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md) |
 | Package manager | pnpm 12.4.1 | ADR-0002 |
-| Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) | ADR-0002 |
+| Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) — **frontend / Nx**. JVM API pending ADR-0005 | ADR-0002 / ADR-0005 |
 | Styling / components | Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI `@base-ui/react` 1.8.0 | [ADR-0003](../adr/ADR-0003-frontend-application-toolchain.md) |
 | Data / state | RSC + Server Actions first; Zustand 5.0.15 for editor/UI state; **no client cache library in v1** | ADR-0003 |
 | Testing | Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + `@axe-core/playwright` 4.13.0 + MSW 2.15.0 + Storybook 10.6.0 | ADR-0003 |
@@ -183,10 +183,11 @@ You can contribute via ordinary PRs without running agents.
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
 | `apps/web/` | **Confirmed** UI application root (ADR-0001 §1 + ADR-0002) — **not present yet** |
-| `apps/api/` | **Confirmed** API / workers root (ADR-0002) — **not present yet** |
-| `packages/ui/`, `packages/contracts/`, `packages/domain/`, `packages/mocks/` | **Confirmed** shared packages (ADR-0002) — **not present yet** |
+| `apps/api/` | **Reopened 2026-09-15** (ADR-0005). Do **not** treat as a Node app until U-BE. Not present yet |
+| `packages/ui/`, `packages/contracts/`, `packages/mocks/` | **Confirmed** FE packages (ADR-0002) — **not present yet** |
+| `packages/domain/` | **Reopened** — not the Java backend SoT if ADR-0005 is accepted |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture-ready baseline (ports, tenancy, fixtures) — stack packages still ADR-0001-dependent |
-| [`docs/adr/`](../adr/) | Decision records; ADR-0001 is `accepted (partial)`, ADR-0002/0003 `accepted` |
+| [`docs/adr/`](../adr/) | Decision records; ADR-0001 §1–§5, §7 `accepted`; §6 library reopened; ADR-0002 FE graph `accepted`; ADR-0005 `proposed` |
 
 ### Workspace layout (ADR-0002)
 
@@ -197,10 +198,11 @@ implementation handoff authorizes scaffolding.
 
 ```text
 apps/web/                 # Next.js 16.3.5 UI application
-apps/api/                 # API / BFF / ingestion + embedding workers
+apps/api/                 # API / workers — Node shape REOPENED (ADR-0005);
+                          # do not scaffold as Node until U-BE
 packages/ui/              # shadcn/ui components + design tokens (copy-in, owned)
-packages/contracts/       # shared request/response/stream types
-packages/domain/          # provider-neutral ports + domain orchestration
+packages/contracts/       # shared request/response/stream types (OpenAPI → TS)
+packages/domain/          # TS backend SoT REOPENED — not Java domain if ADR-0005 accepted
 packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
 docs/adr/                 # Architecture Decision Records

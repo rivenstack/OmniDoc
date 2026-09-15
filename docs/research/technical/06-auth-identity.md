@@ -92,8 +92,19 @@ standard.)
 - Need SAML/OIDC enterprise SSO in year-1?
 - Acceptable third-party sub-processor for identity?
 
+## Wave D pointer (R-BE, 2026-09-15)
+
+If the API is Java, **this file’s Option A (Better Auth) cannot be the
+JVM identity implementation.** See
+[`12-auth-java-spring-security.md`](./12-auth-java-spring-security.md).
+Year-1 SSO still **not** required. First-party org/membership tables
+are required under every Java option.
+
 ## PoC plan
 
-1. Better Auth org plugin vs Clerk orgs: invite + role-gated note list.
-2. Attempt IDOR: user A token + user B `orgId` — must 403.
-3. Record session cookie flags and logout revoke behavior.
+1. If staying on TypeScript API: Better Auth org plugin vs Clerk orgs:
+   invite + role-gated note list.
+2. If Java API: Spring Security session cookie from Next→Java **or** JWT
+   validation; IDOR with forged `workspaceId`.
+3. Attempt IDOR: user A token/session + user B `orgId` — must 403.
+4. Record session cookie flags and logout revoke behavior.

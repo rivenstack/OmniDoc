@@ -6,7 +6,7 @@ questions that return **cited answers** from their own corpus.
 
 | | |
 |---|---|
-| Platform | TypeScript web SaaS |
+| Platform | TypeScript **frontend** (Next.js). Backend application stack: [ADR-0005](docs/adr/ADR-0005-backend-application-stack.md) `proposed` (Java/Spring candidate). Node API **not** authorized. |
 | Primary locale | `en` (LTR) |
 | RTL / mixed-BiDi | Deferred, **not closed** — RTL-readiness discipline is mandatory now |
 | Market | Global English-speaking |

@@ -62,10 +62,15 @@ Version pins in this file come from
 
 | Option | Hosting | Org/multi-tenant | Session model | Small-scale cost | Conf. |
 |--------|---------|------------------|---------------|------------------|-------|
-| Better Auth | Self-hosted lib | Organization plugin + RBAC | App-owned sessions/DB | Software free; you run infra | H |
+| Better Auth | Self-hosted **TypeScript** lib | Organization plugin + RBAC | App-owned sessions/DB | Software free; you run infra | H |
 | Clerk | Managed only | Organizations; B2B add-on for advanced | Managed sessions | Hobby free (50k MRU / 100 MRO); Pro $25/mo | H |
 | Auth.js / NextAuth style | Self-hosted | Orgs DIY | Flexible | Free software | M/H |
 | Keycloak | Self-hosted IdP | Realms/orgs | OIDC/SAML | Apache-2.0; ops cost | H/M |
+| Spring Security session cookies (R-BE, 2026-09-15) | In-process Java | **First-party** membership tables | HttpOnly cookie + `csrf.spa()` | Software free; you own ops | H |
+| JWT resource server (R-BE) | In-process Java | First-party membership | Bearer JWT | Software free; token storage risk | H |
+| Spring Authorization Server (Security 7) (R-BE) | In-process Java IdP | OIDC; still need OmniDoc ACL tables | OAuth2/OIDC | Extra ops vs sessions | H |
+
+Better Auth is **unfit** as a Java identity implementation (`12`). Hybrid Better Auth-in-Next + Java dumb API is a tenant-authority risk, not a default.
 
 ## 7. Hosting / deployment
 
@@ -88,3 +93,6 @@ files. Many former `@user` gates closed 2026-09-14 (budget, BYOK v1,
 privacy ~30d, AWS 6-mo Free Tier preference, data region none). Still
 open for Architect: exact AWS SKU graph (no Researcher selection);
 OpenRouter vs direct provider pairing; vault pattern (see `09`).
+**R-BE 2026-09-15:** backend language/runtime, Java auth class, Spring AI
+behind ports, polyglot layout, Python sidecar policy — evidence only;
+ADR-0005 + `@user`.

@@ -59,9 +59,11 @@
   DevOps I-* stay unassigned until they split them. Local Compose
   Postgres is Backend-owned; AWS hosted demo is I-*. Phase 1 exit is
   mock journeys, not AWS. Phase Check at Build exit, not every ticket.
-- Do not funnel frontend and backend through a single Implementer
-  1–3-task queue. Open only the next live handoff per lane from the
-  tracks file (D-01 + S-01 this cycle; do not pre-open F-02+ / B-02+)
+- `@user` 2026-09-15: backend application stack reopened — no Node.js
+  API; Java Spring Boot preferred; Python only if clearly better and
+  cheap. S-01 (Node `apps/api`) archived blocked before execution.
+  Close-out is R-BE → A-BE → U-BE. Commander never selects Spring Boot.
+  Do not open B-01 on TypeScript ports while ADR-0005 is not accepted.
 
 ## Phase-Boundary Stewardship
 

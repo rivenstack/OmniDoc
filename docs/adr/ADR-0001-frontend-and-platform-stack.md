@@ -1,9 +1,11 @@
 # ADR-0001 — Frontend and Platform Stack
 
-- **Status:** `accepted` — categories 1–7 accepted (1–2 on 2026-09-14;
-  3–7 recorded `accepted` 2026-09-14 from `@user` Task 0.7 answers +
-  Wave C evidence). Dual-mode BYOK / vault / usage / key-resolution
-  detail: **ADR-0004** (`accepted`). Full record: §Decision record.
+- **Status:** `accepted` — categories 1–5 and 7 accepted (1–2 on
+  2026-09-14; 3–5, 7 recorded `accepted` 2026-09-14). **§6 identity
+  *library* reopened 2026-09-15** pending
+  [ADR-0005](./ADR-0005-backend-application-stack.md) (`proposed`).
+  Dual-mode BYOK / vault / usage / key-resolution detail: **ADR-0004**
+  (`accepted`). Full record: §Decision record.
 - **Date:** 2026-09-13 (amended 2026-09-14)
 - **Deciders:** Architect proposes; `@user` accepts / rejects / amends
 - **Consulted evidence:** `docs/research/technical/` (Wave B + Wave C
@@ -27,9 +29,12 @@
 > original reasoning is preserved in §1's alternatives table so the
 > decision trail stays auditable.
 
-OmniDoc needs a concrete TypeScript web stack to leave Phase 0: UI
-framework, note editor, relational DB, vector storage, embedding/LLM
-posture (including BYOK), auth/identity, and hosting. Architecture
+OmniDoc needs a concrete **frontend** TypeScript web stack plus
+platform data/providers/hosting to leave Phase 0: UI framework, note
+editor, relational DB, vector storage, embedding/LLM posture (including
+BYOK), auth/identity **port**, and hosting. The **API application
+language** was implied Node via §6 Better Auth and ADR-0002; that
+implication is **reopened** (ADR-0005, 2026-09-15). Architecture
 requires provider-neutral ports, retrieval-time tenant isolation,
 passage-level citations, and first-class refusal states
 (`architecture.md`). Commerce/SMS/payments are out of scope.
@@ -450,9 +455,17 @@ vendor lock. Exact model IDs are not pinned here.
 
 ### 6. Auth / identity
 
+> **Reopened 2026-09-15.** The **library** (Better Auth 1.7.4) is a
+> TypeScript implementation and cannot be the identity adapter inside a
+> Java API. Product gates below (year-1 SSO not required; server-
+> authoritative orgs) still hold. Disposition of the implementation:
+> [ADR-0005](./ADR-0005-backend-application-stack.md) (`proposed`).
+> Do not scaffold Better Auth until U-BE.
+
 **Decision (accepted by `@user` 2026-09-14; Architect status flip
-2026-09-14):** **Better Auth 1.7.4** (self-hosted TypeScript library)
-with the **organization plugin** for workspace membership/RBAC.
+2026-09-14; library disposition pending ADR-0005):** **Better Auth 1.7.4**
+(self-hosted TypeScript library) with the **organization plugin** was
+the recorded Node/TS API choice.
 
 **Year-1 enterprise SSO is not required** — the prior SSO-reopen
 conditional is **removed**. Revisit SSO only if `@user` later mandates
@@ -582,7 +595,7 @@ SKU.
 | 3 | Database | **PostgreSQL 18** + shared schema + app scoping + RLS defense-in-depth | `accepted` 2026-09-14 |
 | 4 | Vector | **pgvector** in Postgres (ledger **0.8.6**; confirm RDS matrix at scaffold) | `accepted` 2026-09-14 |
 | 5 | Embedding/LLM | Ports + mocks first; OpenRouter operator free-tier **gateway**; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT — detail **ADR-0004** | `accepted` 2026-09-14 |
-| 6 | Auth | **Better Auth 1.7.4** + organization plugin; year-1 SSO **not** required | `accepted` 2026-09-14 |
+| 6 | Auth | **Better Auth 1.7.4** + organization plugin; year-1 SSO **not** required | `accepted` 2026-09-14; **library reopened** 2026-09-15 → ADR-0005 |
 | 7 | Hosting | AWS Free-plan topology class: **EC2 and/or ECS + RDS Postgres + pgvector**; Railway/Render not default; VPS fallback only if AWS cannot cover 6 months; data region none | `accepted` 2026-09-14 |
 
 ---
@@ -599,7 +612,7 @@ come from `docs/research/version-ledger.md`.
 | Frontend framework | **Next.js 16.3.5** (App Router) — chosen over React Router 8; primary reason: portfolio audience recognizability |
 | Editor foundation | **TipTap 3.31.3** (MIT core; `textDirection` verified present) |
 | Note source of truth | **TipTap/ProseMirror JSON**; markdown produced only by one canonical serializer for export + chunking |
-| Language / runtime | **Node 24 LTS** (`engines.node >= 24`, `.nvmrc` = `24`) |
+| Language / runtime | **Node 24 LTS** (`engines.node >= 24`, `.nvmrc` = `24`) — **frontend / Nx graph**. API language: ADR-0005 |
 | Package manager | **pnpm 12.4.1** |
 | Monorepo tool + layout | **Nx 23.2.1**, `apps/` + `packages/` → **ADR-0002** |
 | Language surface | **React-only** (SvelteKit formally closed in §1) |
@@ -618,7 +631,7 @@ Wave C evidence: `05`, `07`, `09`, shortlist. UX constraints: REC-13…19.
 | Relational DB | PostgreSQL 18; shared schema + app scoping + RLS DiD |
 | Vector | pgvector in Postgres |
 | Embedding/LLM | See §5 + **ADR-0004** (`accepted`) |
-| Auth | Better Auth 1.7.4 + org plugin; year-1 SSO not required |
+| Auth | Better Auth 1.7.4 + org plugin; year-1 SSO not required — **implementation reopened 2026-09-15 (ADR-0005)** |
 | Hosting | AWS Free-plan EC2/ECS + RDS + pgvector topology class; no SKU pin |
 | Year-1 tenants | Minimal; honest workspaces; collab much later |
 | Demo corpus | Public labelled sample workspace + clone-and-run fixtures |
@@ -636,7 +649,8 @@ Wave C evidence: `05`, `07`, `09`, shortlist. UX constraints: REC-13…19.
 - Exact AWS Free-plan credit-burn PoC and OpenRouter model-quality PoC
   — Implementer / activation-time work, not ADR blockers for accepting
   topology class / gateway choice
-- Nx generator / boundary tag taxonomy — Implementer PoC at scaffold
+- **Backend application stack / ADR-0005** — `@user` U-BE; Node API
+  not authorized while this ADR's §6 library is in reopen
 
 ### Follow-through owned elsewhere
 
