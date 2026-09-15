@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-15-P0B-UBE
 affinity: decision-gate
 track: parallel
-status: ready
+status: completed
 phase: "0b"
 task: "U-BE"
 lane: shared
@@ -12,6 +12,37 @@ created: 2026-09-15
 ---
 
 # U-BE — Accept / reject / change ADR-0005
+
+## Outcome (Commander, 2026-09-15)
+
+`@user` **accepted ADR-0005 with amendments**. Answers:
+
+1. **API / worker:** Option A — Java 21 + Spring Boot 4.1.x (agree).
+2. **Monorepo:** Option B — Gradle beside Nx via `run-commands` (not
+   `@nx/gradle`; not two repos).
+3. **Auth:** Option A — Spring Security HTTP-only session cookies +
+   first-party membership tables.
+4. **Spring AI:** Option A — Spring AI 2.0.x in adapters only.
+5. **Python:** Policy correct — not in Phase 1; avoid second runtime /
+   image / deploy unit on AWS Free Tier.
+6. **Build tool:** Gradle (aligns with FE package-management structure).
+
+Additional (from R-BE `15` categories):
+
+- **Observability:** Candidate B — **Log4j2** (performance). Must keep:
+  Architect may defer OTel to year-1 optional; `@user` log sink
+  (CloudWatch vs scrape) waits for I-*. **Amends** ADR-0005 §7 Logback.
+- **Test discipline:** Accept JUnit 5 / AssertJ / Spring Boot Test /
+  Testcontainers / ArchUnit **if Free Tier CI minutes stay in budget**.
+- **Persistence / migrations:** **Architect decides** (not Implementer).
+  **Amends** ADR-0005 §7 “JPA or JDBC — Implementer choice” for CRUD.
+
+**Next:** A-BE2 `/architect` finalizes ADR-0005 (`accepted` + pins),
+amends ADR-0001 §6 / ADR-0002 / `architecture.md` banners. S-01a /
+S-01b remain **gated** until ADR-0005 is `accepted`. D-01 unchanged.
+No API scaffold in this task.
+
+---
 
 ## Start Command
 

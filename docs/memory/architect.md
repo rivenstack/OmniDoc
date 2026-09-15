@@ -29,8 +29,9 @@
   — do not silently diverge
 - Split stack vs dual-mode BYOK: ADR-0001 stays stack-level; vault /
   usage / key-resolution belong in a dedicated ADR (ADR-0004 pattern)
-- Backend **application** language is ADR-0005; do not scaffold Node
-  `apps/api` or treat Better Auth as a JVM adapter; `proposed` ≠ accepted
+- Backend **application** language is ADR-0005 (`accepted` 2026-09-15);
+  do not scaffold Node `apps/api` or treat Better Auth as a JVM adapter;
+  `proposed` ≠ accepted until the gate closes
 - OmniDoc customer-BYOK ≠ OpenRouter-upstream-BYOK — never conflate
 - `quota_exhausted` must name the mode (`operator_free_tier` vs
   `customer_key`); silent key mix is a contract violation
@@ -39,3 +40,9 @@
   automatic blockers for a 6-month demo window
 - Cookbook/wizard is UX; Architect owns verify/rotate/revoke vault ports
 - Usage port: `unavailable` is first-class — never invent billing
+- After U-BE accept-with-amendments, Architect must pin CRUD +
+  vector/RLS + migrations before `accepted` — never leave CRUD as
+  Implementer choice when isolation is at stake
+- Year-1 OmniDoc persistence pin: Spring Data JDBC (CRUD) +
+  JdbcTemplate/pgvector-java (vector/RLS) + Flyway; Log4j2 JSON (not
+  Logback); ArchUnit for Java boundaries beside Nx FE tags

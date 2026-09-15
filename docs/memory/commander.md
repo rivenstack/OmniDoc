@@ -62,8 +62,18 @@
 - `@user` 2026-09-15: backend application stack reopened — no Node.js
   API; Java Spring Boot preferred; Python only if clearly better and
   cheap. S-01 (Node `apps/api`) archived blocked before execution.
-  Close-out is R-BE → A-BE → U-BE. Commander never selects Spring Boot.
-  Do not open B-01 on TypeScript ports while ADR-0005 is not accepted.
+  Close-out is R-BE → A-BE → U-BE → **A-BE2**. Commander never selects
+  Spring Boot. Do not open B-01 / S-01b while ADR-0005 is not `accepted`.
+- `@user` 2026-09-15 U-BE: accept ADR-0005 **with amendments** — Java 21
+  + Boot 4.1.x; monorepo Option B (Gradle beside Nx `run-commands`);
+  Spring Security sessions; Spring AI adapters only; Python not Phase 1;
+  Gradle; **Log4j2** (not Logback); tests OK within Free Tier CI minutes;
+  **Architect** pins persistence/migrations. OTel year-1 optional; log
+  sink waits for I-*. A-BE2 completed same day → ADR-0005 `accepted`.
+- **2026-09-15:** `/implementer` rewritten as lane-aware polyglot
+  (Next.js FE + Java/Spring BE). Sync `.cursor` / `.github` / `.opencode`
+  mirrors + `docs/memory/implementer.md`. Do not leave FE-only TypeScript
+  “pending ADR-0001” wording in the agent contract.
 
 ## Phase-Boundary Stewardship
 

@@ -27,7 +27,7 @@ Live status: root [`context.md`](../../context.md). Active assignments:
 |------|-------|----------------|-----------------------------|
 | `frontend` | Frontend developer | `/designer`, then `/implementer` | `docs/design/**` (D-01 only); then `apps/web`, `packages/ui` |
 | `backend` | Backend developer | `/implementer` | Java API module (path per ADR-0005 after U-BE); `packages/mocks` (producer) + `packages/contracts` (with S-02). **Not** Node `apps/api` until/unless U-BE keeps Node |
-| `shared` | Either; **S-01a** after U-BE; R-BE/A-BE/U-BE during close-out | `/researcher` then `/architect` then `@user`; then `/implementer` | Close-out evidence/ADR; then FE Nx scaffold (S-01a) |
+| `shared` | Either; **S-01a** live after A-BE2 | `/implementer` (FE Nx) | FE Nx scaffold (S-01a) |
 | `devops` | Unassigned — split later | — | AWS / deploy / prod secrets. **Not** on the Phase 1 critical path |
 
 **Live concurrency:** one live handoff **per lane**. Two developers may
@@ -36,8 +36,8 @@ differ. Parallel handoffs must not overlap writes.
 
 **API handshake:** Backend authors `docs/api/` + `packages/contracts`.
 Frontend consumes via MSW / `packages/ui` / `apps/web` and must **not**
-import Java domain packages, Spring AI, or provider SDKs. `packages/domain`
-as a TypeScript backend SoT is **reopened** (ADR-0005). Contract changes
+import Java domain packages, Spring AI, or provider SDKs.
+`packages/domain` is **not** the backend SoT (ADR-0005). Contract changes
 follow [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md).
 
 **Local Docker Postgres** is Backend-owned (developer machine). **AWS /
@@ -58,8 +58,8 @@ handoff yet.
 |-------|--------|---------|
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **in progress** | Last planning artifact — visual system + journey specs |
-| Backend Stack Close-out | **in progress** | R-BE → A-BE → U-BE before any API scaffold |
-| 1 Build | **ready** after D-01 + S-01a for journey UI; Backend after U-BE + S-01b | Parallel FE / BE on mocks |
+| Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
+| 1 Build | **in progress** — S-01a / S-01b live; journey UI after D-01 + S-01a | Parallel FE / BE scaffolds + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -76,10 +76,10 @@ Phase 0 (closed)
     → D-01 (frontend /designer)              // continues; no BE-stack dep
     → R-BE (/researcher)                     // Backend Stack Close-out
          → A-BE (/architect, ADR-0005 proposed)
-              → U-BE (@user accept/reject/change)
-                   → C-BE done: tracks below apply
+              → U-BE (@user accept-with-amendments)  // completed
+                   → A-BE2 (/architect, ADR-0005 accepted + pins)
                         → S-01a FE Nx scaffold
-                        → S-01b Java API scaffold (if Java accepted)
+                        → S-01b Java API scaffold
                              → S-02 OpenAPI/SSE
                              → B-01 ports (in API language)
                              → B-02 local Compose Postgres
@@ -119,11 +119,11 @@ or `packages/` source.
 
 ---
 
-## Backend Stack Close-out — before any API scaffold
+## Backend Stack Close-out — **closed** 2026-09-15
 
-Inserted 2026-09-15. **D-01 continues in parallel.** Node `apps/api`
-scaffold is forbidden until U-BE. Spring Boot is a **candidate**, not
-accepted, until ADR-0005 is `accepted`.
+Completed: R-BE → A-BE → U-BE (accept-with-amendments) → A-BE2
+(ADR-0005 `accepted`). **D-01 continues in parallel.** Live scaffolds
+are S-01a / S-01b below.
 
 ### R-BE — Backend language / Spring / auth / ops evidence
 
@@ -151,13 +151,29 @@ Classified evidence only. No vendor selection.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/phase-0b-task-u-be-user.md` |
+| **Status** | **completed** — `docs/handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md` |
 | **Lane** | `shared` (`to: user`) |
 | **Depends on** | A-BE `proposed` |
-| **Blocks** | S-01a, S-01b, B-01+, Java-shaped B-03 |
+| **Blocks** | A-BE2 |
 
-MUST-NOW questions and where to read benefits/adverse: U-BE handoff +
-`docs/research/technical/10–15`.
+`@user` **accepted with amendments:** Java 21 + Boot 4.1.x; monorepo
+Option B (Gradle beside Nx); Spring Security sessions; Spring AI adapters
+only; Python not Phase 1; Gradle; **Log4j2**; tests within Free Tier CI
+minutes; **Architect** pins persistence/migrations. OTel optional;
+log sink waits for I-*.
+
+### A-BE2 — Finalize ADR-0005 (`accepted` + pins)
+
+| | |
+|--|--|
+| **Status** | **completed** — `docs/handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md` |
+| **Lane / agent** | `shared` / `/architect` |
+| **Depends on** | U-BE completed |
+| **Blocks** | (unblocked) S-01a, S-01b |
+
+ADR-0005 `accepted`. Pins: Log4j2; Spring Data JDBC (CRUD);
+JdbcTemplate + pgvector-java 0.1.6 (vector/RLS); Flyway; CI-minute
+budget. ADR-0001 §6 / ADR-0002 amended.
 
 ---
 
@@ -173,16 +189,15 @@ MUST-NOW questions and where to read benefits/adverse: U-BE handoff +
 | **Blocks** | nothing (replaced by S-01a + S-01b) |
 
 Original S-01 assumed a Node `apps/api` health route and TypeScript
-`packages/domain` stubs. **Superseded before execution.** Split below
-after U-BE.
+`packages/domain` stubs. **Superseded before execution.**
 
 ### S-01a — Frontend Nx workspace + boundary CI
 
 | | |
 |--|--|
-| **Status** | listed — gated on U-BE |
+| **Status** | **live** — `docs/handoffs/active/phase-1-task-s-01a-implementer.md` |
 | **Lane / agent** | `shared` / `/implementer` — Frontend reviews `apps/web` + TS tags |
-| **Depends on** | U-BE (ADR-0005 accepted or explicit FE-only amend) |
+| **Depends on** | A-BE2 (ADR-0005 `accepted`) |
 | **Blocks** | F-01+ source work |
 | **Write path** | workspace config, `apps/web`, `packages/ui|contracts|mocks` stubs, TS typecheck/lint/test CI |
 
@@ -195,14 +210,15 @@ boundaries are ArchUnit + CI (S-01b / ADR-0005), not Nx tags.
 
 | | |
 |--|--|
-| **Status** | listed — gated on U-BE accepting a JVM API |
+| **Status** | **live** — `docs/handoffs/active/phase-1-task-s-01b-implementer.md` |
 | **Lane / agent** | `backend` / `/implementer` |
-| **Depends on** | U-BE (ADR-0005 `accepted` with Java API) |
+| **Depends on** | A-BE2 (ADR-0005 `accepted`) |
 | **Blocks** | B-01, B-02 (Compose may start here or with B-02), S-02 authoring from a running health endpoint |
-| **Write path** | Java API module path per ADR-0005; health endpoint; build tool per ADR |
+| **Write path** | `apps/api` JVM (Gradle); health endpoint |
 
-Spring Boot (candidate) health + module layout. **No** production
-OpenRouter adapters. **No** Better Auth.
+Spring Boot health + module layout. **No** production OpenRouter
+adapters. **No** Better Auth. Pins: Java 21, Boot 4.1.x, Gradle,
+Log4j2, ArchUnit baseline.
 
 ### S-02 — Canonical HTTP / OpenAPI / SSE contracts
 
@@ -324,8 +340,8 @@ interfaces in `packages/domain` as the backend SoT.
 Depends: S-01b. PostgreSQL 18; tenants/workspaces/membership;
 notes/versions; RLS on a non-owner, non-`BYPASSRLS` role (ADR-0001 §3).
 **Local Docker Compose Postgres+pgvector is this lane**, not DevOps.
-Migration tool class from ADR-0005 (Flyway vs Liquibase is CAN-WAIT
-unless ADR pins it).
+Migrations: **Flyway** (ADR-0005). CRUD: Spring Data JDBC; vector/RLS:
+JdbcTemplate + pgvector-java.
 
 ### B-03 — Identity adapter (Java auth class per ADR-0005)
 
@@ -460,14 +476,17 @@ only with `@user`. Then Phase 4 hosted demo from the I-* list.
 
 ## Live handoffs (this cycle only)
 
-Commander froze Node S-01. **D-01 continues.** Close-out **U-BE** is
-the live shared assignment. F-* / B-* / S-01a / S-01b stay **listed**
-until U-BE and Commander issues the next implementer handoff.
+Backend Stack Close-out is **complete**. **D-01 continues.** Live
+scaffolds: **S-01a** (FE Nx) and **S-01b** (Java API). Do not overwrite
+D-01 `current.md`.
 
 | ID | Handoff |
 |----|---------|
 | D-01 | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| U-BE | [`docs/handoffs/active/phase-0b-task-u-be-user.md`](../handoffs/active/phase-0b-task-u-be-user.md) |
+| S-01a | [`docs/handoffs/active/phase-1-task-s-01a-implementer.md`](../handoffs/active/phase-1-task-s-01a-implementer.md) |
+| S-01b | [`docs/handoffs/active/phase-1-task-s-01b-implementer.md`](../handoffs/active/phase-1-task-s-01b-implementer.md) |
+| A-BE2 | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md`](../handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md) |
+| U-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md`](../handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md) |
 | R-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md`](../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md) |
 | A-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md`](../handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md) |
 | S-01 (Node API) | archived blocked — [`../handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md) |

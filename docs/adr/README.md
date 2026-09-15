@@ -46,8 +46,8 @@ Until acceptance, Implementer must not scaffold a stack “as decided.”
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `accepted` — §1–§5, §7 (2026-09-14); §6 **library reopened** 2026-09-15 → ADR-0005 |
-| [ADR-0002](./ADR-0002-workspace-and-tooling.md) | Workspace and tooling (Nx, pnpm, app/package layout, boundary enforcement) | `accepted` (FE graph); Node `apps/api` / TS domain SoT **reopened** 2026-09-15 |
+| [ADR-0001](./ADR-0001-frontend-and-platform-stack.md) | Frontend and platform stack | `accepted` — §1–§5, §7 (2026-09-14); §6 port stays; Better Auth library superseded by ADR-0005 (2026-09-15) |
+| [ADR-0002](./ADR-0002-workspace-and-tooling.md) | Workspace and tooling (Nx, pnpm, app/package layout, boundary enforcement) | `accepted` — FE Nx graph; `apps/api` JVM Gradle beside Nx; TS `packages/domain` not backend SoT (A-BE2) |
 | [ADR-0003](./ADR-0003-frontend-application-toolchain.md) | Frontend application toolchain (styling/components, data + state, testing, supporting libraries) | `accepted` |
 | [ADR-0004](./ADR-0004-dual-mode-byok-and-usage.md) | Dual-mode BYOK, vault, usage metering, and key resolution | `accepted` |
-| [ADR-0005](./ADR-0005-backend-application-stack.md) | Backend application stack (Java/Spring candidate) | `proposed` — U-BE |
+| [ADR-0005](./ADR-0005-backend-application-stack.md) | Backend application stack (Java 21 / Spring Boot 4.1.x) | `accepted` 2026-09-15 (U-BE + A-BE2) |

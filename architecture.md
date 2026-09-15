@@ -1,11 +1,13 @@
 # OmniDoc — Architecture Baseline
 
 > Status: **architecture baseline** for Phase 0 close-out. ADR-0001
-> categories 1–5 and 7 are `accepted` (2026-09-14); §6 **library**
-> reopened 2026-09-15 (ADR-0005 `proposed`). Dual-mode BYOK detail in
-> ADR-0004 (`accepted`). ADR-0002 (workspace) remains `accepted` for
-> the **frontend Nx graph**; Node `apps/api` is **not** authorized
-> until U-BE. ADR-0003 (frontend toolchain) remains `accepted`.
+> categories 1–5 and 7 are `accepted` (2026-09-14); §6 identity **port**
+> stays — Better Auth **library** superseded by ADR-0005 (`accepted`,
+> 2026-09-15): Spring Security HTTP-only session cookies. Dual-mode BYOK
+> detail in ADR-0004 (`accepted`). ADR-0002 (workspace) remains
+> `accepted` for the **frontend Nx graph**; `apps/api` is a **JVM Gradle**
+> module beside Nx (not Node). ADR-0003 (frontend toolchain) remains
+> `accepted`. ADR-0005 (backend application stack) is **`accepted`**.
 > Production AI activation and RTL locale remain **gated / deferred**.
 > Stack-specific choices live in
 > [`docs/adr/`](docs/adr/README.md).
@@ -13,11 +15,10 @@
 OmniDoc is a multi-tenant AI/RAG note and knowledge SaaS: capture notes
 and documents, chunk and embed them, then search and ask questions that
 return answers cited to the user’s own sources. Platform class:
-**TypeScript frontend** (Next.js) + **backend application stack pending
-ADR-0005** (Java/Spring `proposed`; Node API not authorized). Primary
-locale: `en` (LTR). RTL / mixed-BiDi support is **deferred, not closed**
-— RTL-readiness remains an invariant. No commerce, payments, shipping,
-or SMS.
+**TypeScript frontend** (Next.js) + **Java 21 / Spring Boot 4.1.x API**
+(ADR-0005 `accepted`). Primary locale: `en` (LTR). RTL / mixed-BiDi
+support is **deferred, not closed** — RTL-readiness remains an
+invariant. No commerce, payments, shipping, or SMS.
 
 ---
 
@@ -46,10 +47,11 @@ ports after evidence, ADR acceptance, and production-activation gates.
 
 **Architecture-ready:** boundary and ports (incl. vault, usage, mode).
 **ADR-accepted stack:** frontend framework, DB, vector, hosting topology,
-provider posture (ADR-0001 §1–§5, §7 / ADR-0004). Auth **library** and
-API language: ADR-0005 `proposed`. **Still gated:** production AI
-activation; RTL locale; backend scaffold until U-BE. **Not yet
-authorized:** Node `apps/api` or Java API module scaffold.
+provider posture (ADR-0001 §1–§5, §7 / ADR-0004); auth **implementation**
+and API language (ADR-0005). **Still gated:** production AI activation;
+RTL locale. **Scaffold:** only via Commander-opened S-01a / S-01b (and
+downstream F-*/B-*) — not from this baseline alone. Node `apps/api` is
+**not** authorized.
 
 ---
 
@@ -281,7 +283,7 @@ sketch, mock path, production path, failure states.
 | **Out** | principal, memberships, roles |
 | **Invariants** | server authority; org context not client-trusted |
 | **Mock** | Fixed users/tenants in fixtures |
-| **Production** | Identity adapter behind this port. **Recorded 2026-09-14:** Better Auth + organization plugin (ADR-0001 §6). **Reopened 2026-09-15:** that library is TypeScript-native; Java API disposition is ADR-0005 (`proposed`) — Spring Security session cookies proposed. Do not implement Better Auth in a JVM API. |
+| **Production** | Identity adapter behind this port. **Accepted 2026-09-15 (ADR-0005):** Spring Security HTTP-only session cookies + first-party organization / workspace / membership / invite tables. Better Auth (ADR-0001 §6 historical library) is **superseded** — do not implement Better Auth in the JVM API. Year-1 SSO still not required. |
 | **Failures** | `unauthenticated`, `forbidden`, `unavailable` |
 
 ### 5.8 Export
@@ -488,10 +490,10 @@ docs and mock adapters.
 | Threat / safety / RAG eval bars | Yes | Concrete libraries |
 | Frontend framework, editor + note SoT | **Accepted** (ADR-0001 §1–2) | Scaffolding via Implementer handoff |
 | DB / vector | **Accepted** (ADR-0001 §3, §4) | Migrations, RLS role PoC |
-| Auth **port** | Ready (`architecture.md` §5.7) | **Library** reopened — ADR-0005; no Better Auth scaffold until U-BE |
+| Auth **port** | Ready (`architecture.md` §5.7) | **Impl accepted** — Spring Security sessions (ADR-0005); no Better Auth |
 | Embedding/LLM dual-mode + BYOK | **Accepted** (ADR-0001 §5 + ADR-0004) | Production AI activation gate; model PoC |
 | Hosting topology class | **Accepted** (ADR-0001 §7 — AWS Free-plan EC2/ECS + RDS + pgvector) | SKU PoC; credit-burn monitoring; no scaffold yet |
-| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted` for FE Nx). Node `apps/api` **not** authorized | ADR-0005 polyglot path after U-BE; S-01a Nx PoC |
+| Directory names / layout | `apps/` + `packages/` per ADR-0002 (`accepted`). `apps/api` = **JVM Gradle** beside Nx (ADR-0005); TS `packages/domain` not backend SoT | S-01a Nx PoC; S-01b Gradle health |
 | Package manager | **Decided: pnpm 12.4.1** (ADR-0002) | — |
 | Production AI / RTL locale | **Not claimed** | Production AI open; RTL deferred not closed |
 
@@ -504,7 +506,7 @@ docs and mock adapters.
 - Workspace + tooling: [`docs/adr/ADR-0002-workspace-and-tooling.md`](docs/adr/ADR-0002-workspace-and-tooling.md) (`accepted`)
 - Frontend application toolchain: [`docs/adr/ADR-0003-frontend-application-toolchain.md`](docs/adr/ADR-0003-frontend-application-toolchain.md) (`accepted`)
 - Dual-mode BYOK + usage: [`docs/adr/ADR-0004-dual-mode-byok-and-usage.md`](docs/adr/ADR-0004-dual-mode-byok-and-usage.md) (`accepted`)
-- Backend application stack: [`docs/adr/ADR-0005-backend-application-stack.md`](docs/adr/ADR-0005-backend-application-stack.md) (`proposed`)
+- Backend application stack: [`docs/adr/ADR-0005-backend-application-stack.md`](docs/adr/ADR-0005-backend-application-stack.md) (`accepted`)
 - Technical evidence: `docs/research/technical/`
 - UX evidence (input): `docs/research/ux/`
 - Frontend contributor contract: `docs/frontend/README.md`

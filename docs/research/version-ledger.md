@@ -2,8 +2,8 @@
 
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
-**Last verified:** 2026-09-15 (Java/Spring R-BE rows); 2026-09-14 (FE/data/tooling)
-**Status:** Evidence — pins are not stack decisions until an accepted ADR says so
+**Last verified:** 2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
+**Status:** Evidence ledger; ADR-accepted pins are binding where an ADR cites them
 
 This file is the **single authority for version-bound claims** in this
 repository. Any document that names a version, a minimum runtime, or a
@@ -70,19 +70,24 @@ still reading as authoritative.
 | Drizzle ORM / Kit | 0.45.2 / 0.31.10 | 2026-03-27 / 2026-03-17 | 2026-09-14 | npm | Illustrative only — ORM is not an ADR-0001 category. |
 | `pg` (node driver) | 8.23.0 | 2026-08-08 | 2026-09-14 | npm | |
 
-## Backend JVM candidates (R-BE — not ADR-accepted)
+## Backend JVM (ADR-0005 `accepted` 2026-09-15)
 
-Evidence only. Do not treat these as stack decisions until ADR-0005 is
-`accepted`.
+Pinned by A-BE2 from R-BE evidence. Boot BOM manages transitive Log4j2 /
+Flyway / Spring Data JDBC versions at scaffold — re-verify BOM pins in
+S-01b and update this table if they diverge from the Boot **4.1.1** line.
 
 | Package / runtime | Version | Released | Verified | Read from | Notes |
 |---|---|---|---|---|---|
-| Spring Boot (current project page) | **4.1.1** | — | 2026-09-15 | spring.io/projects/spring-boot | Boot 4.0.0 GA 2025-11-20 (spring.io blog). 3.5.x still patched (e.g. 3.5.16 on GitHub releases). |
-| Spring AI | **2.0.1** | 2026-08-21 (GitHub release) | 2026-09-15 | spring.io/projects/spring-ai + GitHub releases | Docs: Spring AI **2.0.x** supports Boot **4.0.x and 4.1.x**. Getting-started BOM snippet may still show 2.0.0 — pin the project page version. |
-| Java SE LTS | **21** and **25** | 25 GA 2025-09-16 | 2026-09-15 | oracle.com Java SE support roadmap; openjdk.org/projects/jdk/25 | Choose one LTS in ADR-0005; do not float. |
+| Java SE LTS | **21** | — | 2026-09-15 | oracle.com Java SE support roadmap | ADR-0005 pin (not 25). |
+| Spring Boot | **4.1.1** | — | 2026-09-15 | spring.io/projects/spring-boot | ADR-0005; API + worker runtime. |
+| Spring AI | **2.0.1** | 2026-08-21 (GitHub release) | 2026-09-15 | spring.io/projects/spring-ai + GitHub releases | Adapters only; not domain/corpus SoT. |
 | springdoc-openapi | **3.1.1** | — | 2026-09-15 | springdoc.org | Boot 4 requires springdoc **3.x**. |
-| Spring Security CSRF SPA helper | Security **7** `csrf.spa()` | — | 2026-09-15 | docs.spring.io/spring-security/reference/7.0/servlet/exploits/csrf.html | Candidate for cookie-session BFF. |
-| `com.pgvector:pgvector` | **0.1.6** | — | 2026-09-15 | github.com/pgvector/pgvector-java | JDBC helper; not a SoT. |
+| Spring Security CSRF SPA helper | Security **7** `csrf.spa()` | — | 2026-09-15 | docs.spring.io/spring-security/reference/7.0/servlet/exploits/csrf.html | Session-cookie BFF. |
+| `com.pgvector:pgvector` | **0.1.6** | — | 2026-09-15 | github.com/pgvector/pgvector-java | JDBC helper on vector/RLS path; not a SoT. |
+| Logging | **Log4j2** via `spring-boot-starter-log4j2` | Boot BOM | 2026-09-15 | ADR-0005 (U-BE) | Exclude Logback; JSON structured; never log BYOK keys / note bodies. |
+| Migrations | **Flyway** | Boot BOM | 2026-09-15 | ADR-0005 | Migration role ≠ app role. |
+| CRUD persistence | **Spring Data JDBC** | Boot BOM | 2026-09-15 | ADR-0005 | Not JPA. |
+| Vector / RLS SQL | **JdbcTemplate** + pgvector-java | — | 2026-09-15 | ADR-0005 | Tenant GUC on same connection in a transaction. |
 
 ## Tooling
 

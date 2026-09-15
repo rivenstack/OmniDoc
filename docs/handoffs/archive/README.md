@@ -55,7 +55,8 @@ execution** (`status: blocked`). Live successor for design is **D-01**.
 ## Backend Stack Close-out (2026-09-15)
 
 `H-2026-09-15-P1-S01-commander-implementer.md` (Node `apps/api`) was
-**superseded before execution** (`status: blocked`). R-BE and A-BE
-completed the same day. Live shared successor is **U-BE** (ADR-0005
-gate), then **S-01a** / **S-01b**. See
+**superseded before execution** (`status: blocked`). Backend Stack
+Close-out completed 2026-09-15: R-BE → A-BE → U-BE (accept-with-
+amendments) → A-BE2 (ADR-0005 `accepted`). Live successors: **S-01a** /
+**S-01b** under `docs/handoffs/active/`. See
 `docs/planning/implementation-tracks.md`.

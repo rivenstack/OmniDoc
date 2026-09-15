@@ -2,10 +2,11 @@
 
 - **Status:** `accepted` — categories 1–5 and 7 accepted (1–2 on
   2026-09-14; 3–5, 7 recorded `accepted` 2026-09-14). **§6 identity
-  *library* reopened 2026-09-15** pending
-  [ADR-0005](./ADR-0005-backend-application-stack.md) (`proposed`).
-  Dual-mode BYOK / vault / usage / key-resolution detail: **ADR-0004**
-  (`accepted`). Full record: §Decision record.
+  *port* stays;** Better Auth **library** superseded 2026-09-15 by
+  [ADR-0005](./ADR-0005-backend-application-stack.md) (`accepted`) —
+  Spring Security HTTP-only session cookies. Dual-mode BYOK / vault /
+  usage / key-resolution detail: **ADR-0004** (`accepted`). Full
+  record: §Decision record.
 - **Date:** 2026-09-13 (amended 2026-09-14)
 - **Deciders:** Architect proposes; `@user` accepts / rejects / amends
 - **Consulted evidence:** `docs/research/technical/` (Wave B + Wave C
@@ -34,10 +35,11 @@ platform data/providers/hosting to leave Phase 0: UI framework, note
 editor, relational DB, vector storage, embedding/LLM posture (including
 BYOK), auth/identity **port**, and hosting. The **API application
 language** was implied Node via §6 Better Auth and ADR-0002; that
-implication is **reopened** (ADR-0005, 2026-09-15). Architecture
-requires provider-neutral ports, retrieval-time tenant isolation,
-passage-level citations, and first-class refusal states
-(`architecture.md`). Commerce/SMS/payments are out of scope.
+implication is **closed** by ADR-0005 (`accepted`, 2026-09-15) — Java /
+Spring API; Better Auth library superseded. Architecture requires
+provider-neutral ports, retrieval-time tenant isolation, passage-level
+citations, and first-class refusal states (`architecture.md`).
+Commerce/SMS/payments are out of scope.
 
 Research delivered a non-binding shortlist
 (`docs/research/technical/08-candidate-shortlist.md`) and category
@@ -455,62 +457,73 @@ vendor lock. Exact model IDs are not pinned here.
 
 ### 6. Auth / identity
 
-> **Reopened 2026-09-15.** The **library** (Better Auth 1.7.4) is a
-> TypeScript implementation and cannot be the identity adapter inside a
-> Java API. Product gates below (year-1 SSO not required; server-
-> authoritative orgs) still hold. Disposition of the implementation:
-> [ADR-0005](./ADR-0005-backend-application-stack.md) (`proposed`).
-> Do not scaffold Better Auth until U-BE.
+> **Amended 2026-09-15 (A-BE2).** The **identity port** (server-
+> authoritative membership; year-1 SSO not required; client workspace id
+> is a selector only) remains accepted. The **library** choice
+> **Better Auth 1.7.4** is **superseded** by
+> [ADR-0005](./ADR-0005-backend-application-stack.md) (`accepted`):
+> **Spring Security** HTTP-only session cookies + first-party
+> organization / workspace / membership / invite tables. Do **not**
+> scaffold Better Auth.
 
-**Decision (accepted by `@user` 2026-09-14; Architect status flip
-2026-09-14; library disposition pending ADR-0005):** **Better Auth 1.7.4**
-(self-hosted TypeScript library) with the **organization plugin** was
-the recorded Node/TS API choice.
+**Decision (product gates accepted 2026-09-14; implementation amended
+2026-09-15 via ADR-0005):**
+
+1. **Port / product gates (unchanged):** server-authoritative orgs;
+   year-1 enterprise SSO **not** required; no client-trusted `orgId`
+   authority (`architecture.md` §5.7).
+2. **Implementation (ADR-0005):** Spring Security sessions + SPA CSRF
+   (`csrf.spa()`); first-party membership tables in the Java API.
+3. **Historical record:** Better Auth 1.7.4 + organization plugin was
+   the 2026-09-14 Node/TS API choice; retained below as a superseded
+   alternative, not the binding implementation.
 
 **Year-1 enterprise SSO is not required** — the prior SSO-reopen
-conditional is **removed**. Revisit SSO only if `@user` later mandates
-it.
+conditional remains **removed**. Revisit SSO only if `@user` later
+mandates it.
 
-**Drivers**
+**Drivers (port — still apply)**
 
-- First-class org plugin (members, invites, roles) documented
-  (`06-auth-identity.md`).
-- Self-host aligns with optional portfolio narrative; software free;
-  sessions/DB app-owned (`06`, shortlist).
+- Org/membership model fits tenancy port (`06-auth-identity.md`).
+- Self-host / app-owned sessions align with portfolio narrative.
 - Avoids SMS product flows (out of scope) and keeps org context
   server-side (`06` checklist).
-- Minimal year-1 tenants: honest workspace chrome (REC-18); org plugin
-  still fits without fake enterprise scale.
+- Minimal year-1 tenants: honest workspace chrome (REC-18).
 
 **Alternatives considered**
 
 | Option | Why not primary |
 |--------|-----------------|
+| Better Auth 1.7.4 + org plugin | **Superseded 2026-09-15** — TypeScript library unfit inside the accepted Java API (ADR-0005). |
 | Clerk | Fast org UX; Hobby tier (`06`); lost on managed lock-in, residency uncertainty, and SSO/B2B add-on cost cliffs (`06`). **Fallback** if `@user` prefers managed auth and accepts sub-processor. |
-| Keycloak | Full IdP (`06`); lost on ops burden for solo/portfolio (`06`, shortlist) while year-1 SSO is not required. |
-| Auth.js alone | Viable DIY (`06`); lost because org/RBAC is push-to-project — treat as style under Better Auth, not equal product. |
+| Keycloak / Spring Authorization Server | Full IdP (`06`, `12`); lost on ops burden while year-1 SSO is not required. |
+| Auth.js alone | Viable DIY for a Node API (`06`); moot under Java — not equal product. |
+| JWT resource server as default | Worse default for browser SPA unless `@user` prefers tokens (ADR-0005). |
 
 **Consequences**
 
-- Liked: portable schema; org model fits tenancy port.
-- Disliked: project owns security ops/maturity risk (`06`); must
-  implement cookie flags, rotation, invite abuse controls explicitly.
+- Liked: identity **port** stable across language change; one membership
+  authority in the Java API.
+- Disliked: project owns cookie flags, CSRF, rotation, invite abuse
+  controls, and membership schema (no Better Auth plugin).
 
 **Migration / rollback**
 
 - Identity port abstracts sessions; migrate to Clerk/Keycloak later via
   adapter + session invalidation window.
-- Rollback risk: user password hashes / IdP subjects — plan export.
+- Rollback to Better Auth implies restoring a Node identity surface —
+  treat as a reopen, not a toggle (ADR-0005).
 
 **Security / privacy**
 
-- IDOR tests: user A token + user B org selector → 403 (`06` PoC plan).
+- IDOR tests: user A session + user B org selector → 403 (`06` / B-12).
 - No client-trusted `orgId` authority (`architecture.md`).
 
 **Verification**
 
-- PoC invite + role-gated note list; logout revoke; session flags.
-- Falsify if Better Auth org plugin cannot express workspace ACL for
+- PoC invite + role-gated note list; logout revoke; session cookie flags
+  + CSRF for SPA.
+- Falsify if session + membership tables cannot express workspace ACL for
   retrieval-time isolation without disproportionate custom work.
 
 ---
@@ -595,7 +608,7 @@ SKU.
 | 3 | Database | **PostgreSQL 18** + shared schema + app scoping + RLS defense-in-depth | `accepted` 2026-09-14 |
 | 4 | Vector | **pgvector** in Postgres (ledger **0.8.6**; confirm RDS matrix at scaffold) | `accepted` 2026-09-14 |
 | 5 | Embedding/LLM | Ports + mocks first; OpenRouter operator free-tier **gateway**; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT — detail **ADR-0004** | `accepted` 2026-09-14 |
-| 6 | Auth | **Better Auth 1.7.4** + organization plugin; year-1 SSO **not** required | `accepted` 2026-09-14; **library reopened** 2026-09-15 → ADR-0005 |
+| 6 | Auth | **Port:** year-1 SSO **not** required; server-authoritative orgs. **Impl:** Spring Security sessions (ADR-0005); Better Auth library **superseded** | Port `accepted` 2026-09-14; library disposition `accepted` via ADR-0005 2026-09-15 |
 | 7 | Hosting | AWS Free-plan topology class: **EC2 and/or ECS + RDS Postgres + pgvector**; Railway/Render not default; VPS fallback only if AWS cannot cover 6 months; data region none | `accepted` 2026-09-14 |
 
 ---
@@ -631,7 +644,7 @@ Wave C evidence: `05`, `07`, `09`, shortlist. UX constraints: REC-13…19.
 | Relational DB | PostgreSQL 18; shared schema + app scoping + RLS DiD |
 | Vector | pgvector in Postgres |
 | Embedding/LLM | See §5 + **ADR-0004** (`accepted`) |
-| Auth | Better Auth 1.7.4 + org plugin; year-1 SSO not required — **implementation reopened 2026-09-15 (ADR-0005)** |
+| Auth | Port: year-1 SSO not required; server-authoritative orgs. Impl: Spring Security sessions (ADR-0005 `accepted`); Better Auth superseded |
 | Hosting | AWS Free-plan EC2/ECS + RDS + pgvector topology class; no SKU pin |
 | Year-1 tenants | Minimal; honest workspaces; collab much later |
 | Demo corpus | Public labelled sample workspace + clone-and-run fixtures |
@@ -649,8 +662,9 @@ Wave C evidence: `05`, `07`, `09`, shortlist. UX constraints: REC-13…19.
 - Exact AWS Free-plan credit-burn PoC and OpenRouter model-quality PoC
   — Implementer / activation-time work, not ADR blockers for accepting
   topology class / gateway choice
-- **Backend application stack / ADR-0005** — `@user` U-BE; Node API
-  not authorized while this ADR's §6 library is in reopen
+- **Backend application stack / ADR-0005** — `accepted` 2026-09-15
+  (A-BE2); Node API not authorized; scaffold via S-01b when Commander
+  opens it
 
 ### Follow-through owned elsewhere
 
