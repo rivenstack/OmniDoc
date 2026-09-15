@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {},
+  "include": ["next-env.d.ts", "next.config.mjs", "app/**/*.ts", "app/**/*.tsx", "vitest.config.ts"]
+}

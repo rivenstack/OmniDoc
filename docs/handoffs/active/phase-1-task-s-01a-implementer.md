@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-15-P1-S01A
 affinity: implementation
 track: parallel
-status: ready
+status: completed
 phase: "1"
 task: "S-01a"
 lane: shared
@@ -130,3 +130,58 @@ D-01 `/designer` remains on `docs/handoffs/current.md` — do not replace it.
 5. Do **not** overwrite `docs/handoffs/current.md`.
 6. Persist next handoff only if Commander authorized; otherwise return
    to `/commander` for integration.
+
+## Outcome (2026-09-15, branch `feat/s-01a-fe-nx-workspace`)
+
+Scaffold complete. All acceptance criteria met; violations reverted;
+`docs/handoffs/current.md` untouched; no Node API; no overlap with
+S-01b write paths.
+
+**Graph:** Nx 23.2.1 + pnpm 12.4.1 + Node `>=24` (`.nvmrc` = `24`;
+reference machine runs 26.4.0, within `engines`). Projects
+(`nx show projects`): `web` (`scope:app`), `ui` + `contracts`
+(`scope:shared`), `mocks` (`scope:tooling`). `apps/web` is a Next.js
+16.3.5 App Router stub with a single `lang`/`dir` source
+(`app/locale.ts`, `en`/`ltr`), logical-CSS-only stub stylesheet, and
+`bdi` on the identifier fragment. Stubs only in
+`packages/ui|contracts|mocks`; no design tokens (F-01), no OpenAPI
+(S-02), no corpus (S-03), no `packages/domain`.
+
+**`@nx/next` PoC:** no generator gap on versions — `@nx/next@23.2.1`
+peers `next >=14 <17`, which covers pinned Next 16.3.5. The scaffold
+was authored directly (not via the generator) to avoid accepting
+opinionated generator output wholesale per ADR-0002; `@nx/next` is a
+root devDependency so the generator is available for F-* work.
+
+**Verification (run, not claimed):**
+
+- `pnpm typecheck` — 4/4 pass (`tsc --noEmit`, per-project configs)
+- `pnpm lint` — 4/4 pass (flat config + TS preset +
+  `@nx/enforce-module-boundaries`)
+- `pnpm test` — 4/4 pass (vitest stubs: locale pin, package exports)
+- `nx run web:build` — `next build` succeeds, `/` prerenders static
+- Deliberate violation 1: `import OpenAI from "openai"` in
+  `apps/web/app/page.tsx` → `error A project tagged with "scope:app"
+  is not allowed to import "openai"`, eslint exit 1. Reverted; the
+  temporary `openai` devDependency was removed (`pnpm remove -w`);
+  lockfile carries no provider SDK.
+- Deliberate violation 2: `apps/web` → `@omnidoc/mocks`
+  (`scope:tooling`) → `error ... can only depend on libs tagged with
+  "scope:shared"`, eslint exit 1. Reverted.
+- `git status` confirms: no `apps/api/`, no Better Auth, no secrets,
+  no `.env` values (placeholders only in `.env.example`).
+
+**Adjacent fixes inside Allowed Write Paths:** `docs/frontend/README.md`
+refreshed (ADR-0005 `accepted`, no `packages/domain`, S-01a presence,
+`ci-frontend.yml` existence). FE CI added as
+`.github/workflows/ci-frontend.yml` (typecheck/lint/test; JVM-safe
+name). Nx cache redirected to `node_modules/.cache/nx` so no
+`.gitignore` change was needed.
+
+**Notes for Commander:** pnpm 12 records build approval as
+`allowBuilds: { nx: true }` in `pnpm-workspace.yaml` (tracked;
+`onlyBuiltDependencies` in `package.json` is ignored by pnpm 12).
+Boundary proof detail: the rule only reports installed npm packages,
+so violation 1 needed the temporary install. `pnpm-lock.yaml` is new
+and must be committed with this branch. Not committed — awaiting
+Commander review/PR.

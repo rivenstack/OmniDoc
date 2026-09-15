@@ -23,6 +23,7 @@ storybook-static/
 
 # Caches
 .cache/
+.nx/
 .parcel-cache/
 .eslintcache
 .stylelintcache

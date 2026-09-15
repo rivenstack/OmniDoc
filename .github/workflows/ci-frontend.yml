@@ -1,0 +1,34 @@
+name: ci-frontend
+
+# S-01a — frontend-only CI (typecheck / lint / test over the Nx JS graph).
+# Named `ci-frontend` so the parallel S-01b JVM workflow can land beside
+# it without conflict. Nx Cloud stays off (local cache only, ADR-0002).
+on:
+  push:
+    branches: [
+        main,
+        # develop,
+        # "feat/**",
+        # "fix/**",
+        # "chore/**"
+      ]
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test

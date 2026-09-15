@@ -50,3 +50,19 @@
   Flyway; Log4j2 JSON; Python not Phase 1.
 - Two `/implementer` sessions OK when `lane` and write paths differ
   (frontend vs backend).
+- **2026-09-15 (S-01a):** pnpm 12 ignores the `pnpm` key in
+  `package.json` — build approval lives as `allowBuilds:` in
+  `pnpm-workspace.yaml` (`pnpm approve-builds <pkg>` writes it there).
+- **2026-09-15 (S-01a):** `@nx/eslint-plugin@23.2.1`
+  `enforce-module-boundaries` schema puts `bannedExternalImports` and
+  `allowedExternalImports` **per depConstraint** (not top-level) and
+  names the tag list `onlyDependOnLibsWithTags` (not `onlyDependOn`).
+  The rule bails silently on **uninstalled** npm imports — proving the
+  banned-external path needs the package temporarily installed.
+- **2026-09-15 (S-01a):** `flat/typescript` needs `@eslint/js` +
+  `typescript-eslint` peers; `flat/react` additionally pulls
+  `eslint-plugin-import` et al. — base+typescript suffices for
+  boundary-only lint.
+- **2026-09-15 (S-01a):** keep Nx cache under `node_modules/.cache/nx`
+  via `cacheDirectory` to avoid touching `.gitignore` outside
+  Allowed Write Paths.
