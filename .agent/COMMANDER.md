@@ -53,8 +53,12 @@ At the start of every meaningful session, read in this order:
 1. [`context.md`](../context.md) — live phase, status, blockers, gates
 2. [`architecture.md`](../architecture.md) — boundaries and invariants
 3. [`AGENTS.md`](../AGENTS.md) — roster, CX-first, extension-first, ownership
-4. Active handoff — [`docs/handoffs/current.md`](../docs/handoffs/current.md)
-   and/or the assigned file under [`docs/handoffs/active/`](../docs/handoffs/active/)
+4. Active handoff — Commander index
+   [`docs/handoffs/current.md`](../docs/handoffs/current.md) **and** the
+   assigned lane head under
+   [`docs/handoffs/active/lane-*.md`](../docs/handoffs/active/) (FE/BE).
+   During dual-track build, `current.md` is an integration board, not an
+   implementer work ticket.
 5. [`docs/planning/implementation-tracks.md`](../docs/planning/implementation-tracks.md)
    when doing Phase 1+ work
 6. **Accepted** ADRs cited by the handoff under [`docs/adr/`](../docs/adr/)

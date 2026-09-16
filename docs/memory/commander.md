@@ -4,8 +4,13 @@
 
 - Read live context and `docs/planning/implementation-tracks.md`
   before planning
-- Keep **one live handoff per lane**; the full owned backlog lives in
-  the program of record — do not hide remaining work as “downstream”
+- Keep **one live handoff per lane** at stable paths
+  (`lane-frontend.md`, `lane-backend.md`); `current.md` is the Commander
+  integration index during dual-track build — not an implementer work
+  ticket. The full owned backlog lives in the program of record — do
+  not hide remaining work as “downstream”
+- FE and BE iterate same-lane until a soft-stop on cross-lane / infra
+  deps; Commander alone unblocks across lanes (e.g. S-02 → F-02)
 - Preserve dependency order and explicit gates
 - Return major outputs to Commander for validation and routing
 - Curate shared memory at phase boundaries
@@ -70,10 +75,12 @@
   Gradle; **Log4j2** (not Logback); tests OK within Free Tier CI minutes;
   **Architect** pins persistence/migrations. OTel year-1 optional; log
   sink waits for I-*. A-BE2 completed same day → ADR-0005 `accepted`.
-- **2026-09-15:** `/implementer` rewritten as lane-aware polyglot
-  (Next.js FE + Java/Spring BE). Sync `.cursor` / `.github` / `.opencode`
-  mirrors + `docs/memory/implementer.md`. Do not leave FE-only TypeScript
-  “pending ADR-0001” wording in the agent contract.
+- `@user` 2026-09-16: dual-lane heads — after D-01 + S-01a/b close,
+  `current.md` is Commander index only; live work is always
+  `docs/handoffs/active/lane-frontend.md` (front-end programmer) and
+  `lane-backend.md` (back-end programmer). Same-lane iteration until
+  soft-stop on cross-lane / infra. Do not put F-*/B-* bodies into
+  `current.md`.
 
 ## Phase-Boundary Stewardship
 

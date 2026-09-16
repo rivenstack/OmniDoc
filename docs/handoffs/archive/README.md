@@ -15,7 +15,8 @@ Examples:
 
 ## Rules
 
-1. Before replacing `docs/handoffs/current.md`, copy the consumed file
+1. Before rewriting a stable `docs/handoffs/active/lane-*.md` head (or
+   replacing the Commander index `current.md`), copy the consumed file
    here and set `status: completed` or `status: blocked`
 2. Add a short outcome summary at the top or bottom of the archived copy
 3. Do not edit archived handoffs after they become historical truth
@@ -24,8 +25,9 @@ Examples:
    bodies — so `/phase-check` ledger integrity stays verifiable.
 4. A ready handoff superseded before execution is archived as
    `status: blocked` with an outcome noting supersession — not failure
-5. Parallel handoffs are archived when Commander integrates them after
-   Wave completion
+5. Lane handoffs are archived on each same-lane iteration; Commander
+   keeps `current.md` as the dual-lane integration index during Phase 1+
+   build
 
 See `../README.md` for the full protocol.
 

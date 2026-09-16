@@ -15,9 +15,11 @@ gated / deferred.
 `packages/domain` TypeScript SoT. Close-out: **R-BE → A-BE → U-BE**
 before any API scaffold. Do **not** execute archived S-01.
 
-Live status: root [`context.md`](../../context.md). Active assignments:
-[`docs/handoffs/current.md`](../handoffs/current.md) and
-[`docs/handoffs/active/`](../handoffs/active/).
+Live status: root [`context.md`](../../context.md). Commander index:
+[`docs/handoffs/current.md`](../handoffs/current.md). Live work:
+[`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md)
+and
+[`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md).
 
 ---
 
@@ -27,12 +29,17 @@ Live status: root [`context.md`](../../context.md). Active assignments:
 |------|-------|----------------|-----------------------------|
 | `frontend` | Frontend developer | `/designer`, then `/implementer` | `docs/design/**` (D-01 only); then `apps/web`, `packages/ui` |
 | `backend` | Backend developer | `/implementer` | Java API module (path per ADR-0005 after U-BE); `packages/mocks` (producer) + `packages/contracts` (with S-02). **Not** Node `apps/api` until/unless U-BE keeps Node |
-| `shared` | Either; **S-01a** live after A-BE2 | `/implementer` (FE Nx) | FE Nx scaffold (S-01a) |
+| `shared` | Either; use only for true shared slices | `/implementer` | Paths listed on the handoff only |
 | `devops` | Unassigned — split later | — | AWS / deploy / prod secrets. **Not** on the Phase 1 critical path |
 
-**Live concurrency:** one live handoff **per lane**. Two developers may
-each have one `/implementer` session if `lane` and Allowed Write Paths
-differ. Parallel handoffs must not overlap writes.
+**Live concurrency:** one live handoff **per lane** at stable paths
+`lane-frontend.md` / `lane-backend.md` (optional `lane-shared.md` /
+`lane-devops.md`). Two developers may each have one `/implementer`
+session if `lane` and Allowed Write Paths differ. Same-lane iteration
+continues until a soft-stop on a cross-lane or infra dependency.
+`current.md` is the Commander integration index during dual-track build
+— not an implementer work ticket. Parallel handoffs must not overlap
+writes.
 
 **API handshake:** Backend authors `docs/api/` + `packages/contracts`.
 Frontend consumes via MSW / `packages/ui` / `apps/web` and must **not**
@@ -57,9 +64,9 @@ handoff yet.
 | Phase | Status | Meaning |
 |-------|--------|---------|
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
-| Design close-out (D-01) | **in progress** | Last planning artifact — visual system + journey specs |
+| Design close-out (D-01) | **closed** | Visual system + journey specs — Commander-accepted 2026-09-16 |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — S-01a / S-01b live; journey UI after D-01 + S-01a | Parallel FE / BE scaffolds + mocks |
+| 1 Build | **in progress** — F-01 + B-01 live dual-lane | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -99,10 +106,10 @@ Phase 0 (closed)
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/current.md` |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md` (Commander-accepted 2026-09-16) |
 | **Lane / agent** | `frontend` / `/designer` |
 | **Depends on** | Phase 0 (done) |
-| **Blocks** | F-01+ journey UI. Does **not** block R-BE, S-01a, or B-01+ |
+| **Blocks** | F-01+ journey UI (F-01 now unblocked). Did **not** block R-BE, S-01a, or B-01+ |
 | **Write path** | `docs/design/**`; may extend `quality/ui-qa-checklist.md` without weakening it |
 
 Create implementation-ready specs for capture, organize, retrieve, ask,
@@ -195,10 +202,10 @@ Original S-01 assumed a Node `apps/api` health route and TypeScript
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/phase-1-task-s-01a-implementer.md` |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
 | **Lane / agent** | `shared` / `/implementer` — Frontend reviews `apps/web` + TS tags |
 | **Depends on** | A-BE2 (ADR-0005 `accepted`) |
-| **Blocks** | F-01+ source work |
+| **Blocks** | F-01+ source work (now unblocked) |
 | **Write path** | workspace config, `apps/web`, `packages/ui|contracts|mocks` stubs, TS typecheck/lint/test CI |
 
 Nx 23.2.1, pnpm 12.4.1, Node 24 for the **JS graph only**.
@@ -210,7 +217,7 @@ boundaries are ArchUnit + CI (S-01b / ADR-0005), not Nx tags.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/phase-1-task-s-01b-implementer.md` |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
 | **Lane / agent** | `backend` / `/implementer` |
 | **Depends on** | A-BE2 (ADR-0005 `accepted`) |
 | **Blocks** | B-01, B-02 (Compose may start here or with B-02), S-02 authoring from a running health endpoint |
@@ -261,9 +268,17 @@ Postgres, AWS, or S-01b.
 
 ### F-01 — Design tokens + shadcn primitives
 
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | D-01, S-01a |
+| **Blocks** | F-02+ (also need S-02) |
+| **Write path** | `packages/ui/**`; needed `apps/web` token wiring; `docs/frontend/README.md` |
+
 Depends: D-01, S-01a. Map D-01 tokens into `packages/ui` (Tailwind 4 +
 shadcn/Base UI). Refresh stale ADR status in `docs/frontend/README.md`
-(§6 auth implementation may still be in ADR-0005 close-out).
+(§6 auth implementation is ADR-0005 Spring sessions).
 
 ### F-02 — App shell, nav, locale, honest workspace switcher
 
@@ -330,10 +345,19 @@ May start **B-01** as soon as **S-01b** lands — **no design dependency**.
 
 ### B-01 — Domain port interfaces
 
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-backend.md` |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | S-01b |
+| **Blocks** | Clarifies S-02; B-03+ need S-02 |
+| **Write path** | `apps/api/**` port packages |
+
 Depends: S-01b. Language-native port interfaces for `architecture.md`
-§5.1–§5.11 **inside the API module** (Java if ADR-0005 accepts JVM),
-aligned with S-02 OpenAPI. No production adapters. **Not** TypeScript
-interfaces in `packages/domain` as the backend SoT.
+§5.1–§5.11 **inside the API module** (Java), aligned with S-02 OpenAPI.
+No production adapters. **Not** TypeScript interfaces in
+`packages/domain` as the backend SoT. Next same-lane handoff after B-01:
+**S-02**, then **B-02**.
 
 ### B-02 — Postgres schema + RLS + local Compose
 
@@ -476,15 +500,17 @@ only with `@user`. Then Phase 4 hosted demo from the I-* list.
 
 ## Live handoffs (this cycle only)
 
-Backend Stack Close-out is **complete**. **D-01 continues.** Live
-scaffolds: **S-01a** (FE Nx) and **S-01b** (Java API). Do not overwrite
-D-01 `current.md`.
+D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
+`current.md` is the Commander integration index only.
 
 | ID | Handoff |
 |----|---------|
-| D-01 | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| S-01a | [`docs/handoffs/active/phase-1-task-s-01a-implementer.md`](../handoffs/active/phase-1-task-s-01a-implementer.md) |
-| S-01b | [`docs/handoffs/active/phase-1-task-s-01b-implementer.md`](../handoffs/active/phase-1-task-s-01b-implementer.md) |
+| Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
+| F-01 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
+| B-01 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| D-01 | archived accepted — [`../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md`](../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md) |
+| S-01a | archived completed — [`../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md) |
+| S-01b | archived completed — [`../handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md) |
 | A-BE2 | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md`](../handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md) |
 | U-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md`](../handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md) |
 | R-BE | archived completed — [`../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md`](../handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md) |
@@ -497,6 +523,6 @@ D-01 `current.md`.
 
 - [`architecture.md`](../../architecture.md) — ports, tenancy, fixtures
 - [`docs/adr/README.md`](../adr/README.md) — accepted and proposed decisions
-- [`docs/adr/ADR-0005-backend-application-stack.md`](../adr/ADR-0005-backend-application-stack.md) — backend stack (`proposed`)
+- [`docs/adr/ADR-0005-backend-application-stack.md`](../adr/ADR-0005-backend-application-stack.md) — backend stack (`accepted`)
 - [`docs/handoffs/README.md`](../handoffs/README.md) — `lane:` protocol
 - [`quality/ui-qa-checklist.md`](../../quality/ui-qa-checklist.md)

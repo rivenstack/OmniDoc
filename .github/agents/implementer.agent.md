@@ -22,8 +22,11 @@ Read, in order:
 1. `context.md`
 2. `architecture.md`
 3. `AGENTS.md`
-4. The assigned handoff (`docs/handoffs/current.md` or
-   `docs/handoffs/active/…`) — note **`lane:`** and Allowed Write Paths
+4. The assigned lane handoff (`docs/handoffs/active/lane-frontend.md`
+   or `lane-backend.md`; optional `lane-shared.md` / `lane-devops.md`) —
+   note **`lane:`** and Allowed Write Paths. During dual-track build,
+   `docs/handoffs/current.md` is the Commander index, not an implementer
+   work ticket
 5. `docs/planning/implementation-tracks.md` (write-path boundaries)
 6. Accepted ADRs for the assigned area:
    - Frontend / shared FE: ADR-0001 §1–§5, §7; ADR-0002 (FE graph);
@@ -199,13 +202,15 @@ Before ending your task:
 1. Follow `docs/handoffs/README.md`.
 2. Update only files listed in the handoff Allowed Write Paths (parallel
    tasks typically must not touch `context.md` or `current.md`).
-3. For a main-track task, archive the consumed `docs/handoffs/current.md`
-   and replace it with the complete next handoff.
-4. For a parallel task, update the assigned file under
-   `docs/handoffs/active/` and do not overwrite `current.md` unless
-   explicitly authorized.
-5. Never leave the next-agent handoff only in chat.
-6. Your final response must state the handoff path and the one-line
+3. For lane work, archive the consumed handoff to `archive/`, then either
+   rewrite the **same** `docs/handoffs/active/lane-*.md` with the next
+   same-lane slice (when Completion Instructions authorize and deps are
+   satisfied) or set `status: blocked` with Outcome `waiting on <ID>`
+   when soft-stopped on the other lane / infra. Do not overwrite the
+   other lane’s head. Do not overwrite `current.md` unless explicitly
+   authorized.
+4. Never leave the next-agent handoff only in chat.
+5. Your final response must state the handoff path and the one-line
    Cursor start command.
 
 The persisted handoff must target exactly one of `/commander`,

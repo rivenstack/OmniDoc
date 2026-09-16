@@ -78,8 +78,13 @@ Always read, in order:
 - Route completed phases to `/phase-check`.
 - Route commercial, legal, scope, or unresolved tradeoff decisions to `@user`.
 - Update `context.md` when phase status or active tasks change.
-- Write every main-track assignment to `docs/handoffs/current.md`; write parallel assignments to one file each under `docs/handoffs/active/`.
-- Archive consumed handoffs before replacing them and never rely on chat text as the only handoff record.
+- Write lane work to stable heads under `docs/handoffs/active/`
+  (`lane-frontend.md`, `lane-backend.md`, optional `lane-shared.md` /
+  `lane-devops.md`). Keep `docs/handoffs/current.md` as the Commander
+  **integration index** during dual-track build — not an implementer
+  work ticket.
+- Archive consumed lane handoffs before rewriting the same `lane-*.md`
+  path; never rely on chat text as the only handoff record.
 
 ## Planning Rules
 
@@ -139,8 +144,12 @@ Before ending your task:
 
 1. Follow `docs/handoffs/README.md`.
 2. Update `context.md` only with concise task status, blockers, readiness, and the active handoff path.
-3. For a main-track task, archive the consumed `docs/handoffs/current.md` and replace it with the complete next handoff.
-4. For a parallel task, update the assigned file under `docs/handoffs/active/` and do not overwrite `current.md` unless explicitly authorized.
+3. For lane work, archive the consumed handoff and rewrite the same
+   `docs/handoffs/active/lane-*.md` path with the next same-lane slice
+   (or set `status: blocked` when waiting on a cross-lane dependency).
+4. Update `docs/handoffs/current.md` as the Commander integration index
+   (lane pointers + cross-lane deps); do not put F-*/B-* work bodies
+   into `current.md` during dual-track build.
 5. Never leave the next-agent handoff only in chat.
 6. Your final response must state the handoff path and the one-line start command (e.g. `/commander ...`, `/researcher ...`).
 

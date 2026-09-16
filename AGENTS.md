@@ -74,7 +74,15 @@ Researcher + UX Researcher → Architect → Designer → Implementer → Phase 
 
 Two research streams may feed architecture; they are not co-owners.
 Commander assigns exactly one primary owner per handoff.
-`context.md` and `docs/handoffs/current.md` control live status.
+
+**Phase 1+ dual-track:** Front-end programmer and back-end programmer
+iterate in parallel via stable lane heads
+`docs/handoffs/active/lane-frontend.md` and
+`docs/handoffs/active/lane-backend.md`. Same-lane iteration continues
+until a cross-lane or infra dependency soft-stops the lane. Commander
+integrates via `docs/handoffs/current.md` (index only — not an
+implementer work ticket). `context.md` plus the live lane heads control
+status.
 
 ## Shared context load order
 
@@ -87,8 +95,8 @@ At the start of every meaningful session, read in this order:
 1. `context.md` — live phase, status, blockers, gates
 2. `architecture.md` — boundaries and invariants
 3. `AGENTS.md` — this file (roster and ownership rules)
-4. Active handoff — `docs/handoffs/current.md` and/or
-   `docs/handoffs/active/…`
+4. Active handoff — Commander index `docs/handoffs/current.md` and the
+   assigned `docs/handoffs/active/lane-*.md` (FE or BE)
 5. `docs/planning/implementation-tracks.md` when doing Phase 1+ work
 6. Cited **accepted** ADRs under `docs/adr/`
 7. `MEMORY.md` + `docs/memory/<role>.md` — supporting only

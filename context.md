@@ -35,12 +35,12 @@ Validate at minimum:
 
 ## Current Phase
 
-**Design close-out (D-01) + Phase 1 scaffolds (S-01a / S-01b)**
+**Phase 1 Build — dual-lane implementation**
 
-Goal: finish visual specs (D-01) while Implementers scaffold the
-polyglot monorepo — **S-01a** FE Nx and **S-01b** Java API. Dual-mode
-BYOK ports stay; production adapters dark. Hosted AWS and live
-OpenRouter remain DevOps / Phase 3–4.
+Goal: Front-end programmer owns F-*; back-end programmer owns B-* (and
+backend-authored S-02/S-03). D-01 design close-out and S-01a/S-01b
+scaffolds are **closed**. Dual-mode BYOK ports stay; production adapters
+dark. Hosted AWS and live OpenRouter remain DevOps / Phase 3–4.
 
 Program of record:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -53,13 +53,9 @@ Program of record:
   are the plan of record
 - **2026-09-15:** Backend Stack Close-out **complete** — U-BE
   accept-with-amendments → A-BE2 → ADR-0005 `accepted`
-- **Active:** **D-01** `/designer` (`lane: frontend`); **S-01a**
-  `/implementer` (`lane: shared`); **S-01b** `/implementer`
-  (`lane: backend`)
-- `/implementer` agent contract rewritten as lane-aware polyglot
-  (Next.js + Java/Spring) — `.cursor` / `.github` / `.opencode` mirrors
+- **2026-09-16:** D-01 **Commander-accepted**; S-01a and S-01b **completed**
+  and archived. Dual-lane heads opened: F-01 (FE) + B-01 (BE)
 - Production AI / OpenRouter live calls are **not** authorized
-- Nothing is scaffolded yet; no secrets in the repo
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02)
 
@@ -90,14 +86,11 @@ Program of record:
 | Task | Lane | Owner | Status | Handoff |
 |------|------|-------|--------|---------|
 | 0.1–0.9 | — | (see archive) | completed | `docs/handoffs/archive/` |
-| D-01 Visual system + journey UI specs | frontend | Designer | ready | `docs/handoffs/current.md` |
-| S-01 Nx workspace (Node `apps/api`) | shared | Implementer | **blocked** (superseded) | `docs/handoffs/archive/H-2026-09-15-P1-S01-commander-implementer.md` |
-| R-BE Backend stack evidence | shared | Researcher | completed | `docs/handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md` |
-| A-BE ADR-0005 proposed | shared | Architect | completed | `docs/handoffs/archive/H-2026-09-15-P0B-ABE-commander-architect.md` |
-| U-BE Accept ADR-0005 | shared | `@user` | completed | `docs/handoffs/archive/H-2026-09-15-P0B-UBE-commander-user.md` |
-| A-BE2 Finalize ADR-0005 | shared | Architect | completed | `docs/handoffs/archive/H-2026-09-15-P0B-ABE2-commander-architect.md` |
-| S-01a FE Nx + boundary CI | shared | Implementer | ready | `docs/handoffs/active/phase-1-task-s-01a-implementer.md` |
-| S-01b Java API scaffold | backend | Implementer | ready | `docs/handoffs/active/phase-1-task-s-01b-implementer.md` |
+| D-01 Visual system + journey UI specs | frontend | Designer | **completed** (Commander-accepted) | `docs/handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md` |
+| S-01a FE Nx + boundary CI | shared | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
+| S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
+| F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
+| B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -106,8 +99,8 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 
 - Production AI/provider activation remains gated (mock-first CX)
 - RTL locale support remains deferred, not closed
-- F-01 waits on D-01 + **S-01a**; B-01 waits on **S-01b**
-- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not D-01/S-01*
+- **F-02+** waits on **S-02** (backend-authored after B-01)
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-01/B-01
 - DevOps I-* have no human owner yet
 
 ## Open Gates
@@ -128,6 +121,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - ADR-0002 Node `apps/api` / TS domain SoT → JVM Gradle + Java ports
 - ADR-0005 backend application stack → `accepted`
 
+**Closed 2026-09-16**
+
+- D-01 design package → Commander-accepted (bounded gaps in
+  `docs/design/traceability.md` §6 remain open; do not block F-01)
+- S-01a / S-01b scaffolds → completed
+
 **Still open / standing**
 
 - **RTL locale support** — deferred, not closed
@@ -135,13 +134,13 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   validation
 - UT-1…UT-22 — unrun hypotheses (0.8b added UT-15…22)
 - Exact AWS Free-plan service graph / credit-burn PoC — I-03 (unassigned)
-- Nx `@nx/next` generator vs Next 16.3.5 — S-01a PoC
 - DevOps I-* human split — later
 
 ## Active Handoffs
 
-- Main track: `docs/handoffs/current.md` → `/designer` (D-01, `lane: frontend`)
-- Parallel: `docs/handoffs/active/phase-1-task-s-01a-implementer.md` →
-  `/implementer` (S-01a, `lane: shared`)
-- Parallel: `docs/handoffs/active/phase-1-task-s-01b-implementer.md` →
-  `/implementer` (S-01b, `lane: backend`)
+- **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
+  dual-lane board only; not an implementer work ticket
+- **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
+  `/implementer` (F-01, `lane: frontend`, human: front-end programmer)
+- **Backend lane:** `docs/handoffs/active/lane-backend.md` →
+  `/implementer` (B-01, `lane: backend`, human: back-end programmer)
