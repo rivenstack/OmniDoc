@@ -66,3 +66,19 @@
 - **2026-09-15 (S-01a):** keep Nx cache under `node_modules/.cache/nx`
   via `cacheDirectory` to avoid touching `.gitignore` outside
   Allowed Write Paths.
+- **2026-09-16 (S-01b):** Boot **4.1.1** Initializr maps Web →
+  `spring-boot-starter-webmvc` (not `spring-boot-starter-web`). MockMvc
+  autoconfigure lives under
+  `org.springframework.boot.webmvc.test.autoconfigure`. Prefer MockMvc
+  over TestRestTemplate unless also adding `spring-boot-restclient`
+  (`RestTemplateBuilder` moved).
+- **2026-09-16 (S-01b):** ArchUnit 1.4+ fails empty `should()` sets —
+  keep at least one class in `com.omnidoc.api.web` (e.g. marker) or set
+  `allowEmptyShould(true)`. Deliberate Spring AI leak proof needs a
+  temporary `org.springframework.ai` artifact on the classpath.
+- **2026-09-16 (S-01b):** put `.gradle/` in `apps/api/.gitignore` rather
+  than editing root `.gitignore` outside Allowed Write Paths. Option B
+  Gradle-at-`apps/api` + Nx `run-commands` works without `@nx/gradle`.
+- **2026-09-16 (S-01b):** exclude `UserDetailsServiceAutoConfiguration`
+  on the scaffold app so Security does not log a generated password
+  before B-03 session wiring.
