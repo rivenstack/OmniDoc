@@ -1,9 +1,14 @@
-/* S-01a stub stylesheet.
-   LTR-now / RTL-readiness: logical properties only. No physical
-   left/right in shared layout chrome. */
+/* App stylesheet — Tailwind v4 entry comes from the design system.
+   F-01 replaced the S-01a stub stylesheet: tokens and Tailwind now live in
+   `packages/ui` (`@omnidoc/ui/styles/globals.css` → `tokens.css`), so the
+   app has exactly one Tailwind entry and one token authority. */
 
+@import "@omnidoc/ui/styles/globals.css";
+
+/* S-01a scaffold class, still used by `app/page.tsx`. Now expressed with
+   D-01 layout tokens and logical properties only (LTR-now / RTL-ready). */
 .shell {
   margin-inline: auto;
-  padding-inline: 1rem;
-  max-inline-size: 60rem;
+  padding-inline: var(--od-space-4);
+  max-inline-size: var(--od-layout-content-max);
 }

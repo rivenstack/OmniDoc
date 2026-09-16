@@ -1,0 +1,419 @@
+/* ==========================================================================
+   OmniDoc design tokens — F-01
+   --------------------------------------------------------------------------
+   Authority: docs/design/foundations/tokens.md (D-01, Commander-accepted
+   2026-09-16). This file is the single implementation mirror of that
+   document. Do not add token names or values that are not in D-01.
+
+   Stack: Tailwind CSS 4.3.3 + shadcn/ui on Base UI (ADR-0003).
+   Locale: `en` (LTR) only. RTL is deferred, not closed — every declaration
+   here is direction-neutral (logical properties, remapped by role).
+
+   Three layers, per D-01 §1:
+     layer 1  --od-<scale>-<step>   primitives (never used by components)
+     layer 2  --od-<role> / shadcn  semantic roles (what components consume)
+     layer 3  --od-<component>-<part> component tokens (added only on need)
+
+   Tailwind bridge note
+   --------------------
+   Tailwind v4 only generates utilities for known namespaces (`--color-*`,
+   `--font-*`, `--radius-*`, `--shadow-*`, `--ease-*`). The `@theme inline`
+   block near the bottom re-exposes the D-01 roles under those namespaces as
+   strict 1:1 aliases, so copied-in shadcn components (`bg-background`,
+   `text-muted-foreground`, `rounded-md`, …) resolve to D-01 values. It adds
+   no new values and no new roles.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Primitive scales — D-01 §2.1 (color) and §3 (type families)
+   Declared in `@theme` so they are emitted once as CSS custom properties.
+   Components must not consume these directly.
+   -------------------------------------------------------------------------- */
+@theme {
+  /* Neutral (slate-leaning, cool) */
+  --od-neutral-0: oklch(1 0 0);
+  --od-neutral-50: oklch(0.985 0.002 265);
+  --od-neutral-100: oklch(0.968 0.004 265);
+  --od-neutral-200: oklch(0.93 0.006 265);
+  --od-neutral-300: oklch(0.87 0.008 265);
+  --od-neutral-400: oklch(0.7 0.01 265);
+  --od-neutral-500: oklch(0.56 0.012 265);
+  --od-neutral-600: oklch(0.45 0.013 265);
+  --od-neutral-700: oklch(0.36 0.013 265);
+  --od-neutral-800: oklch(0.265 0.012 265);
+  --od-neutral-900: oklch(0.185 0.01 265);
+  --od-neutral-950: oklch(0.13 0.008 265);
+
+  /* Accent — single product accent (calm, non-neon) */
+  --od-accent-400: oklch(0.72 0.13 250);
+  --od-accent-500: oklch(0.62 0.16 252);
+  --od-accent-600: oklch(0.54 0.17 254);
+
+  /* Status */
+  --od-success-500: oklch(0.62 0.13 155);
+  --od-warning-500: oklch(0.75 0.14 80);
+  --od-danger-500: oklch(0.58 0.19 25);
+  --od-info-500: oklch(0.62 0.13 240);
+
+  /* Typeface — D-01 §3. System UI stack for body/UI; one mono family for
+     code and identifiers. No webfont (performance + no network font). */
+  --od-font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --od-font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+
+  /* Type scale — D-01 §3.1. Split into size / leading / weight because a
+     single custom property cannot carry three CSS values; roles and numbers
+     are unchanged. `--od-text-body` also gives Tailwind `text-od-body`. */
+  --od-text-display: 2.25rem;
+  --od-text-display-leading: 1.15;
+  --od-text-display-weight: 650;
+
+  --od-text-h1: 1.75rem;
+  --od-text-h1-leading: 1.2;
+  --od-text-h1-weight: 620;
+
+  --od-text-h2: 1.375rem;
+  --od-text-h2-leading: 1.25;
+  --od-text-h2-weight: 600;
+
+  --od-text-h3: 1.125rem;
+  --od-text-h3-leading: 1.3;
+  --od-text-h3-weight: 600;
+
+  --od-text-body: 1rem;
+  --od-text-body-leading: 1.6;
+  --od-text-body-weight: 400;
+
+  --od-text-body-sm: 0.875rem;
+  --od-text-body-sm-leading: 1.55;
+  --od-text-body-sm-weight: 400;
+
+  --od-text-caption: 0.8125rem;
+  --od-text-caption-leading: 1.45;
+  --od-text-caption-weight: 500;
+
+  --od-text-micro: 0.75rem;
+  --od-text-micro-leading: 1.4;
+  --od-text-micro-weight: 500;
+
+  /* Reading measure — D-01 §3.1 / §4 */
+  --od-measure-reading: 68ch;
+
+  /* Spacing — D-01 §4, 4px base grid. These steps are identical to
+     Tailwind's default spacing scale, so no bridge is required; they are
+     declared so authors can name the grid explicitly. */
+  --od-space-0: 0;
+  --od-space-1: 0.25rem;
+  --od-space-2: 0.5rem;
+  --od-space-3: 0.75rem;
+  --od-space-4: 1rem;
+  --od-space-5: 1.25rem;
+  --od-space-6: 1.5rem;
+  --od-space-8: 2rem;
+  --od-space-10: 2.5rem;
+  --od-space-12: 3rem;
+  --od-space-16: 4rem;
+
+  /* Layout constants — D-01 §4. The sidebar row gives two values
+     (expanded / rail); they are split into two names so both are usable. */
+  --od-layout-sidebar: 15rem;
+  --od-layout-sidebar-rail: 3.25rem;
+  --od-layout-reading: 68ch;
+  --od-layout-citation-rail: 22rem;
+  --od-layout-content-max: 80rem;
+  --od-layout-composer-max: 46rem;
+
+  /* Radius — D-01 §5 */
+  --od-radius-xs: 0.25rem;
+  --od-radius-sm: 0.375rem;
+  --od-radius-md: 0.5rem;
+  --od-radius-lg: 0.75rem;
+  --od-radius-full: 9999px;
+
+  /* Elevation — D-01 §5. Hierarchical only; never signals trust level. */
+  --od-elevation-0: none;
+  --od-elevation-1: 0 1px 2px oklch(0 0 0 / 0.06);
+  --od-elevation-2: 0 4px 12px oklch(0 0 0 / 0.08);
+  --od-elevation-3: 0 12px 32px oklch(0 0 0 / 0.12);
+
+  /* Motion — D-01 §6. Durations/easings only; every consumer must resolve
+     to a static equivalent under `prefers-reduced-motion: reduce` (§6.1). */
+  --od-duration-instant: 80ms;
+  --od-duration-fast: 140ms;
+  --od-duration-base: 200ms;
+  --od-duration-slow: 320ms;
+  --od-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --od-ease-emphasis: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* --------------------------------------------------------------------------
+   2. Semantic roles — D-01 §2.2 (light theme)
+   Uses shadcn's variable contract so copied-in components theme correctly.
+   -------------------------------------------------------------------------- */
+:root {
+  --background: var(--od-neutral-0);
+  --foreground: var(--od-neutral-900);
+
+  --card: var(--od-neutral-0);
+  --card-foreground: var(--od-neutral-900);
+
+  --popover: var(--od-neutral-0);
+  --popover-foreground: var(--od-neutral-900);
+
+  --primary: var(--od-accent-600);
+  --primary-foreground: var(--od-neutral-0);
+
+  --secondary: var(--od-neutral-100);
+  --secondary-foreground: var(--od-neutral-800);
+
+  --muted: var(--od-neutral-100);
+  --muted-foreground: var(--od-neutral-600);
+
+  --accent: var(--od-neutral-100);
+  --accent-foreground: var(--od-neutral-900);
+
+  --destructive: var(--od-danger-500);
+  --destructive-foreground: var(--od-neutral-0);
+
+  --border: var(--od-neutral-200);
+  --input: var(--od-neutral-200);
+  --ring: var(--od-accent-500);
+
+  /* OmniDoc domain roles */
+  --od-surface-canvas: var(--od-neutral-50);
+  --od-surface-raised: var(--od-neutral-0);
+  --od-surface-sunken: var(--od-neutral-100);
+  --od-text-primary: var(--od-neutral-900);
+  --od-text-secondary: var(--od-neutral-600);
+  --od-text-tertiary: var(--od-neutral-500);
+  --od-focus-ring: var(--od-accent-500);
+
+  --od-status-supported: var(--od-success-500);
+  --od-status-partial: var(--od-warning-500);
+  --od-status-unsupported: var(--od-neutral-500);
+  --od-status-conflict: var(--od-warning-500);
+  --od-status-error: var(--od-danger-500);
+  --od-status-info: var(--od-info-500);
+}
+
+/* --------------------------------------------------------------------------
+   3. Semantic roles — D-01 §2.3 (dark theme)
+   Driven by `next-themes` with `attribute="class"`. All theming is
+   token-level: no component may branch on theme in JS.
+   -------------------------------------------------------------------------- */
+.dark {
+  --background: var(--od-neutral-950);
+  --foreground: var(--od-neutral-50);
+  --card: var(--od-neutral-900);
+  --card-foreground: var(--od-neutral-50);
+  --popover: var(--od-neutral-900);
+  --popover-foreground: var(--od-neutral-50);
+  --primary: var(--od-accent-400);
+  --primary-foreground: var(--od-neutral-950);
+  --secondary: var(--od-neutral-800);
+  --secondary-foreground: var(--od-neutral-100);
+  --muted: var(--od-neutral-800);
+  --muted-foreground: var(--od-neutral-400);
+  --accent: var(--od-neutral-800);
+  --accent-foreground: var(--od-neutral-50);
+  --border: oklch(1 0 0 / 0.12);
+  --input: oklch(1 0 0 / 0.16);
+  --ring: var(--od-accent-400);
+  --od-surface-canvas: var(--od-neutral-950);
+  --od-surface-raised: var(--od-neutral-900);
+  --od-surface-sunken: oklch(0 0 0 / 0.28);
+  --od-text-primary: var(--od-neutral-50);
+  --od-text-secondary: var(--od-neutral-300);
+  --od-text-tertiary: var(--od-neutral-400);
+}
+
+/* --------------------------------------------------------------------------
+   4. Tailwind bridge — 1:1 aliases only (no new values, no new roles)
+   Required because Tailwind v4 generates utilities from fixed namespaces.
+   Dark-mode remapping stays in `.dark` above; these aliases use `inline` so
+   they resolve at use time instead of snapshotting the light values.
+   -------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-od-surface-canvas: var(--od-surface-canvas);
+  --color-od-surface-raised: var(--od-surface-raised);
+  --color-od-surface-sunken: var(--od-surface-sunken);
+  --color-od-text-primary: var(--od-text-primary);
+  --color-od-text-secondary: var(--od-text-secondary);
+  --color-od-text-tertiary: var(--od-text-tertiary);
+  --color-od-focus-ring: var(--od-focus-ring);
+
+  --color-od-status-supported: var(--od-status-supported);
+  --color-od-status-partial: var(--od-status-partial);
+  --color-od-status-unsupported: var(--od-status-unsupported);
+  --color-od-status-conflict: var(--od-status-conflict);
+  --color-od-status-error: var(--od-status-error);
+  --color-od-status-info: var(--od-status-info);
+
+  --font-sans: var(--od-font-sans);
+  --font-mono: var(--od-font-mono);
+
+  /* D-01 radius roles override Tailwind's own defaults so copied-in
+     components (`rounded-sm|md|lg`) land on design-system values. */
+  --radius-xs: var(--od-radius-xs);
+  --radius-sm: var(--od-radius-sm);
+  --radius-md: var(--od-radius-md);
+  --radius-lg: var(--od-radius-lg);
+
+  --shadow-od-0: var(--od-elevation-0);
+  --shadow-od-1: var(--od-elevation-1);
+  --shadow-od-2: var(--od-elevation-2);
+  --shadow-od-3: var(--od-elevation-3);
+
+  --ease-standard: var(--od-ease-standard);
+  --ease-emphasis: var(--od-ease-emphasis);
+
+  /* Text scale roles as `text-od-<role>` utilities. */
+  --text-od-display: var(--od-text-display);
+  --text-od-display--line-height: var(--od-text-display-leading);
+  --text-od-display--font-weight: var(--od-text-display-weight);
+
+  --text-od-h1: var(--od-text-h1);
+  --text-od-h1--line-height: var(--od-text-h1-leading);
+  --text-od-h1--font-weight: var(--od-text-h1-weight);
+
+  --text-od-h2: var(--od-text-h2);
+  --text-od-h2--line-height: var(--od-text-h2-leading);
+  --text-od-h2--font-weight: var(--od-text-h2-weight);
+
+  --text-od-h3: var(--od-text-h3);
+  --text-od-h3--line-height: var(--od-text-h3-leading);
+  --text-od-h3--font-weight: var(--od-text-h3-weight);
+
+  --text-od-body: var(--od-text-body);
+  --text-od-body--line-height: var(--od-text-body-leading);
+
+  --text-od-body-sm: var(--od-text-body-sm);
+  --text-od-body-sm--line-height: var(--od-text-body-sm-leading);
+
+  --text-od-caption: var(--od-text-caption);
+  --text-od-caption--line-height: var(--od-text-caption-leading);
+  --text-od-caption--font-weight: var(--od-text-caption-weight);
+
+  --text-od-micro: var(--od-text-micro);
+  --text-od-micro--line-height: var(--od-text-micro-leading);
+  --text-od-micro--font-weight: var(--od-text-micro-weight);
+}
+
+/* Dark mode variant. Registered once, here, so every component's `dark:`
+   utilities resolve against the same `.dark` class the token remap uses. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------------------------------------
+   5. Base layer — D-01 §6.1 (reduced motion) and §7 (a11y contract)
+   -------------------------------------------------------------------------- */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--od-font-sans);
+    font-size: var(--od-text-body);
+    line-height: var(--od-text-body-leading);
+  }
+
+  /* Focus ring: 2px ring + 2px offset, per D-01 §7 and the a11y spec.
+     Declared centrally so no component can ship an invisible focus state. */
+  :focus-visible {
+    outline: 2px solid var(--od-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Single global reduced-motion rule (D-01 §6.1). Per-component
+     `motion-reduce:` utilities are layered on top; this guarantees no
+     animation survives if a component forgets its fallback. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Content-shape utilities — D-01 §3.1, §3.2, §3.3 and §7.3
+   These expose D-01 rules that are not expressible as a single Tailwind
+   utility. They add no token values.
+   -------------------------------------------------------------------------- */
+
+/* Answer/note prose caps at the reading measure even on wide desktop. */
+@utility od-reading-measure {
+  max-inline-size: var(--od-measure-reading);
+}
+
+/* Tabular figures for usage counters, offsets, timestamps, token counts. */
+@utility od-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Long unbroken strings (tokens, base64-like fragments) must never cause
+   horizontal page scroll. `word-break: normal` keeps normal prose wrapping. */
+@utility od-unbroken {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Isolation hook for identifiers, code tokens, URLs, key prefixes, usage /
+   request ids, and user-generated fragments placed next to numbers or
+   chassis punctuation (D-01 §3.2, a11y spec §7.3).
+   Prefer the native `<bdi>` element; use this utility when the element
+   cannot be changed (e.g. inside a syntax-highlighted token). */
+@utility od-isolate {
+  unicode-bidi: isolate;
+}
+
+/* Logical inline sizing for full-width form controls. D-01 §4 / a11y §7.2
+   require `inline-size` over the physical `width`, so form controls use this
+   instead of `w-full`. */
+@utility od-inline-full {
+  inline-size: 100%;
+}

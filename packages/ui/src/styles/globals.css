@@ -1,0 +1,26 @@
+/* ==========================================================================
+   OmniDoc — Tailwind v4 entry point (ADR-0003)
+   --------------------------------------------------------------------------
+   This is the canonical CSS entry for the design system. Applications import
+   it rather than declaring Tailwind themselves:
+
+     apps/web/app/globals.css
+       @import "@omnidoc/ui/styles/globals.css";
+
+   ADR-0003 note: Tailwind v4 keeps its config in CSS, so `components.json`
+   leaves the `tailwind.config` key empty and points `tailwind.css` here.
+   ========================================================================== */
+
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Tailwind's automatic source detection roots at the consuming project and
+   ignores `node_modules`. `packages/ui` is consumed through a pnpm symlink in
+   `node_modules`, so its component source must be registered explicitly or
+   component classes would silently not be generated. */
+@source "../components";
+@source "../providers";
+@source "../lib";
+
+/* The app tree that renders these components. */
+@source "../../../../apps/web/app";

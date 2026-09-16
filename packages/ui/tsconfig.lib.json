@@ -1,7 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // Shared base keeps `preserve` for Next; this package is a component
+    // library consumed by other bundlers/tests, so it uses the automatic
+    // React 19 runtime.
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }

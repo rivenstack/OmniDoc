@@ -74,6 +74,7 @@ pin below was registry-verified on 2026-09-14).
 | Workspace | Nx 23.2.1, `apps/` + `packages/`, boundaries enforced | [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md) |
 | Package manager | pnpm 12.4.1 | ADR-0002 |
 | Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) — **frontend / Nx graph only**. API runtime is Java 21 (ADR-0005 `accepted`) | ADR-0002 / ADR-0005 |
+| Auth / session | Identity **port** on the frontend. Implementation is **Spring Security HTTP-only session cookies** in the Java API plus first-party membership tables — **not** Better Auth | [ADR-0001 §6](../adr/ADR-0001-frontend-and-platform-stack.md) / [ADR-0005](../adr/ADR-0005-backend-application-stack.md) |
 | Styling / components | Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI `@base-ui/react` 1.8.0 | [ADR-0003](../adr/ADR-0003-frontend-application-toolchain.md) |
 | Data / state | RSC + Server Actions first; Zustand 5.0.15 for editor/UI state; **no client cache library in v1** | ADR-0003 |
 | Testing | Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + `@axe-core/playwright` 4.13.0 + MSW 2.15.0 + Storybook 10.6.0 | ADR-0003 |
@@ -91,6 +92,19 @@ Notes that matter day to day:
   decides the data-ownership question (ADR-0002 §Security).
 - Component source is **copy-in and owned** in `packages/ui`; upgrades
   are per-component reconciliations, not dependency bumps.
+- **Identity has no frontend library.** The client talks to an identity
+  **port**; the implementation is Spring Security HTTP-only session
+  cookies served by the Java API (ADR-0005). Do **not** add `better-auth`
+  (or any other auth library) to the frontend graph — the historical
+  Better Auth *library* choice in ADR-0001 §6 was superseded; only the
+  identity **port** survives. The workspace id is a **selector** only;
+  membership is resolved server-side and a mismatch is a 403, not a
+  frontend fallback.
+- **Tokens live in `packages/ui/src/styles/`.** `tokens.css` is the single
+  D-01 mirror and `globals.css` is the only Tailwind v4 entry; the app
+  imports it rather than declaring Tailwind itself. Register UI-package
+  component source with `@source` when adding new directories, or classes
+  generated there will silently go missing.
 
 ### Still pending / open
 
@@ -181,9 +195,10 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a (Next.js stub; journeys land in F-01+) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; D-01 tokens and providers wired in F-01. Journey UI lands in F-02+ (live status: [`context.md`](../../context.md)) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
-| `packages/ui/`, `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — stubbed by S-01a; real content in F-01 / S-02 / S-03 |
+| `packages/ui/` | Design system: D-01 tokens (`src/styles/`) and copied-in shadcn/Base UI components (F-01 landed the token layer + foundation primitives) |
+| `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
 | `packages/domain/` | **Not created** — not the backend SoT (ADR-0005); domain ports live as Java interfaces in `apps/api` |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture baseline (ports, tenancy, fixtures) + accepted stack packages |
 | [`docs/adr/`](../adr/) | Decision records; ADR-0001 §1–§5, §7 `accepted`; §6 port stays / library superseded; ADR-0002 FE graph `accepted`; ADR-0005 `accepted` |
@@ -197,10 +212,10 @@ Confirmed by [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md)
 module is S-01b-owned.
 
 ```text
-apps/web/                 # Next.js 16.3.5 UI application (S-01a stub)
+apps/web/                 # Next.js 16.3.5 UI application (scaffold; D-01 tokens + providers wired)
 apps/api/                 # JVM Gradle module — Spring Boot API / workers (ADR-0005);
                           # S-01b-owned; never a Node app
-packages/ui/              # shadcn/ui components + design tokens (copy-in, owned)
+packages/ui/              # D-01 design tokens + shadcn/ui components (copy-in, owned)
 packages/contracts/       # shared request/response/stream types (OpenAPI → TS)
 packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
@@ -430,10 +445,11 @@ Concrete work that needs **no further decisions**:
 4. **Draft an accessibility checklist** for the four journeys (capture,
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
-5. **Collect design-token input** — lists of semantic roles (surface,
-   text, accent, danger, focus ring, etc.) and motion preferences. The
-   framework is already decided (Tailwind CSS 4.3.3, ADR-0003); supply
-   semantic roles, not a framework choice.
+5. **Extend the D-01 design system** — the token layer and foundation
+   primitives already live in `packages/ui`
+   ([`docs/design/foundations/tokens.md`](../design/foundations/tokens.md)
+   is the token authority). Read the component inventory before adding
+   anything; do not invent components, tokens, or IA outside it.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.
@@ -442,7 +458,8 @@ Concrete work that needs **no further decisions**:
 
 ### Still blocked until their implementation handoffs
 
-- FE journey source work beyond the S-01a stub (F-01+; needs D-01 specs)
+- FE journey source work (F-02+; tokens and primitives landed in F-01, and
+  F-02 also needs the S-02 contracts)
 - Implementing production provider adapters
 - Shipping an RTL locale
 - Adopting anything on ADR-0003's deferred list (client cache library,
