@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-14-P1-D01
 affinity: design
 track: main
-status: ready
+status: completed
 phase: "1"
 task: "D-01"
 lane: frontend
@@ -152,3 +152,87 @@ workspace scaffold files, `docs/handoffs/active/**` (S-01).
 4. Do **not** open F-01, S-02, or any Implementer journey task —
    Commander integrates D-01 + S-01 and opens the next **frontend** live
    handoff (F-01) from `docs/planning/implementation-tracks.md`.
+
+---
+
+## Outcome
+
+**Status:** completed — 2026-09-16
+**Owner:** `/designer` (lane `frontend`)
+
+### Delivered
+
+`docs/design/**` created (16 files). No `apps/` or `packages/` source
+written; no provider SDK implied.
+
+| File                                                  | Deliverable                                                                                                                                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/design/README.md`                               | Package index, authority, non-negotiable rules, stack mapping, non-claims                                                                                                                     |
+| `docs/design/foundations/tokens.md`                   | Color/type/spacing/elevation/radius/motion tokens → Tailwind v4 + shadcn contract; light+dark via `next-themes`; Base UI `Direction` as the single direction source; a11y contract for tokens |
+| `docs/design/foundations/content-and-voice.md`        | Microcopy system: three-axis mode × corpus × source labelling, refusal/partial copy, streaming+AT copy, failure template, cookbook/usage copy, workspace copy                                 |
+| `docs/design/shell/app-shell-and-navigation.md`       | Auth shell (desktop + mobile), nav, command palette, honest workspace/switcher at n≈1 (REC-18), members panel, shell error/loading                                                            |
+| `docs/design/journeys/capture.md`                     | Write-first TipTap capture, paste/import parity, save-confidence states, ingestion, mixed-content handling                                                                                    |
+| `docs/design/journeys/organize.md`                    | Inbox-first light structure, optional collections/labels, bulk actions, tenant-safe moves                                                                                                     |
+| `docs/design/journeys/retrieve.md`                    | Search/hybrid UX, filters, snippet safety, true/filtered/indexing no-result split, pivot-to-Ask                                                                                               |
+| `docs/design/journeys/ask.md`                         | Composer, answer card, passage-level citation loop (rail/sheet), all five answer states, streaming+AT, save/copy/feedback, mobile verify path                                                 |
+| `docs/design/dual-mode/mode-corpus-and-usage.md`      | Mode spine, three labelling axes, mode switching with payer confirmation, compact usage strip + honest `unavailable`, no-ZDR copy                                                             |
+| `docs/design/dual-mode/cookbook-wizard.md`            | Chapter index, create-elsewhere→paste→verify→first-Ask→manage flow, write-once masked prefix, rotate/revoke, a11y gate                                                                        |
+| `docs/design/dual-mode/failure-states.md`             | Failure taxonomy + 13-entry catalogue, mode-named copy template, no silent payer fallback, recovery map                                                                                       |
+| `docs/design/states/empty-loading-error-indexing.md`  | Empty inventory (E1–E10), loading skeletons, error classes, indexing/import progress, state×journey matrix                                                                                    |
+| `docs/design/states/sample-vs-mine.md`                | Corpus label system, surfaces, public sample rules, clone fixtures, first-run flow, 60-second portfolio script                                                                                |
+| `docs/design/accessibility/a11y-and-rtl-readiness.md` | Focus contract, keyboard map, SR patterns, reduced motion, contrast, RTL-readiness discipline (logical CSS + `bdi` + single `lang`/`dir`), per-component matrix                               |
+| `docs/design/components/inventory.md`                 | `packages/ui` component inventory (names + states + source: shadcn / shadcn+ / custom) across 11 groups                                                                                       |
+| `docs/design/traceability.md`                         | REC-01…REC-19 → spec, architecture → spec, acceptance mapping, QA cross-reference, preserved gates, bounded open questions                                                                    |
+
+Also extended: `quality/ui-qa-checklist.md` with §9 (dual-mode/mode
+honesty/corpus labelling), §10 (enterprise-scale + commerce honesty), and
+§11 (design-spec conformance). Existing §1–§8 unchanged — extended, not
+weakened.
+
+Durable lessons recorded in `docs/memory/designer.md`.
+
+### Acceptance
+
+- Specs trace to REC-01…REC-19 and architecture ports — ✅ `traceability.md` §1–§2
+- Four journeys + dual-mode surfaces have implementation-ready states — ✅ `journeys/*`, `dual-mode/*`, `states/*`, component inventory
+- LTR-now excellence; RTL-readiness discipline documented — ✅ `accessibility/…` §7 + per-journey RTL sections
+- Accessibility specified as a gate, not polish — ✅ `accessibility/…` §1/§9; per-journey a11y gates; checklist §1–§3
+- No application source generated — ✅ only `docs/design/**`, checklist, memory, this Outcome
+- No provider SDK implied in the client — ✅ `README.md` non-negotiable 1; `components/inventory.md` §13
+
+### MCP usage
+
+Figma MCP (`plugin-figma-figma`), GSAP Master, and Canva MCP were **not
+used** for this task. D-01 is a docs-only specification deliverable with
+no visual-asset or motion-prototype dependency, so repo-native Markdown
+specs were sufficient; none of these MCPs were consulted and none were
+required to close a gate. No `needsAuth` state was encountered because no
+MCP call was made.
+
+### Gates preserved (unchanged by D-01)
+
+- Production AI / provider activation — **open**; mock-first is the
+  designed default surface
+- RTL locale — **deferred, not closed**; readiness discipline specified
+  only, no claim of shipped RTL
+- UT-1…UT-22 — **unrun hypotheses**, not findings
+- AWS / hosted deploy, provider/host/model selection — untouched
+
+### Bounded gaps returned to Commander
+
+Not blocking F-01; detailed in `docs/design/traceability.md` §6:
+
+1. Cookbook chapter data (tool names, external steps, verify-probe
+   meaning) depends on `docs/api/` (S-02); shell ships with a
+   `Coming soon` variant meanwhile.
+2. Usage fields available per live mode are provider-dependent; design
+   specifies honest `available`/`unavailable` states.
+3. Sample-workspace deletion semantics (hide vs delete) affect one empty-state copy.
+4. Exact role vocabulary for the members panel should be confirmed against
+   the identity port when S-02 lands.
+
+### Next
+
+`/commander` — accept or return the design package and integrate D-01
+with S-01. F-01 (frontend journey implementation) is unblocked by D-01
+but still waits on **S-01a**. D-01 did **not** open F-01/S-02.
