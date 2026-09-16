@@ -1,0 +1,24 @@
+# OmniDoc API (S-01b scaffold)
+#
+# Free Tier RSS: prefer -Xmx256m for local/demo JVMs (bootRun default).
+# I-03 owns hosted SKU PoC — do not treat 256m as a production pin.
+
+server:
+  port: ${API_PORT:8080}
+
+spring:
+  application:
+    name: omnidoc-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+# Logging: Log4j2 (see log4j2-spring.xml). Never log BYOK keys or note bodies.
+logging:
+  config: classpath:log4j2-spring.xml

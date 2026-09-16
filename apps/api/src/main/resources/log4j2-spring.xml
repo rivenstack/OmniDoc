@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OmniDoc Log4j2 stub (ADR-0005).
+  Redaction rules (must hold when vault / note write paths land):
+  - NEVER emit BYOK / customer API keys or Authorization bearer material
+  - NEVER emit note bodies, chunk text, or full prompt/completion payloads
+  - Correlation id + tenant/workspace ids are OK
+  JSON-oriented PatternLayout stub; upgrade to JsonTemplateLayout when I-* picks a sink.
+-->
+<Configuration status="WARN">
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern='{"timestamp":"%d{ISO8601}","level":"%p","logger":"%c{1.}","message":"%enc{%m}{JSON}","thread":"%t"}%n'/>
+		</Console>
+	</Appenders>
+	<Loggers>
+		<Root level="INFO">
+			<AppenderRef ref="Console"/>
+		</Root>
+		<Logger name="com.omnidoc" level="INFO" additivity="false">
+			<AppenderRef ref="Console"/>
+		</Logger>
+	</Loggers>
+</Configuration>

@@ -48,7 +48,7 @@ RTL-readiness discipline (see [Non-negotiables](#stack-independent-non-negotiabl
 ### Settled (do not re-litigate)
 
 - Product identity: multi-tenant AI/RAG note & knowledge SaaS
-- Platform class: TypeScript **frontend**; API language pending [ADR-0005](../adr/ADR-0005-backend-application-stack.md) (`proposed`)
+- Platform class: TypeScript **frontend** (Next.js); API is Java 21 / Spring Boot 4.1.x [ADR-0005](../adr/ADR-0005-backend-application-stack.md) (`accepted` 2026-09-15)
 - Primary locale: `en` (LTR); no secondary locale in Phase 0
 - Customer-experience-first: validate journeys with realistic mocks before
   production AI/provider activation
@@ -59,7 +59,7 @@ RTL-readiness discipline (see [Non-negotiables](#stack-independent-non-negotiabl
 - Agent roster, handoff protocol, and one-owner rule
 - No secrets in the repository
 
-### Settled stack (accepted 2026-09-14)
+### Settled stack (accepted 2026-09-14; backend application stack accepted 2026-09-15)
 
 These are **binding**. Source of truth:
 [`docs/adr/`](../adr/README.md) and
@@ -73,7 +73,7 @@ pin below was registry-verified on 2026-09-14).
 | Note source of truth | TipTap/ProseMirror **JSON**; markdown only via one canonical serializer (export + chunking) | ADR-0001 §2 |
 | Workspace | Nx 23.2.1, `apps/` + `packages/`, boundaries enforced | [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md) |
 | Package manager | pnpm 12.4.1 | ADR-0002 |
-| Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) — **frontend / Nx**. JVM API pending ADR-0005 | ADR-0002 / ADR-0005 |
+| Runtime | Node 24 LTS (`engines.node >= 24`, `.nvmrc` = `24`) — **frontend / Nx graph only**. API runtime is Java 21 (ADR-0005 `accepted`) | ADR-0002 / ADR-0005 |
 | Styling / components | Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI `@base-ui/react` 1.8.0 | [ADR-0003](../adr/ADR-0003-frontend-application-toolchain.md) |
 | Data / state | RSC + Server Actions first; Zustand 5.0.15 for editor/UI state; **no client cache library in v1** | ADR-0003 |
 | Testing | Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + `@axe-core/playwright` 4.13.0 + MSW 2.15.0 + Storybook 10.6.0 | ADR-0003 |
@@ -94,17 +94,13 @@ Notes that matter day to day:
 
 ### Still pending / open
 
-`ADR-0001` is **`accepted (partial)`**: categories 1–2 are binding,
-categories 3–7 remain `proposed`:
+`ADR-0001` categories 1–5 and 7 are **`accepted`**; §6 keeps the
+identity **port** while the Better Auth **library** is superseded by
+Spring Security sessions ([ADR-0005](../adr/ADR-0005-backend-application-stack.md),
+`accepted` 2026-09-15). TypeScript `packages/domain` is **not** the
+backend SoT — domain ports live as Java interfaces in the API module.
 
-- Database (proposal: PostgreSQL 18 + app scope + RLS)
-- Vector store (proposal: pgvector 0.8.6)
-- Embedding / LLM posture (proposal: ports + mocks first, operator keys,
-  BYOK later)
-- Auth / identity (proposal: Better Auth 1.7.4 + organization plugin)
-- Hosting (proposal: Railway or Render; VPS if self-host mandated)
-
-Also open: budget ceiling; self-host vs managed; privacy / ZDR ambition;
+Still open: budget ceiling; self-host vs managed; privacy / ZDR ambition;
 customer BYOK; data region; year-1 enterprise SSO; demo posture (mock vs
 live Ask, public vs local fixtures); year-1 tenant count; collaborative
 editing in v1; always-on demo hosting; **RTL locale shipping** (deferred,
@@ -118,8 +114,8 @@ Live status and open gates: always re-check root [`context.md`](../../context.md
 **Architecture vs ADR:** root [`architecture.md`](../../architecture.md)
 is the OmniDoc **architecture-ready baseline** (ports, tenancy,
 answer/citation states, threat/safety, RAG eval bar, mock-fixture
-themes). It is not a blank starter. Concrete stack packages now come
-from the accepted ADRs; categories 3–7 remain ADR-0001-dependent.
+themes). Concrete stack packages now come from the accepted ADRs
+(ADR-0001 §1–§5, §7; ADR-0005 for the API runtime).
 Decisions index: [`docs/adr/README.md`](../adr/README.md).
 
 ---
@@ -135,9 +131,12 @@ Decisions index: [`docs/adr/README.md`](../adr/README.md).
 | **Git** | Required for clone / branch / PR |
 | **Editor** | Cursor, VS Code, or equivalent. Enable EditorConfig support so [`.editorconfig`](../../.editorconfig) applies. |
 
-There is **no** `package.json` yet. You cannot `pnpm install` an app that
-does not exist. That is expected until an implementation handoff
-authorizes scaffolding.
+The workspace exists (S-01a). After cloning:
+
+```bash
+pnpm install
+pnpm typecheck && pnpm lint && pnpm test
+```
 
 ### Clone
 
@@ -182,32 +181,35 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | **Confirmed** UI application root (ADR-0001 §1 + ADR-0002) — **not present yet** |
-| `apps/api/` | **Reopened 2026-09-15** (ADR-0005). Do **not** treat as a Node app until U-BE. Not present yet |
-| `packages/ui/`, `packages/contracts/`, `packages/mocks/` | **Confirmed** FE packages (ADR-0002) — **not present yet** |
-| `packages/domain/` | **Reopened** — not the Java backend SoT if ADR-0005 is accepted |
-| [`architecture.md`](../../architecture.md) | OmniDoc architecture-ready baseline (ports, tenancy, fixtures) — stack packages still ADR-0001-dependent |
-| [`docs/adr/`](../adr/) | Decision records; ADR-0001 §1–§5, §7 `accepted`; §6 library reopened; ADR-0002 FE graph `accepted`; ADR-0005 `proposed` |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a (Next.js stub; journeys land in F-01+) |
+| `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
+| `packages/ui/`, `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — stubbed by S-01a; real content in F-01 / S-02 / S-03 |
+| `packages/domain/` | **Not created** — not the backend SoT (ADR-0005); domain ports live as Java interfaces in `apps/api` |
+| [`architecture.md`](../../architecture.md) | OmniDoc architecture baseline (ports, tenancy, fixtures) + accepted stack packages |
+| [`docs/adr/`](../adr/) | Decision records; ADR-0001 §1–§5, §7 `accepted`; §6 port stays / library superseded; ADR-0002 FE graph `accepted`; ADR-0005 `accepted` |
 
 ### Workspace layout (ADR-0002)
 
 Confirmed by [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md)
 (`accepted` 2026-09-14), which **supersedes** the earlier
-`frontend/` + `backend/` contract. Apps are still absent until an
-implementation handoff authorizes scaffolding.
+`frontend/` + `backend/` contract. The FE graph (`apps/web`,
+`packages/ui|contracts|mocks`) is scaffolded by S-01a; the JVM API
+module is S-01b-owned.
 
 ```text
-apps/web/                 # Next.js 16.3.5 UI application
-apps/api/                 # API / workers — Node shape REOPENED (ADR-0005);
-                          # do not scaffold as Node until U-BE
+apps/web/                 # Next.js 16.3.5 UI application (S-01a stub)
+apps/api/                 # JVM Gradle module — Spring Boot API / workers (ADR-0005);
+                          # S-01b-owned; never a Node app
 packages/ui/              # shadcn/ui components + design tokens (copy-in, owned)
 packages/contracts/       # shared request/response/stream types (OpenAPI → TS)
-packages/domain/          # TS backend SoT REOPENED — not Java domain if ADR-0005 accepted
 packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
 docs/adr/                 # Architecture Decision Records
 docs/frontend/            # Contributor docs, checklists, fixture notes
 ```
+
+No `packages/domain` — domain ports are Java interfaces in `apps/api`
+(ADR-0005).
 
 `apps/web` may depend on `packages/contracts` and `packages/ui` only —
 never on `packages/domain` internals, `packages/mocks` production paths,
@@ -375,11 +377,11 @@ Examples: `docs/frontend-onboarding`, `feat/note-list-empty-state`
 - One concern per PR when practical
 - Link the handoff path or issue in the description
 - List manual checks you ran (especially a11y / logical-CSS when UI exists)
-- Call out anything still gated (ADR-0001 categories 3–7, production providers, RTL locale)
+- Call out anything still gated (production providers, RTL locale)
 
-These are **team conventions**, not automated gates. This repository does
-**not** have CI configured yet — do not expect GitHub Actions or required
-status checks to run on pull requests today.
+Frontend CI (`.github/workflows/ci-frontend.yml`, S-01a) runs
+typecheck / lint / test over the Nx JS graph on push and PR. The JVM
+API workflow lands beside it (S-01b) without conflict.
 
 ### Review expectations
 
@@ -438,16 +440,13 @@ Concrete work that needs **no further decisions**:
 7. **Read research as it lands** under `docs/research/` — absorb; do not
    treat research shortlists as stack decisions.
 
-### Still blocked until Phase 1 planning + an implementation handoff
+### Still blocked until their implementation handoffs
 
-- Creating `package.json`, lockfiles, or app scaffolding (the *shape* is
-  settled by ADR-0002; the *action* still needs a handoff)
+- FE journey source work beyond the S-01a stub (F-01+; needs D-01 specs)
 - Implementing production provider adapters
 - Shipping an RTL locale
 - Adopting anything on ADR-0003's deferred list (client cache library,
   i18n runtime, a second component base)
-- Treating `architecture.md` as final accepted truth beyond its
-  architecture-ready baseline (ADR-0001 categories 3–7 still await `@user`)
 
 ---
 

@@ -50,3 +50,35 @@
   Flyway; Log4j2 JSON; Python not Phase 1.
 - Two `/implementer` sessions OK when `lane` and write paths differ
   (frontend vs backend).
+- **2026-09-15 (S-01a):** pnpm 12 ignores the `pnpm` key in
+  `package.json` — build approval lives as `allowBuilds:` in
+  `pnpm-workspace.yaml` (`pnpm approve-builds <pkg>` writes it there).
+- **2026-09-15 (S-01a):** `@nx/eslint-plugin@23.2.1`
+  `enforce-module-boundaries` schema puts `bannedExternalImports` and
+  `allowedExternalImports` **per depConstraint** (not top-level) and
+  names the tag list `onlyDependOnLibsWithTags` (not `onlyDependOn`).
+  The rule bails silently on **uninstalled** npm imports — proving the
+  banned-external path needs the package temporarily installed.
+- **2026-09-15 (S-01a):** `flat/typescript` needs `@eslint/js` +
+  `typescript-eslint` peers; `flat/react` additionally pulls
+  `eslint-plugin-import` et al. — base+typescript suffices for
+  boundary-only lint.
+- **2026-09-15 (S-01a):** keep Nx cache under `node_modules/.cache/nx`
+  via `cacheDirectory` to avoid touching `.gitignore` outside
+  Allowed Write Paths.
+- **2026-09-16 (S-01b):** Boot **4.1.1** Initializr maps Web →
+  `spring-boot-starter-webmvc` (not `spring-boot-starter-web`). MockMvc
+  autoconfigure lives under
+  `org.springframework.boot.webmvc.test.autoconfigure`. Prefer MockMvc
+  over TestRestTemplate unless also adding `spring-boot-restclient`
+  (`RestTemplateBuilder` moved).
+- **2026-09-16 (S-01b):** ArchUnit 1.4+ fails empty `should()` sets —
+  keep at least one class in `com.omnidoc.api.web` (e.g. marker) or set
+  `allowEmptyShould(true)`. Deliberate Spring AI leak proof needs a
+  temporary `org.springframework.ai` artifact on the classpath.
+- **2026-09-16 (S-01b):** put `.gradle/` in `apps/api/.gitignore` rather
+  than editing root `.gitignore` outside Allowed Write Paths. Option B
+  Gradle-at-`apps/api` + Nx `run-commands` works without `@nx/gradle`.
+- **2026-09-16 (S-01b):** exclude `UserDetailsServiceAutoConfiguration`
+  on the scaffold app so Security does not log a generated password
+  before B-03 session wiring.

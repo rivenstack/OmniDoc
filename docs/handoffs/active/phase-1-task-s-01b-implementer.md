@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-15-P1-S01B
 affinity: implementation
 track: parallel
-status: ready
+status: completed
 phase: "1"
 task: "S-01b"
 lane: backend
@@ -135,3 +135,51 @@ locks except unavoidable root Nx target registration, `docs/adr/**`,
 4. Do **not** open B-01 — Commander opens the next backend live handoff.
 5. Do **not** overwrite `docs/handoffs/current.md`.
 6. Return integration to `/commander` unless authorized to open B-01.
+
+## Outcome (2026-09-16)
+
+Scaffold complete at **`apps/api`** (JVM Gradle beside Nx; no `backend/`
+rename). Acceptance met; ArchUnit deliberate Spring AI-on-DTO failure
+observed then reverted; `docs/handoffs/current.md` untouched; no Node
+API; no Better Auth; no production OpenRouter / Spring AI deps.
+
+| Pin | Version / path used |
+|-----|---------------------|
+| Module | `apps/api` (`com.omnidoc:api:0.0.1-SNAPSHOT`) |
+| Java | **21** (Temurin 21.0.8; toolchain enforced) |
+| Spring Boot | **4.1.1** |
+| Gradle | **9.7.1** (wrapper) |
+| Logging | `spring-boot-starter-log4j2` + Logback excluded; JSON PatternLayout stub |
+| ArchUnit | `archunit-junit5` **1.4.1** |
+| Health | `GET /actuator/health` → `{"status":"UP",…}` |
+| Security | Stub `SecurityFilterChain` (health + all permit; CSRF/basic/form off); `UserDetailsServiceAutoConfiguration` excluded — full sessions/CSRF spa() = B-03 |
+| Persistence | Not introduced; empty `src/main/resources/db/migration/` placeholder |
+| Package seeds | `domain`, `application`, `adapters`, `web` (+ `HealthWireMarker`) |
+
+**Nx:** `project.json` targets `build` / `test` / `serve` / `bootRun` via
+`nx:run-commands` → `./gradlew` (`cwd: apps/api`). `nx show projects`
+lists `api` beside `web` / `ui` / `contracts` / `mocks`. No `@nx/gradle`.
+
+**CI:** `.github/workflows/ci-backend.yml` — Temurin 21 +
+`./gradlew test --no-daemon` only (no Testcontainers).
+
+**Env / docs:** `.env.example` API placeholders (`API_PORT`,
+`SPRING_PROFILES_ACTIVE`); `docs/api/health.md` curl notes.
+`bootRun` defaults to `-Xmx256m` (Free Tier RSS note; I-03 owns SKU).
+
+**Verification (run, not claimed):**
+
+- `cd apps/api && ./gradlew test` — BUILD SUCCESSFUL (HealthEndpointTest +
+  ArchitectureBoundaryTest)
+- Deliberate violation: temporary `web.dto.DeliberateSpringAiLeakDto` +
+  `spring-ai-model:2.0.1` → ArchUnit **FAILED**; both removed; classpath
+  clean of `spring-ai`
+- `./gradlew bootRun` + `curl -s http://localhost:8080/actuator/health`
+  → `{"groups":["liveness","readiness"],"status":"UP"}`
+- Log4j2 JSON-oriented console lines observed at startup
+
+**Notes for Commander:** Boot 4 Initializr uses
+`spring-boot-starter-webmvc` (not classic `web`). Health MockMvc test
+uses `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`
+(Boot 4 package move). Do **not** open B-01 from this Outcome —
+Commander owns the next backend live handoff. Return to `/commander`.

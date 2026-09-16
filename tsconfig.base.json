@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "incremental": true,
+    "declaration": false,
+    "baseUrl": ".",
+    "paths": {
+      "@omnidoc/ui": ["packages/ui/src/index.ts"],
+      "@omnidoc/ui/*": ["packages/ui/src/*"],
+      "@omnidoc/contracts": ["packages/contracts/src/index.ts"],
+      "@omnidoc/contracts/*": ["packages/contracts/src/*"],
+      "@omnidoc/mocks": ["packages/mocks/src/index.ts"],
+      "@omnidoc/mocks/*": ["packages/mocks/src/*"]
+    },
+    "types": ["node"]
+  }
+}
