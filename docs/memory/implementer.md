@@ -82,3 +82,44 @@
 - **2026-09-16 (S-01b):** exclude `UserDetailsServiceAutoConfiguration`
   on the scaffold app so Security does not log a generated password
   before B-03 session wiring.
+- **2026-09-17 (F-01):** Tailwind v4 needs two project-level hooks for a
+  copy-in UI package: `@source` globs **inside the CSS entry** (a pnpm
+  workspace package is symlinked under `node_modules`, which Tailwind's
+  auto-detection skips) and `transpilePackages: ["@omnidoc/ui"]` in
+  `next.config.mjs` (the package ships TS source, not built JS).
+- **2026-09-17 (F-01):** `@custom-variant` declared in an **imported** CSS
+  file does register globally, and `@theme inline` re-exposes non-Tailwind
+  role names (`--od-*`) under Tailwind's namespaces as 1:1 aliases. Verify
+  by inspecting the built CSS, not by assuming.
+- **2026-09-17 (F-01):** Tailwind v4 **tree-shakes unused `@theme`
+  variables** — a token referenced by nothing is absent from the output.
+  Fine for utilities (they pull their variables back in when used), but a
+  raw-CSS consumer of an unused token would get an undefined variable.
+- **2026-09-17 (F-01):** two `@types/react` copies make `tsc` fail with
+  "Two different types with this name exist, but they are unrelated" —
+  `node_modules/@types` at the workspace root is **auto-included**, so a
+  package pinning a different `@types/react` than the root breaks. Keep
+  `@types/react` / `@types/react-dom` on the root's version everywhere.
+- **2026-09-17 (F-01):** likewise pin a UI package's **devDependency**
+  `react`/`react-dom` to the app's exact version, or the app bundle ends up
+  with two React copies and invalid hook calls. (`@omnidoc/ui` uses
+  19.2.7 to match `apps/web`; the ledger's 19.3.0 there would duplicate.)
+- **2026-09-17 (F-01):** under Vitest 5 `import.meta.url` is not a `file:`
+  URL, so `fileURLToPath(new URL(...))` throws "The URL must be of scheme
+  file". Read fixtures with `path.join(process.cwd(), ...)` and rely on the
+  Nx target's `cwd`.
+- **2026-09-17 (F-01):** Vitest/Vite rejects `esbuild: { jsx: "automatic" }`
+  ("'jsx' does not exist in type 'ESBuildOptions'"). Set
+  `"jsx": "react-jsx"` in the package tsconfig instead — the shared base's
+  `preserve` (for Next) does not emit a runtime.
+- **2026-09-17 (F-01):** jsdom has no `matchMedia`, which `next-themes`
+  calls; add a stub via `test.setupFiles`. Also RTL only auto-cleans up
+  when vitest globals are on — call `afterEach(cleanup)` explicitly.
+- **2026-09-17 (F-01):** lint traps in test/setup code: literal
+  `false && x` trips `no-constant-binary-expression` (use a variable), and
+  `() => {}` trips `@typescript-eslint/no-empty-function` (use
+  `() => undefined`).
+- **2026-09-17 (F-01):** do **not** add `api` to a frontend
+  `nx run-many` verification — `api:build`/`api:test` need a Java 21
+  toolchain that is absent locally, and it is another lane's problem.
+  Scope to `--projects=ui,web,contracts,mocks`.
