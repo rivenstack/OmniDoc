@@ -4,5 +4,15 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "types": "./src/index.ts",
+  "scripts": {
+    "generate": "openapi-typescript ../../docs/api/openapi.yaml -o src/generated/openapi.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json",
+    "test": "vitest run",
+    "lint": "eslint . --ignore-pattern src/generated/**"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "yaml": "^2.9.1"
+  }
 }

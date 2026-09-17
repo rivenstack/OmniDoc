@@ -66,7 +66,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed** | Visual system + journey specs — Commander-accepted 2026-09-16 |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-01 + B-01 live dual-lane | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-01 + S-02 live dual-lane | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -231,9 +231,9 @@ Log4j2, ArchUnit baseline.
 
 | | |
 |--|--|
-| **Status** | listed — Backend authors; Frontend reviews |
+| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (Commander-authorized 2026-09-17 after B-01 PASS) |
 | **Lane** | `backend` (author) + Frontend review (no overlapping write: review via PR) |
-| **Depends on** | S-01a and S-01b (or enough of each that OpenAPI can be authored) |
+| **Depends on** | S-01a, S-01b, and B-01 (vocabulary) |
 | **Blocks** | F-03+ and B-03+ / B-04+ that speak HTTP |
 | **Write path** | `docs/api/**`, `packages/contracts` |
 
@@ -347,7 +347,7 @@ May start **B-01** as soon as **S-01b** lands — **no design dependency**.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-backend.md` |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` (Commander-validated PASS 2026-09-17) |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | S-01b |
 | **Blocks** | Clarifies S-02; B-03+ need S-02 |
@@ -507,7 +507,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
 | F-01 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
-| B-01 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| S-02 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| B-01 | archived completed — [`../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md`](../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md) |
 | D-01 | archived accepted — [`../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md`](../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md) |
 | S-01a | archived completed — [`../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md) |
 | S-01b | archived completed — [`../handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md) |

@@ -55,6 +55,8 @@ Program of record:
   accept-with-amendments → A-BE2 → ADR-0005 `accepted`
 - **2026-09-16:** D-01 **Commander-accepted**; S-01a and S-01b **completed**
   and archived. Dual-lane heads opened: F-01 (FE) + B-01 (BE)
+- **2026-09-17:** B-01 **Commander-validated PASS** and archived; backend
+  lane advanced to **S-02**. F-01 remains live in parallel
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02)
@@ -90,7 +92,8 @@ Program of record:
 | S-01a FE Nx + boundary CI | shared | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
 | S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
-| B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
+| B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
+| S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -99,9 +102,11 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 
 - Production AI/provider activation remains gated (mock-first CX)
 - RTL locale support remains deferred, not closed
-- **F-02+** waits on **S-02** (backend-authored after B-01)
-- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-01/B-01
+- **F-02+** waits on **S-02** (backend-authored; B-01 closed)
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-01/S-02
 - DevOps I-* have no human owner yet
+- B-01 Java port sources remain **uncommitted** in the working tree —
+  commit before merge/PR; does not block S-02 authoring
 
 ## Open Gates
 
@@ -143,4 +148,4 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
   `/implementer` (F-01, `lane: frontend`, human: front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (B-01, `lane: backend`, human: back-end programmer)
+  `/implementer` (S-02, `lane: backend`, human: back-end programmer)

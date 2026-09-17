@@ -1,0 +1,1612 @@
+openapi: 3.1.0
+info:
+  title: OmniDoc HTTP API
+  version: 0.1.0
+  summary: Canonical Phase 1 handshake for identity, notes, ingestion, search, Ask, vault, usage, runtime mode, and export stub.
+  description: |
+    Authoritative HTTP contract (S-02). Ask stream events are defined in
+    docs/api/ask-sse.md; payload schemas for those events are the AskSse*
+    components in this document.
+
+    Tenant authority is the server session. Workspace identifiers are
+    selectors only. Production AI remains gated.
+  license:
+    name: UNLICENSED
+    identifier: UNLICENSED
+
+servers:
+  - url: http://localhost:8080
+    description: Local Spring Boot API (S-01b)
+
+tags:
+  - name: Health
+  - name: Identity
+  - name: Notes
+  - name: Ingestion
+  - name: Search
+  - name: Ask
+  - name: Vault
+  - name: Usage
+  - name: RuntimeMode
+  - name: Export
+
+security:
+  - sessionCookie: []
+
+paths:
+  /actuator/health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Process health probe
+      security: []
+      responses:
+        "200":
+          description: Process is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /api/v1/session:
+    post:
+      tags: [Identity]
+      operationId: createSession
+      summary: Authenticate and establish an HTTP-only session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: Authenticated principal; Set-Cookie includes the session
+          headers:
+            Set-Cookie:
+              description: HTTP-only session cookie (Spring default JSESSIONID until B-03)
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+    get:
+      tags: [Identity]
+      operationId: getSession
+      summary: Current principal for the session cookie
+      responses:
+        "200":
+          description: Bound principal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+    delete:
+      tags: [Identity]
+      operationId: deleteSession
+      summary: End the session
+      parameters:
+        - $ref: "#/components/parameters/CsrfHeader"
+      responses:
+        "204":
+          description: Session revoked
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/v1/workspaces:
+    get:
+      tags: [Identity]
+      operationId: listWorkspaces
+      summary: Workspaces the session principal may select
+      responses:
+        "200":
+          description: Server-resolved workspace list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/v1/workspaces/{workspaceId}/invites:
+    post:
+      tags: [Identity]
+      operationId: inviteWorkspaceMember
+      summary: Invite a member to a workspace
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceIdPath"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteMemberRequest"
+      responses:
+        "201":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResult"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/workspaces/{workspaceId}/notes:
+    get:
+      tags: [Notes]
+      operationId: listNotes
+      summary: List notes in a workspace
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceIdPath"
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageCursor"
+      responses:
+        "200":
+          description: Note page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotePage"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Notes]
+      operationId: createNote
+      summary: Create a note version
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceIdPath"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteRequest"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/notes/{noteId}:
+    get:
+      tags: [Notes]
+      operationId: getNote
+      summary: Get a note
+      parameters:
+        - $ref: "#/components/parameters/NoteIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelector"
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Notes]
+      operationId: updateNote
+      summary: Update a note with optimistic concurrency
+      parameters:
+        - $ref: "#/components/parameters/NoteIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelector"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteRequest"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/notes/{noteId}/soft-delete:
+    post:
+      tags: [Notes]
+      operationId: softDeleteNote
+      summary: Hide a note from retrieve and Ask immediately
+      parameters:
+        - $ref: "#/components/parameters/NoteIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelector"
+        - $ref: "#/components/parameters/CsrfHeader"
+      responses:
+        "204":
+          description: Soft-deleted
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/notes/{noteId}/purge:
+    post:
+      tags: [Notes]
+      operationId: purgeNote
+      summary: Purge a note version and derived retrieval artifacts
+      parameters:
+        - $ref: "#/components/parameters/NoteIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelector"
+        - $ref: "#/components/parameters/CsrfHeader"
+      responses:
+        "204":
+          description: Purged
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/ingestion-jobs:
+    post:
+      tags: [Ingestion]
+      operationId: enqueueIngestionJob
+      summary: Enqueue an import
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EnqueueImportRequest"
+      responses:
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionJob"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedType"
+
+  /api/v1/ingestion-jobs/{jobId}:
+    get:
+      tags: [Ingestion]
+      operationId: getIngestionJob
+      summary: Ingestion job progress
+      parameters:
+        - $ref: "#/components/parameters/JobIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+      responses:
+        "200":
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionJob"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/search/lexical:
+    post:
+      tags: [Search]
+      operationId: lexicalSearch
+      summary: Lexical search within the bound workspace ACL
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Authorized hits only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+        "504":
+          $ref: "#/components/responses/Timeout"
+
+  /api/v1/search/hybrid:
+    post:
+      tags: [Search]
+      operationId: hybridSearch
+      summary: Hybrid search within the bound workspace ACL
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Authorized hits only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+        "504":
+          $ref: "#/components/responses/Timeout"
+
+  /api/v1/ask:
+    post:
+      tags: [Ask]
+      operationId: askNotes
+      summary: Ask a question; stream cited claim units
+      description: |
+        Successful Ask outcomes (supported, partial, no_supported_answer,
+        conflict, refused_policy) are delivered on the 200 SSE stream as a
+        completed event. See docs/api/ask-sse.md.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AskRequest"
+      responses:
+        "200":
+          description: SSE stream; events defined in docs/api/ask-sse.md
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE records. JSON payloads match AskSse* schemas.
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrMode"
+        "429":
+          $ref: "#/components/responses/QuotaExhausted"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+        "504":
+          $ref: "#/components/responses/Timeout"
+
+  /api/v1/vault:
+    get:
+      tags: [Vault]
+      operationId: listVaultMetadata
+      summary: Masked vault records for the bound tenant
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+      responses:
+        "200":
+          description: Metadata only; never plaintext keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultMetadataList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Vault]
+      operationId: storeVaultCredential
+      summary: Store a customer BYOK credential; response is masked metadata
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreVaultRequest"
+      responses:
+        "201":
+          description: Stored; plaintext is not returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultMetadata"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/EncryptionError"
+
+  /api/v1/vault/{vaultRecordId}:
+    get:
+      tags: [Vault]
+      operationId: getVaultMetadata
+      summary: Masked metadata for one vault record
+      parameters:
+        - $ref: "#/components/parameters/VaultRecordIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+      responses:
+        "200":
+          description: Metadata only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultMetadata"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/vault/{vaultRecordId}/rotate:
+    post:
+      tags: [Vault]
+      operationId: rotateVaultCredential
+      summary: Replace ciphertext; response is masked metadata
+      parameters:
+        - $ref: "#/components/parameters/VaultRecordIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RotateVaultRequest"
+      responses:
+        "200":
+          description: Rotated; plaintext is not returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultMetadata"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/EncryptionError"
+
+  /api/v1/vault/{vaultRecordId}/revoke:
+    post:
+      tags: [Vault]
+      operationId: revokeVaultCredential
+      summary: Revoke a vault record
+      parameters:
+        - $ref: "#/components/parameters/VaultRecordIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/vault/{vaultRecordId}/verify:
+    post:
+      tags: [Vault]
+      operationId: verifyVaultCredential
+      summary: Probe a stored credential; distinct from Ask
+      parameters:
+        - $ref: "#/components/parameters/VaultRecordIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      responses:
+        "200":
+          description: Verification outcome (ok / invalid / wrong_scope are success-shaped)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultVerification"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /api/v1/usage:
+    get:
+      tags: [Usage]
+      operationId: getUsage
+      summary: Attributed usage or explicit unavailable
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/RuntimeModeQuery"
+        - $ref: "#/components/parameters/UsageFrom"
+        - $ref: "#/components/parameters/UsageTo"
+      responses:
+        "200":
+          description: Snapshot; unavailable is not a 5xx
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageSnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/usage/limits:
+    get:
+      tags: [Usage]
+      operationId: getUsageLimits
+      summary: Remaining limits or explicit unavailable
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/RuntimeModeQuery"
+        - $ref: "#/components/parameters/UsageFrom"
+        - $ref: "#/components/parameters/UsageTo"
+      responses:
+        "200":
+          description: Limits; unavailable is not a 5xx
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemainingLimits"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/runtime-mode:
+    get:
+      tags: [RuntimeMode]
+      operationId: getRuntimeMode
+      summary: Resolved runtime mode for a feature
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/RuntimeFeatureQuery"
+      responses:
+        "200":
+          description: Resolved mode; no credential material
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvedRuntimeMode"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [RuntimeMode]
+      operationId: putRuntimeMode
+      summary: Request a runtime mode; never silently fall back
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestRuntimeMode"
+      responses:
+        "200":
+          description: Requested mode accepted and resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvedRuntimeMode"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrMode"
+        "404":
+          $ref: "#/components/responses/VaultMissing"
+
+  /api/v1/exports/workspace:
+    post:
+      tags: [Export]
+      operationId: exportWorkspace
+      summary: Stub workspace export job
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportWorkspaceRequest"
+      responses:
+        "202":
+          description: Export accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportBundle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+
+  /api/v1/exports/notes:
+    post:
+      tags: [Export]
+      operationId: exportNotes
+      summary: Stub notes export job
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+        - $ref: "#/components/parameters/CsrfHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportNotesRequest"
+      responses:
+        "202":
+          description: Export accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportBundle"
+        "400":
+          $ref: "#/components/responses/Validation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+
+  /api/v1/exports/{exportId}:
+    get:
+      tags: [Export]
+      operationId: getExport
+      summary: Export stub status
+      parameters:
+        - $ref: "#/components/parameters/ExportIdPath"
+        - $ref: "#/components/parameters/WorkspaceSelectorRequired"
+      responses:
+        "200":
+          description: Export metadata; secrets excluded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportBundle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: HTTP-only session cookie. Tenant authority. Not a client tenant id.
+
+  parameters:
+    CsrfHeader:
+      name: X-XSRF-TOKEN
+      in: header
+      required: true
+      description: Spring Security SPA CSRF header matching the XSRF-TOKEN cookie.
+      schema:
+        type: string
+        minLength: 1
+    WorkspaceSelector:
+      name: OmniDoc-Workspace-Id
+      in: header
+      required: false
+      description: Workspace selector. Server re-binds membership; never tenant authority.
+      schema:
+        $ref: "#/components/schemas/Id"
+    WorkspaceSelectorRequired:
+      name: OmniDoc-Workspace-Id
+      in: header
+      required: true
+      description: Workspace selector. Server re-binds membership; never tenant authority.
+      schema:
+        $ref: "#/components/schemas/Id"
+    WorkspaceIdPath:
+      name: workspaceId
+      in: path
+      required: true
+      description: Workspace selector in the path. Server re-binds membership.
+      schema:
+        $ref: "#/components/schemas/Id"
+    NoteIdPath:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    JobIdPath:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    VaultRecordIdPath:
+      name: vaultRecordId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    ExportIdPath:
+      name: exportId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    PageLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    PageCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+    RuntimeModeQuery:
+      name: mode
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RuntimeMode"
+    RuntimeFeatureQuery:
+      name: feature
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RuntimeFeature"
+      description: Defaults to ask when omitted.
+    UsageFrom:
+      name: from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+    UsageTo:
+      name: to
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    Unauthenticated:
+      description: No valid session
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: unauthenticated
+            detail: Session required.
+    Forbidden:
+      description: Authenticated but not a member of the selected workspace, or otherwise denied
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: forbidden
+            detail: Workspace selector does not match session membership.
+    ForbiddenOrMode:
+      description: Forbidden or live mode blocked while production AI is gated
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          examples:
+            forbidden:
+              value:
+                code: forbidden
+                detail: Workspace selector does not match session membership.
+            modeForbidden:
+              value:
+                code: mode_forbidden
+                detail: Live mode is not available yet.
+                mode: operator_free_tier
+    NotFound:
+      description: Resource not found in the bound tenant
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: not_found
+            detail: Resource not found.
+    Validation:
+      description: Request failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: validation
+            detail: Question must not be blank.
+    Conflict:
+      description: Version concurrency conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: conflict
+            detail: Note version token did not match.
+    TooLarge:
+      description: Payload too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: too_large
+            detail: Import exceeds the allowed size.
+    UnsupportedType:
+      description: Unsupported import type
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: unsupported_type
+            detail: Media type is not importable.
+    Unavailable:
+      description: Dependency unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: unavailable
+            detail: Answer service is unavailable.
+    Timeout:
+      description: Upstream or worker timeout
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: timeout
+            detail: Search timed out.
+    QuotaExhausted:
+      description: Provider quota exhausted; mode is required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: quota_exhausted
+            detail: Operator free-tier quota exhausted.
+            mode: operator_free_tier
+    EncryptionError:
+      description: Vault encryption failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: encryption_error
+            detail: Vault encryption failed.
+    VaultMissing:
+      description: Customer vault record required for customer_key mode is missing
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+          example:
+            code: vault_missing
+            detail: No customer key is stored for this tenant.
+            mode: customer_key
+
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      description: Opaque identifier. Not tenant authority when used as a workspace selector.
+
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          minLength: 1
+          examples: [UP]
+
+    CreateSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 1
+          writeOnly: true
+
+    Principal:
+      type: object
+      additionalProperties: false
+      required: [actorId]
+      properties:
+        actorId:
+          $ref: "#/components/schemas/Id"
+      description: Session handle is the HTTP-only cookie, not a response field.
+
+    Workspace:
+      type: object
+      additionalProperties: false
+      required: [id, tenantId, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        tenantId:
+          description: Server-resolved tenant label. Clients must not send this as authority.
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+          minLength: 1
+
+    WorkspaceList:
+      type: object
+      additionalProperties: false
+      required: [workspaces]
+      properties:
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/Workspace"
+
+    InviteMemberRequest:
+      type: object
+      additionalProperties: false
+      required: [invitee, roles]
+      properties:
+        invitee:
+          type: string
+          minLength: 1
+        roles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 1
+          uniqueItems: true
+
+    InviteResult:
+      type: object
+      additionalProperties: false
+      required: [inviteId]
+      properties:
+        inviteId:
+          $ref: "#/components/schemas/Id"
+
+    CorpusOwnership:
+      type: string
+      enum: [sample, mine]
+
+    ProseMirrorDocument:
+      type: object
+      description: TipTap/ProseMirror JSON document (ADR-0001 §2). Structure is editor-owned; stored as JSON.
+      additionalProperties: true
+
+    Note:
+      type: object
+      additionalProperties: false
+      required: [id, workspaceId, versionId, title, bodyJson, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        workspaceId:
+          $ref: "#/components/schemas/Id"
+        versionId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        bodyJson:
+          $ref: "#/components/schemas/ProseMirrorDocument"
+        updatedAt:
+          type: string
+          format: date-time
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    NotePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        nextCursor:
+          type: [string, "null"]
+          minLength: 1
+
+    CreateNoteRequest:
+      type: object
+      additionalProperties: false
+      required: [title, bodyJson]
+      properties:
+        title:
+          type: string
+        bodyJson:
+          $ref: "#/components/schemas/ProseMirrorDocument"
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    UpdateNoteRequest:
+      type: object
+      additionalProperties: false
+      required: [title, bodyJson, expectedVersion]
+      properties:
+        title:
+          type: string
+        bodyJson:
+          $ref: "#/components/schemas/ProseMirrorDocument"
+        expectedVersion:
+          type: string
+          minLength: 1
+          description: Optimistic concurrency token from the last seen note version.
+
+    EnqueueImportRequest:
+      type: object
+      additionalProperties: false
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+        fileName:
+          type: string
+        mediaType:
+          type: string
+
+    JobStatus:
+      type: string
+      enum: [pending, running, ready, failed, partial]
+
+    IngestionJob:
+      type: object
+      additionalProperties: false
+      required: [jobId, status, completedUnits, totalUnits]
+      properties:
+        jobId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/JobStatus"
+        completedUnits:
+          type: integer
+          minimum: 0
+        totalUnits:
+          type: integer
+          minimum: 0
+
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+        topK:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    SearchHit:
+      type: object
+      additionalProperties: false
+      required: [chunkId, noteId, versionId, score, snippet]
+      properties:
+        chunkId:
+          $ref: "#/components/schemas/Id"
+        noteId:
+          $ref: "#/components/schemas/Id"
+        versionId:
+          $ref: "#/components/schemas/Id"
+        score:
+          type: number
+        snippet:
+          type: string
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    SearchResults:
+      type: object
+      additionalProperties: false
+      required: [hits, degraded]
+      properties:
+        hits:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchHit"
+        degraded:
+          type: boolean
+          description: True when retrieval returned a partial/degraded topK.
+
+    RuntimeMode:
+      type: string
+      enum:
+        - mock
+        - operator_free_tier
+        - customer_key
+      description: Exact runtime values. No silent fallback across modes.
+
+    RuntimeFeature:
+      type: string
+      enum: [embed, ask]
+
+    AskRequest:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 1
+        locale:
+          type: string
+          minLength: 1
+          default: en
+        mode:
+          $ref: "#/components/schemas/RuntimeMode"
+          description: Requested mode selector. Server resolves; mismatch or gated live mode → mode_forbidden.
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    PassageAnchor:
+      type: object
+      additionalProperties: false
+      required: [startOffset, endOffset]
+      properties:
+        startOffset:
+          type: integer
+          minimum: 0
+        endOffset:
+          type: integer
+          minimum: 0
+        blockId:
+          type: string
+          minLength: 1
+
+    Citation:
+      type: object
+      additionalProperties: false
+      required: [noteId, versionId, chunkId, anchor, preview]
+      properties:
+        noteId:
+          $ref: "#/components/schemas/Id"
+        versionId:
+          $ref: "#/components/schemas/Id"
+        chunkId:
+          $ref: "#/components/schemas/Id"
+        anchor:
+          $ref: "#/components/schemas/PassageAnchor"
+        preview:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        corpusOwnership:
+          $ref: "#/components/schemas/CorpusOwnership"
+
+    AskOutcome:
+      type: string
+      enum:
+        - supported
+        - partial
+        - no_supported_answer
+        - conflict
+        - refused_policy
+      description: |
+        Successful Ask outcomes on Answer.outcome / completed SSE data.
+        Distinct from ErrorBody.code. The token partial here means
+        unsupported spans, not stream truncation.
+
+    Answer:
+      type: object
+      additionalProperties: false
+      required: [outcome, text, citations]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/AskOutcome"
+        text:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+
+    AskSseGenerating:
+      type: object
+      additionalProperties: false
+      properties: {}
+      description: data payload for SSE event generating.
+
+    AskSseClaim:
+      type: object
+      additionalProperties: false
+      required: [text, citations]
+      properties:
+        text:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+      description: data payload for SSE event claim.
+
+    AskSseCompleted:
+      $ref: "#/components/schemas/Answer"
+
+    AskSseTruncated:
+      $ref: "#/components/schemas/ErrorBody"
+
+    AskSseError:
+      $ref: "#/components/schemas/ErrorBody"
+
+    ErrorCode:
+      type: string
+      enum:
+        - not_found
+        - conflict
+        - forbidden
+        - validation
+        - unavailable
+        - unsupported_type
+        - too_large
+        - timeout
+        - partial
+        - quota_exhausted
+        - invalid_model
+        - mode_forbidden
+        - unauthenticated
+        - invalid_key
+        - wrong_scope
+        - encryption_error
+        - vault_missing
+      description: |
+        Transport and port failures on ErrorBody.code (HTTP 4xx/5xx or
+        SSE truncated/error). Ask success outcomes live on Answer.outcome.
+        The token partial here means truncated/degraded work, not
+        AskOutcome.partial (unsupported spans). conflict here is
+        optimistic-concurrency, not AskOutcome.conflict (sources disagree).
+
+    ErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, detail]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        detail:
+          type: string
+        mode:
+          $ref: "#/components/schemas/RuntimeMode"
+      description: |
+        Transport error envelope. quota_exhausted must include mode.
+        Ask success outcomes must not appear as code.
+
+    VaultStatus:
+      type: string
+      enum: [active, revoked, invalid]
+
+    VaultMetadata:
+      type: object
+      additionalProperties: false
+      required: [vaultRecordId, maskedPrefix, toolChapterId, status]
+      properties:
+        vaultRecordId:
+          $ref: "#/components/schemas/Id"
+        maskedPrefix:
+          type: string
+          minLength: 1
+          description: Display prefix only; never the full credential.
+        toolChapterId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+        status:
+          $ref: "#/components/schemas/VaultStatus"
+
+    VaultMetadataList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VaultMetadata"
+
+    StoreVaultRequest:
+      type: object
+      additionalProperties: false
+      required: [plaintextKey, toolChapterId]
+      properties:
+        plaintextKey:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Write-only. Never present on vault responses.
+        toolChapterId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+
+    RotateVaultRequest:
+      type: object
+      additionalProperties: false
+      required: [plaintextKey]
+      properties:
+        plaintextKey:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Write-only. Never present on vault responses.
+
+    VaultVerificationStatus:
+      type: string
+      enum: [ok, invalid, wrong_scope]
+
+    VaultVerification:
+      type: object
+      additionalProperties: false
+      required: [verification]
+      properties:
+        verification:
+          $ref: "#/components/schemas/VaultVerificationStatus"
+
+    UsageSnapshot:
+      oneOf:
+        - $ref: "#/components/schemas/UsageAvailable"
+        - $ref: "#/components/schemas/UsageUnavailable"
+      discriminator:
+        propertyName: status
+        mapping:
+          available: "#/components/schemas/UsageAvailable"
+          unavailable: "#/components/schemas/UsageUnavailable"
+
+    UsageAvailable:
+      type: object
+      additionalProperties: false
+      required: [status, inputTokens, outputTokens]
+      properties:
+        status:
+          type: string
+          enum: [available]
+        inputTokens:
+          type: integer
+          minimum: 0
+        outputTokens:
+          type: integer
+          minimum: 0
+        remainingRequests:
+          type: integer
+          minimum: 0
+
+    UsageUnavailable:
+      type: object
+      additionalProperties: false
+      required: [status, reason]
+      properties:
+        status:
+          type: string
+          enum: [unavailable]
+        reason:
+          type: string
+          minLength: 1
+
+    RemainingLimits:
+      oneOf:
+        - $ref: "#/components/schemas/LimitsAvailable"
+        - $ref: "#/components/schemas/LimitsUnavailable"
+      discriminator:
+        propertyName: status
+        mapping:
+          available: "#/components/schemas/LimitsAvailable"
+          unavailable: "#/components/schemas/LimitsUnavailable"
+
+    LimitsAvailable:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [available]
+        requests:
+          type: integer
+          minimum: 0
+        tokens:
+          type: integer
+          minimum: 0
+
+    LimitsUnavailable:
+      type: object
+      additionalProperties: false
+      required: [status, reason]
+      properties:
+        status:
+          type: string
+          enum: [unavailable]
+        reason:
+          type: string
+          minLength: 1
+
+    ResolvedRuntimeMode:
+      type: object
+      additionalProperties: false
+      required: [mode, feature]
+      properties:
+        mode:
+          $ref: "#/components/schemas/RuntimeMode"
+        feature:
+          $ref: "#/components/schemas/RuntimeFeature"
+      description: Opaque credential handles stay server-side and must not appear here.
+
+    RequestRuntimeMode:
+      type: object
+      additionalProperties: false
+      required: [requestedMode, feature]
+      properties:
+        requestedMode:
+          $ref: "#/components/schemas/RuntimeMode"
+        feature:
+          $ref: "#/components/schemas/RuntimeFeature"
+
+    ExportFormat:
+      type: string
+      enum: [json, zip]
+
+    ExportStatus:
+      type: string
+      enum: [pending, ready, failed]
+
+    ExportWorkspaceRequest:
+      type: object
+      additionalProperties: false
+      required: [workspaceId, format]
+      properties:
+        workspaceId:
+          $ref: "#/components/schemas/Id"
+        format:
+          $ref: "#/components/schemas/ExportFormat"
+
+    ExportNotesRequest:
+      type: object
+      additionalProperties: false
+      required: [noteIds, format]
+      properties:
+        noteIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Id"
+          minItems: 1
+        format:
+          $ref: "#/components/schemas/ExportFormat"
+
+    ExportBundle:
+      type: object
+      additionalProperties: false
+      required: [exportId, status, format, mediaType]
+      properties:
+        exportId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/ExportStatus"
+        format:
+          $ref: "#/components/schemas/ExportFormat"
+        mediaType:
+          type: string
+          minLength: 1
+          description: Bundle media type when ready. Never includes vault plaintext or session secrets.
