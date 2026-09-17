@@ -82,3 +82,16 @@
 - **2026-09-16 (S-01b):** exclude `UserDetailsServiceAutoConfiguration`
   on the scaffold app so Security does not log a generated password
   before B-03 session wiring.
+- **2026-09-17 (S-02):** Canonical HTTP SoT is `docs/api/openapi.yaml`.
+  Generate TS with `openapi-typescript` 7.13.0 into
+  `packages/contracts/src/generated/openapi.ts` — do not hand-edit that
+  file. Ask SSE event *names* live in `docs/api/ask-sse.md`; JSON
+  payloads are OpenAPI `AskSse*` components. Keep `export const appName`
+  — `apps/web` still imports it and is outside this write path.
+- **2026-09-17 (S-02):** `partial` and `conflict` are legal on both
+  `AskOutcome` and `ErrorCode` but mean different things; distinguish by
+  field (`Answer.outcome` vs `ErrorBody.code`), not by banning the token.
+- **2026-09-17 (S-02):** Adding contracts codegen deps updates the root
+  `pnpm-lock.yaml` as a workspace consequence. Springdoc in `apps/api`
+  must later match `docs/api/`, not become a second authority.
+

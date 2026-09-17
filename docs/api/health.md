@@ -1,5 +1,8 @@
 # OmniDoc API health (S-01b)
 
+Canonical HTTP/OpenAPI/SSE handshake: [README.md](./README.md). This
+probe is included in [openapi.yaml](./openapi.yaml) as `GET /actuator/health`.
+
 JVM module: `apps/api` (Java 21 + Spring Boot 4.1.1 + Gradle).
 
 ## Local commands

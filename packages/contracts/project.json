@@ -5,24 +5,31 @@
   "projectType": "library",
   "tags": ["scope:shared", "type:lib"],
   "targets": {
+    "generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run generate",
+        "cwd": "packages/contracts"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p tsconfig.lib.json",
+        "command": "pnpm run typecheck",
         "cwd": "packages/contracts"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint .",
+        "command": "pnpm run lint",
         "cwd": "packages/contracts"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run",
+        "command": "pnpm run test",
         "cwd": "packages/contracts"
       }
     }
