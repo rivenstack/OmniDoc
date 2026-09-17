@@ -81,6 +81,11 @@
   `lane-backend.md` (back-end programmer). Same-lane iteration until
   soft-stop on cross-lane / infra. Do not put F-*/B-* bodies into
   `current.md`.
+- 2026-09-17: when Implementer archives and rewrites a lane head ahead
+  of Commander index/`context.md`/tracks, treat that as a validation
+  request — inspect code against track acceptance before greenlighting
+  the next slice; then sync SoT. Do not authorize S-* from a rewritten
+  lane head alone.
 
 ## Phase-Boundary Stewardship
 

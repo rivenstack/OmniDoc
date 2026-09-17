@@ -1,144 +1,114 @@
 ---
-handoff_id: H-2026-09-16-P1-B01
+handoff_id: H-2026-09-17-P1-S02
 affinity: implementation
 track: parallel
 status: ready
 phase: "1"
-task: "B-01"
+task: "S-02"
 lane: backend
 human_owner: back-end-programmer
-from: commander
+from: implementer
 to: implementer
-created: 2026-09-16
+created: 2026-09-17
 ---
 
-# B-01 — Domain port interfaces (Java)
+# S-02 — Canonical HTTP / OpenAPI / SSE contracts
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-backend.md and execute B-01 exactly. Add Java port interfaces for architecture.md §5.1–§5.11 inside apps/api. No production adapters. Do not touch apps/web or packages/ui. Do not overwrite docs/handoffs/current.md or lane-frontend.md.
+/implementer Read .codex/INSTRUCTIONS.md and docs/handoffs/active/lane-backend.md, then execute S-02 exactly. Author the canonical OpenAPI and Ask SSE contracts in docs/api and generate/align packages/contracts. Do not modify apps/api or packages/mocks.
 ```
 
 ## Objective
 
 Owner: `/implementer`. **Lane:** `backend`. **Human:** back-end
-programmer. **allowed_task_classes:** `B-*` plus backend-authored
-`S-02` / `S-03` (this handoff = B-01 only).
-
-Create language-native **Java** port interfaces for
-`architecture.md` §5.1–§5.11 **inside** `apps/api` (ADR-0005). Align
-naming toward upcoming S-02 OpenAPI. **No** production adapters. **Not**
-TypeScript `packages/domain` as backend SoT.
-
-S-01b is **closed**. B-01 does **not** wait on D-01 or F-01.
+programmer. Author the canonical HTTP/OpenAPI/SSE handshake for the
+Phase 1 frontend and backend. Map the accepted architecture surfaces and
+B-01 vocabulary without creating a second contract authority.
 
 ## Required Reading
 
 1. `context.md` (read-only)
-2. `docs/planning/implementation-tracks.md` (B-01 row)
-3. `architecture.md` §5.1–§5.11 (ports)
-4. `AGENTS.md`
-5. ADR-0005 (`accepted`), ADR-0001 §3–§5 / §6 identity **port**,
-   ADR-0004, ADR-0002 polyglot layout
-6. Existing `apps/api` scaffold (S-01b)
-7. `docs/memory/implementer.md`
-8. This handoff
-
-## Inputs / Evidence
-
-- JVM scaffold: Gradle + Spring Boot 4.1.x health + ArchUnit (S-01b)
-- Ports are provider-neutral contracts; Spring AI adapters stay dark
-- Identity: Spring Security sessions class (ADR-0005) — not Better Auth
+2. `architecture.md` §2, §4, §5, and §9
+3. `AGENTS.md`
+4. `docs/planning/implementation-tracks.md` S-02 row
+5. ADR-0002, ADR-0004, and ADR-0005 (`accepted`)
+6. Archived B-01 outcome —
+   `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md`
+   plus Java ports under `apps/api/.../application/port` and
+   `apps/api/.../domain` (read-only for vocabulary; do not edit)
+7. Existing `packages/contracts` scaffold
+8. `docs/memory/implementer.md`
+9. `.cursor/skills/api-contract-change/SKILL.md`
+10. This handoff
 
 ## Allowed Write Paths
 
-- `apps/api/**` (domain/application port packages; tests; ArchUnit stays
-  green)
+- `docs/api/**`
+- `packages/contracts/**`
+- This backend lane handoff and its archive
 - `docs/memory/implementer.md` (durable lessons only)
-- This file: status, Outcome; archive + rewrite rules in Completion
 
-**Must not touch:** `apps/web/**`, `packages/ui/**`, `docs/design/**`,
-`docs/frontend/**`, visual tokens, `docs/adr/**`,
-`docs/handoffs/current.md`, `docs/handoffs/active/lane-frontend.md`,
-`context.md`, `architecture.md`
+## Must Not Touch
 
-## Out of scope
-
-- OpenAPI / SSE file authorship (**S-02** — next same-lane handoff)
-- Flyway schema + Compose Postgres (**B-02**)
-- Production OpenRouter / Spring AI live clients
-- FE packages, journey UI, design tokens
-- Better Auth library
+- `apps/api/**`
+- `packages/mocks/**` (S-03 owns fixtures)
+- `apps/web/**`, `packages/ui/**`, and all other frontend paths
+- `context.md`, `architecture.md`, `docs/adr/**`
+- `docs/handoffs/current.md`
+- `docs/handoffs/active/lane-frontend.md`
 
 ## Deliverables
 
-1. Java port interfaces covering §5.1–§5.11 surfaces inside `apps/api`
-   (notes, ingestion, embedding, vector, search, answer, identity,
-   export, vault metadata, usage, runtime mode).
-2. Naming ready to align with upcoming S-02 OpenAPI (no dual authority).
-3. ArchUnit + module tests green; health endpoint still up.
-4. No production adapter implementations.
-5. Outcome on this handoff.
+1. Canonical OpenAPI contract for identity/workspaces, notes and
+   versions, ingestion jobs, search, Ask, vault metadata, usage, runtime
+   mode, corpus ownership, and export stub surfaces.
+2. Canonical Ask SSE event definitions covering generating, stable claim
+   units with citations, completion, and explicit truncation/error.
+3. TypeScript contracts generated or aligned from the canonical API
+   definition; no hand-maintained conflicting shapes.
+4. Contract validation/typecheck tests and documented reproducible
+   generation commands.
 
-## Constraints / Prohibited Decisions
+## Contract Invariants
 
-- Do not make TypeScript `packages/domain` the backend SoT
-- Do not create a Node `apps/api`
-- Do not enable production AI / OpenRouter
-- Do not implement full Flyway schema here (B-02)
-- Do not author the OpenAPI file here (S-02 next)
-- Do not touch FE write paths
+- Tenant authority comes from the server session; workspace input is a
+  selector and never authoritative tenant identity.
+- Search and Ask scopes preserve ACL constraints.
+- `supported`, `partial`, `no_supported_answer`, `conflict`, and
+  `refused_policy` are successful Ask outcomes.
+- Citations identify note, version, chunk, passage anchor, preview, and
+  optional UTC update/corpus-ownership data.
+- Runtime values are exactly `mock`, `operator_free_tier`, and
+  `customer_key`; never specify silent fallback.
+- Vault responses expose masked metadata only, never plaintext keys.
+- Usage may explicitly be unavailable and must not invent billing data.
+- Production AI activation remains gated.
+
+## Out of Scope
+
+- Java controllers or changes to B-01 ports
+- Mock corpus or MSW handlers (S-03)
+- Persistence, migrations, authentication implementation, or adapters
+- Frontend UI integration
+- Live OpenRouter or other provider calls
 
 ## Acceptance Criteria
 
-- Ports compile and map 1:1 to `architecture.md` §5.1–§5.11
-- No production adapters; no provider SDK live calls
-- ArchUnit baseline green; health still serves
-- No FE package ownership; no Better Auth
-
-## Directionality / accessibility checks
-
-- N/A for pure Java ports — do not claim UI directionality work
-
-## Stop / escalate conditions
-
-- **Soft-stop:** None inside B-01. After B-01, the **next authorized
-  same-lane handoff is S-02** (preferred before deep B-03+ so FE is not
-  parked after F-01), then **B-02**. If a later slice needs FE UI
-  decisions, soft-stop with `waiting on F-<ID>`.
-- **Hard-stop:** write-path collision with frontend; pressure to reopen
-  ADR-0005 / Node API; production AI activation; inventing a second
-  contract authority outside upcoming S-02.
-
-## Dependencies / Risks
-
-- Depends on: S-01b (closed)
-- Unblocks: S-02 authoring clarity; B-03+ eventually need S-02
-- Parallel: F-01 on frontend — no mutual dependency
-- Risk: drifting port names away from OpenAPI — mitigate by S-02 next
-
-## Gates
-
-- Production AI activation remains gated
-- RTL locale remains deferred (FE concern)
-- DevOps I-* unassigned — do not stall on AWS
+- OpenAPI and SSE definitions cover the listed architecture surfaces and
+  validate successfully.
+- `packages/contracts` compiles and is traceable to the canonical API
+  definition.
+- Success outcomes remain distinct from transport errors.
+- No secret-bearing field is returned by vault contracts.
+- No changes occur outside the Allowed Write Paths.
 
 ## Completion Instructions
 
-1. Implement B-01 deliverables inside Allowed Write Paths.
-2. Append Outcome; set this file `status: completed`.
-3. Archive a copy to
-   `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md`.
-4. **Rewrite this same path** (`lane-backend.md`) as the next handoff
-   **S-02** (Canonical HTTP / OpenAPI / SSE contracts) with
-   `status: ready`, unless Commander has already opened it. Allowed
-   Write Paths for S-02 must include `docs/api/**` and
-   `packages/contracts/**` per tracks — draft from
-   `docs/planning/implementation-tracks.md` S-02 row; keep
-   `human_owner: back-end-programmer` and `lane: backend`.
-5. If unable to author a complete S-02 handoff, set Outcome
-   `ready for Commander to open S-02` and leave this file completed
-   without opening F-02 or FE work.
-6. Durable lessons only in `docs/memory/implementer.md`.
-7. Do **not** overwrite `lane-frontend.md` or put work into `current.md`.
+1. Record commands and results in this handoff Outcome.
+2. Set this handoff to `completed` and archive it under
+   `docs/handoffs/archive/`.
+3. Do not open frontend work or edit the Commander index.
+4. Leave the completed lane head for Commander if the next complete
+   backend handoff cannot be authored without expanding these paths.
