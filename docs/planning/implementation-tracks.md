@@ -66,7 +66,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed** | Visual system + journey specs — Commander-accepted 2026-09-16 |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-01 + S-02 live dual-lane | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-02 live (FE); B-02 next on BE | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -231,7 +231,7 @@ Log4j2, ArchUnit baseline.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (Commander-authorized 2026-09-17 after B-01 PASS) |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
 | **Lane** | `backend` (author) + Frontend review (no overlapping write: review via PR) |
 | **Depends on** | S-01a, S-01b, and B-01 (vocabulary) |
 | **Blocks** | F-03+ and B-03+ / B-04+ that speak HTTP |
@@ -270,10 +270,10 @@ Postgres, AWS, or S-01b.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | D-01, S-01a |
-| **Blocks** | F-02+ (also need S-02) |
+| **Blocks** | F-02+ (S-02 closed 2026-09-17 — no longer a blocker) |
 | **Write path** | `packages/ui/**`; needed `apps/web` token wiring; `docs/frontend/README.md` |
 
 Depends: D-01, S-01a. Map D-01 tokens into `packages/ui` (Tailwind 4 +
@@ -281,6 +281,14 @@ shadcn/Base UI). Refresh stale ADR status in `docs/frontend/README.md`
 (§6 auth implementation is ADR-0005 Spring sessions).
 
 ### F-02 — App shell, nav, locale, honest workspace switcher
+
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (`ready` 2026-09-19) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-01, S-02 |
+| **Blocks** | F-03+ (F-03 additionally needs S-03/B-03; F-04 needs S-03 fixtures) |
+| **Write path** | `packages/ui/**` (shell + Storybook), `apps/web` shell wiring, `docs/frontend/README.md` |
 
 Depends: F-01, S-02. Single `lang`/`dir` source; REC-18 honest
 org/workspace chrome at n≈1–few; no fake enterprise teams.
