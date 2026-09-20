@@ -57,6 +57,13 @@ Program of record:
   and archived. Dual-lane heads opened: F-01 (FE) + B-01 (BE)
 - **2026-09-17:** B-01 **Commander-validated PASS** and archived; backend
   lane advanced to **S-02**. F-01 remains live in parallel
+- **2026-09-17:** S-02 **completed** and archived — canonical
+  HTTP/OpenAPI/SSE contracts in `docs/api/` + `@omnidoc/contracts`.
+  F-01 **completed** and archived (tokens + shadcn primitives; 121 UI
+  tests pass)
+- **2026-09-19:** F-01 soft-stop **cleared** — frontend lane head
+  rewritten to **F-02** (app shell, nav, locale, honest workspace
+  switcher). F-02 `ready`
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02)
@@ -91,9 +98,10 @@ Program of record:
 | D-01 Visual system + journey UI specs | frontend | Designer | **completed** (Commander-accepted) | `docs/handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md` |
 | S-01a FE Nx + boundary CI | shared | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
 | S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
-| F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
+| F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
+| F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
-| S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
+| S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -102,11 +110,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 
 - Production AI/provider activation remains gated (mock-first CX)
 - RTL locale support remains deferred, not closed
-- **F-02+** waits on **S-02** (backend-authored; B-01 closed)
-- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-01/S-02
+- **F-03+** waits on **S-03** (mock corpus / MSW) or **B-03** (identity)
+  fixtures — S-02 closed 2026-09-17 unblocked F-02
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/S-03
 - DevOps I-* have no human owner yet
 - B-01 Java port sources remain **uncommitted** in the working tree —
-  commit before merge/PR; does not block S-02 authoring
+  commit before merge/PR; does not block S-03 authoring
 
 ## Open Gates
 
@@ -129,7 +138,8 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 **Closed 2026-09-16**
 
 - D-01 design package → Commander-accepted (bounded gaps in
-  `docs/design/traceability.md` §6 remain open; do not block F-01)
+  `docs/design/traceability.md` §6 remain open; F-01 resolved the
+  Storybook question by folding scaffolding into F-02)
 - S-01a / S-01b scaffolds → completed
 
 **Still open / standing**
@@ -146,6 +156,6 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-01, `lane: frontend`, human: front-end programmer)
+  `/implementer` (F-02, `lane: frontend`, human: front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (S-02, `lane: backend`, human: back-end programmer)
+  completed (S-02); next BE slice **B-02** not yet opened
