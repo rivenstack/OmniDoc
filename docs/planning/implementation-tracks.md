@@ -66,7 +66,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed** | Visual system + journey specs — Commander-accepted 2026-09-16 |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-02 live (FE); B-02 next on BE | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-02 live (FE); B-02 live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -368,6 +368,14 @@ No production adapters. **Not** TypeScript interfaces in
 **S-02**, then **B-02**.
 
 ### B-02 — Postgres schema + RLS + local Compose
+
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (opened 2026-09-20) |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | S-01b (done); B-01 vocabulary (done); S-02 contracts (done, consume) |
+| **Blocks** | B-03, B-04, B-06 |
+| **Write path** | `apps/api/**` (Compose, Flyway, JDBC/RLS wiring, tests) |
 
 Depends: S-01b. PostgreSQL 18; tenants/workspaces/membership;
 notes/versions; RLS on a non-owner, non-`BYPASSRLS` role (ADR-0001 §3).

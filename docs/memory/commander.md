@@ -86,6 +86,9 @@
   request — inspect code against track acceptance before greenlighting
   the next slice; then sync SoT. Do not authorize S-* from a rewritten
   lane head alone.
+- 2026-09-20: opened **B-02** on `lane-backend.md` (Compose Postgres 18
+  + pgvector, Flyway, RLS). F-02 remains parallel. S-03 still listed —
+  open after B-02 or when FE needs mock fixtures for F-03+.
 
 ## Phase-Boundary Stewardship
 

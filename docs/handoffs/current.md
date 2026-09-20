@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -32,7 +32,7 @@ Two humans own parallel lanes:
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
 | Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-02** |
-| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-02** (next BE slice — not yet opened) |
+| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-02** |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
 not serialize FE behind BE (or vice versa) when dependencies are clear.
@@ -40,9 +40,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 ## Live lane pointers
 
 - Frontend: `docs/handoffs/active/lane-frontend.md` → F-02 (`ready`)
-  — soft-stop cleared 2026-09-19 (S-02 completed)
-- Backend: `docs/handoffs/active/lane-backend.md` → S-02 completed
-  (next BE slice **B-02** not yet opened)
+- Backend: `docs/handoffs/active/lane-backend.md` → B-02 (`ready`)
+  — opened 2026-09-20 after S-02 archive
 - Shared / DevOps heads: none live
 
 ## Cross-lane dependencies
@@ -50,8 +49,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | Dependency | Status | Effect |
 |------------|--------|--------|
 | **S-02** | **completed** (archived 2026-09-17) | F-02 unblocked; B-03+/B-04+ unblocked |
+| **B-02** (local Compose Postgres) | **Live** | No FE dependency; unblocks B-03 / B-04 / B-06 |
 | **S-03** (mock corpus, BE) | Not started | **F-03** needs B-03 or S-03 identity fixtures; F-04+ needs mock data |
-| B-02 (local Compose Postgres) | Backend lane | No FE dependency |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
@@ -72,14 +71,16 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 ## Commander actions this cycle
 
 1. Leave F-02 to frontend lane human / `/implementer`.
-2. Open the next backend handoff (B-02 — local Compose Postgres) on
-   `lane-backend.md` when authorizing the BE slice.
-3. Open **S-03** (deterministic mock corpus) on the backend lane — it is
-   the gate for F-03 (identity fixtures) and F-04+ (mock data).
+2. Leave **B-02** to backend lane human / `/implementer`
+   (opened 2026-09-20).
+3. Open **S-03** (deterministic mock corpus) after B-02 or when
+   Commander prioritizes FE mock data — gate for F-03 / F-04+.
 4. When F-02 completes, rewrite `lane-frontend.md` to F-03 only after
    S-03 / B-03 fixtures are ready; otherwise leave F-02 completed.
-5. Update `context.md` when lane statuses change.
-6. Do not open Phase Check until Phase 1 Build exit criteria in
+5. When B-02 completes, advance backend same-lane to **B-03** (or
+   soft-stop for S-03 if Commander redirects).
+6. Update `context.md` when lane statuses change.
+7. Do not open Phase Check until Phase 1 Build exit criteria in
    `docs/planning/implementation-tracks.md`.
 
 ## Allowed Write Paths (Commander only)
