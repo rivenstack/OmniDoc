@@ -187,9 +187,9 @@ build on `omnidoc_app`, `TenantRlsSession`, and the session principal.
 2. Set `status: completed` and archive under
    `docs/handoffs/archive/H-2026-09-20-P1-B04-implementer-implementer.md`
    (or dated equivalent).
-3. Same-lane next slice: rewrite this file to **B-05** (ingestion /
-   chunking jobs + progress port) **or** set `status: blocked` with
-   Outcome `waiting on <ID>` if S-03 should interleave — do **not** edit
-   `current.md` or `lane-frontend.md`.
+3. Same-lane next slice: rewrite this file from
+   `docs/handoffs/active/lane-backend.next.md` (**B-04c** quality
+   checkpoint) — do **not** skip to B-05; do **not** edit `current.md`
+   or `lane-frontend.md`.
 4. Durable lessons only in `docs/memory/implementer.md`.
 5. Do not open Phase Check.

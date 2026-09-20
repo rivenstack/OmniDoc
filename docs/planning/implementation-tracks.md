@@ -395,9 +395,17 @@ First-party org/membership tables remain required.
 
 Depends: B-02, S-02.
 
+### B-04c — B-01–B-04 quality checkpoint
+
+Depends: B-04. Same-lane gate **before B-05**: evaluate B-01–B-04;
+close unit / integration / load / API e2e gaps for identity + notes;
+add Postman under `apps/api/postman`. Does **not** replace B-12
+(retrieval isolation after B-08). Does **not** open Phase Check.
+
 ### B-05 — Ingestion / chunking jobs + progress port
 
-Depends: B-04. Indexing lag is a first-class state (REC-02).
+Depends: B-04c (B-04 product + checkpoint). Indexing lag is a first-class
+state (REC-02).
 
 ### B-06 — pgvector + mock embed adapter
 
