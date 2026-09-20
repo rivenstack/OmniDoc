@@ -136,3 +136,15 @@
   `nx run-many` verification — `api:build`/`api:test` need a Java 21
   toolchain that is absent locally, and it is another lane's problem.
   Scope to `--projects=ui,web,contracts,mocks`.
+- **2026-09-20 (B-02):** default Spring profile must exclude Boot 4 JDBC /
+  Flyway autoconfig (`org.springframework.boot.jdbc.autoconfigure.*`,
+  `...flyway.autoconfigure.FlywayAutoConfiguration`) so health/ArchUnit
+  stay green without a live DB; enable under profile `local` only.
+- **2026-09-20 (B-02):** `CREATE EXTENSION vector` needs superuser — put it
+  in Compose/init (or Testcontainers admin), not Flyway as migrator.
+  Migrator is table owner + `BYPASSRLS` (FORCE RLS otherwise blocks owner
+  seed); runtime `omnidoc_app` stays `NOBYPASSRLS` non-owner. Tenant GUC
+  `app.current_tenant_id` via `set_config(..., true)` inside a txn;
+  missing GUC → empty (fail closed). Testcontainers 2.x artifacts are
+  `testcontainers-junit-jupiter` / `testcontainers-postgresql` and
+  `org.testcontainers.postgresql.PostgreSQLContainer` (non-generic).

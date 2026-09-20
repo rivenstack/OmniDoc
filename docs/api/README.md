@@ -10,6 +10,7 @@ they are not a second authority.
 | [openapi.yaml](./openapi.yaml) | HTTP paths, JSON schemas, error envelope |
 | [ask-sse.md](./ask-sse.md) | Ask stream events (`text/event-stream`) |
 | [health.md](./health.md) | Existing S-01b actuator probe |
+| [local-postgres.md](./local-postgres.md) | Local Compose Postgres 18 + pgvector + Flyway / RLS |
 
 Springdoc in `apps/api` is **not** the SoT until controllers exist and are
 proven identical to this document (ADR-0005). Do not generate a competing

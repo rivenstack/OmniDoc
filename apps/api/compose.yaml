@@ -1,0 +1,41 @@
+# OmniDoc local Postgres 18 + pgvector (B-02). Backend-owned — not DevOps.
+#
+# Requires Compose v2: `docker compose version` must succeed.
+# If you see `unknown shorthand flag: 'f'` or `unknown command: docker compose`,
+# install the plugin (Ubuntu: `sudo apt-get install -y docker-compose-v2`, or a
+# user binary at ~/.docker/cli-plugins/docker-compose). See docs/api/local-postgres.md.
+#
+# Up:   docker compose -f apps/api/compose.yaml --env-file .env.example up -d
+# Down: docker compose -f apps/api/compose.yaml down
+# Logs: docker compose -f apps/api/compose.yaml logs -f postgres
+#
+# Credentials: placeholders from root `.env.example` only — never commit real secrets.
+# Flyway (migrator) ≠ runtime (omnidoc_app / NOBYPASSRLS). See docs/api/local-postgres.md.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: omnidoc-postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-omnidoc_postgres_dev}
+      OMNIDOC_DB: ${OMNIDOC_DB:-omnidoc}
+      OMNIDOC_MIGRATOR_USER: ${OMNIDOC_MIGRATOR_USER:-omnidoc_migrator}
+      OMNIDOC_MIGRATOR_PASSWORD: ${OMNIDOC_MIGRATOR_PASSWORD:-omnidoc_migrator_dev}
+      OMNIDOC_APP_USER: ${OMNIDOC_APP_USER:-omnidoc_app}
+      OMNIDOC_APP_PASSWORD: ${OMNIDOC_APP_PASSWORD:-omnidoc_app_dev}
+    volumes:
+      # PG 18+ images expect the mount at /var/lib/postgresql (not .../data).
+      - omnidoc_pg_data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  omnidoc_pg_data:
