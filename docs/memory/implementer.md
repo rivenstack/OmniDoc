@@ -148,3 +148,48 @@
   missing GUC → empty (fail closed). Testcontainers 2.x artifacts are
   `testcontainers-junit-jupiter` / `testcontainers-postgresql` and
   `org.testcontainers.postgresql.PostgreSQLContainer` (non-generic).
+- **2026-09-20 (B-03):** Boot 4 ships **Jackson 3** —
+  `tools.jackson.databind.ObjectMapper` (annotations stay
+  `com.fasterxml.jackson.annotation`). The autoconfigured bean is a
+  `JsonMapper`; inject by `ObjectMapper` supertype. `writeValueAsString` /
+  `readValue` no longer throw checked exceptions.
+- **2026-09-20 (B-03):** Spring Security 7 —
+  `AntPathRequestMatcher` is gone; use
+  `PathPatternRequestMatcher.pathPattern(HttpMethod, path)` for
+  method-scoped matchers (needed to exempt only `POST /api/v1/session`
+  from CSRF). `csrf().spa()` = `CookieCsrfTokenRepository.withHttpOnlyFalse()`
+  (`XSRF-TOKEN` cookie / `X-XSRF-TOKEN` header) + `SpaCsrfTokenRequestHandler`,
+  which accepts the **raw** token when it arrives as a header and the
+  XOR-masked value otherwise.
+- **2026-09-20 (B-03):** the SPA CSRF cookie is written lazily — nothing
+  emits `XSRF-TOKEN` unless something calls `CsrfToken.getToken()`. Touch
+  the `CsrfToken.class.getName()` request attribute at sign-in instead of
+  adding a separate token endpoint.
+- **2026-09-20 (B-03):** manual (non-filter) login must
+  `securityContextRepository.saveContext(...)` explicitly —
+  `SecurityContextHolderFilter` only loads and clears. Invalidate any
+  existing session first for fixation defence.
+- **2026-09-20 (B-03):** with Boot's default security dispatcher types the
+  `/error` forward is authorized too — `permitAll` `/error`, or an
+  unauthenticated 400 surfaces as 401.
+- **2026-09-20 (B-03):** keep the `SecurityFilterChain` free of DataSource
+  dependencies and profile-gate only the adapter + controllers
+  (`@Profile` works directly on `@RestController` / `@RestControllerAdvice`).
+  That keeps `HealthEndpointTest` green on the default profile.
+- **2026-09-20 (B-03):** RLS needs a second GUC for membership discovery
+  (`app.current_actor_id`) because an actor must find its workspaces
+  *before* a tenant is known. Permissive Postgres policies OR together, so
+  an actor-scoped `FOR SELECT` policy coexists with the V2 tenant policy
+  without weakening it. FK checks bypass RLS, so tenant-scoped inserts
+  referencing parent rows still work.
+- **2026-09-20 (B-03):** `IdentityModels.SessionHandle` has no transport
+  meaning in a JDBC adapter — define it as the server-resolved actor id
+  (`IdentitySessions`) rather than the container session id, otherwise
+  `listWorkspaces`/`resolveMembership` cannot resolve an actor.
+- **2026-09-20 (B-03):** Spring Boot IT pattern for the `local` profile:
+  `@ActiveProfiles("local")` + `@DynamicPropertySource` pointing at a
+  Testcontainers Postgres, with `spring.flyway.enabled=false` because
+  roles/extension/migration/seed must run in `@BeforeAll` (which executes
+  before the context loads). MockMvc has no cookie jar — carry
+  `MockHttpSession` from `result.getRequest().getSession(false)` and replay
+  the `XSRF-TOKEN` cookie plus header by hand.

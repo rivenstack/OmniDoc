@@ -8,6 +8,17 @@
 
 server:
   port: ${API_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        # secure is left to the deploy profile (I-05); local FE↔API is plain http.
+
+# B-03: browser origins allowed to send the session + CSRF cookies.
+omnidoc:
+  cors:
+    allowed-origins: ${OMNIDOC_CORS_ORIGINS:http://localhost:3000}
 
 spring:
   application:
