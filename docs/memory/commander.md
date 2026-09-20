@@ -89,6 +89,19 @@
 - 2026-09-20: opened **B-02** on `lane-backend.md` (Compose Postgres 18
   + pgvector, Flyway, RLS). F-02 remains parallel. S-03 still listed —
   open after B-02 or when FE needs mock fixtures for F-03+.
+- 2026-09-20: B-04c Implementer closeout archived GO
+  (`H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`). Opened
+  **S-03** (deterministic mock corpus / `packages/mocks`) on
+  `lane-backend.md` **before B-05**. F-02 untouched; do not open B-05
+  until S-03 completes or `@user` defers.
+- 2026-09-20: When an Implementer reports product verification but
+  exhausts tokens before Outcome/archive/soft-stop, Commander must
+  **re-run the claimed commands**, confirm write-path and §acceptance
+  independently, then archive + open the next same-lane slice — do not
+  treat chat claims alone as completion. S-03 PASS-with-notes →
+  archived `H-2026-09-20-P1-S03-commander-implementer.md`; opened
+  **B-05**. FE `web → mocks` import exception remains a separate
+  Commander/FE follow-up, not an S-03 reopen.
 
 ## Phase-Boundary Stewardship
 

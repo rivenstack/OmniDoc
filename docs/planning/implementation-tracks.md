@@ -246,10 +246,10 @@ mine), export stub.
 
 | | |
 |--|--|
-| **Status** | listed |
+| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md` (Commander-validated 2026-09-20) |
 | **Lane** | `backend` produces `packages/mocks`; Frontend consumes via MSW |
-| **Depends on** | S-01a, S-02 (and S-01b if fixtures are served from the API) |
-| **Blocks** | F-07 Ask UI; B-08 mock ask adapter |
+| **Depends on** | S-01a, S-02 (and S-01b if fixtures are served from the API); B-04c Implementer closeout completed |
+| **Blocks** | F-07 Ask UI; B-08 mock ask adapter (fixtures ready; FE import-boundary exception still needed for in-app MSW) |
 | **Write path** | `packages/mocks` (producer). Frontend must not fork a second fixture authority |
 
 Themes: `architecture.md` §9. Include `no_supported_answer` / `partial`
@@ -403,18 +403,26 @@ owners (exactly one live owner at a time):
 1. **Commander** evaluates B-01–B-04 (go/no-go) — **completed GO**
    2026-09-20 (`H-2026-09-20-P1-B04C-implementer-commander.md`)
 2. On GO, **Implementer** closes unit / integration / load / API e2e
-   gaps + Postman under `apps/api/postman` — **live** `lane-backend.md`
-3. **Commander** then opens **S-03** (mock corpus) **before B-05**
-   (Implementer must not open either)
+   gaps + Postman under `apps/api/postman` — **completed**
+   (`H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`)
+3. **Commander** then opens **S-03** (mock corpus) **before B-05** —
+   **completed** 2026-09-20; Implementer must not open B-05
 
 Does **not** replace B-12 (retrieval isolation after B-08). Does **not**
 open Phase Check.
 
 ### B-05 — Ingestion / chunking jobs + progress port
 
-Depends: B-04c and **S-03** preferred ahead on the backend lane (FE mock
-journeys). Indexing lag is a first-class state (REC-02). Do not jump to
-B-05 while S-03 is still listed unless `@user` explicitly defers mocks.
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (`ready` 2026-09-20) |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | B-04c completed; **S-03 completed** |
+| **Blocks** | B-06 |
+| **Write path** | `apps/api/**` (ingestion jobs, chunks, progress HTTP) |
+
+Depends: B-04c and **S-03** (completed ahead on the backend lane for FE
+mock journeys). Indexing lag is a first-class state (REC-02).
 
 ### B-06 — pgvector + mock embed adapter
 
@@ -540,7 +548,9 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
 | F-02 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
-| B-04c Implementer closeout | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| B-05 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
+| B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |
 | B-01 | archived completed — [`../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md`](../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md) |
 | D-01 | archived accepted — [`../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md`](../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md) |
