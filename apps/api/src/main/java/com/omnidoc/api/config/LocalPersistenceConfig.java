@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.omnidoc.api.adapters.identity.JdbcIdentityAdapter;
+import com.omnidoc.api.adapters.notes.JdbcNotesAdapter;
 import com.omnidoc.api.application.port.IdentityPort;
+import com.omnidoc.api.application.port.NotesPort;
 import com.omnidoc.api.persistence.TenantRlsSession;
 import com.omnidoc.api.web.identity.IdentityProfiles;
 
@@ -49,6 +51,15 @@ public class LocalPersistenceConfig {
 		ObjectMapper objectMapper) {
 		return new JdbcIdentityAdapter(
 			jdbcTemplate, tenantRlsSession, transactionTemplate, passwordEncoder, objectMapper);
+	}
+
+	@Bean
+	NotesPort notesPort(
+		JdbcTemplate jdbcTemplate,
+		TenantRlsSession tenantRlsSession,
+		TransactionTemplate transactionTemplate,
+		ObjectMapper objectMapper) {
+		return new JdbcNotesAdapter(jdbcTemplate, tenantRlsSession, transactionTemplate, objectMapper);
 	}
 
 }

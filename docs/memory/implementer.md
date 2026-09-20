@@ -193,3 +193,17 @@
   before the context loads). MockMvc has no cookie jar — carry
   `MockHttpSession` from `result.getRequest().getSession(false)` and replay
   the `XSRF-TOKEN` cookie plus header by hand.
+- **2026-09-20 (B-04):** optional note-by-id workspace headers require two
+  secure paths: a supplied selector is membership-bound before a tenant-GUC
+  lookup and rejects a workspace mismatch; headerless lookup starts from the
+  session actor's memberships, probes only distinct member tenants with a
+  membership-scoped query, then re-binds the discovered server-side workspace.
+  A `noteId` is never tenant or workspace authority.
+- **2026-09-20 (B-04):** ordinary get/update resolution must exclude
+  `soft_deleted_at`, but purge needs an explicit tombstone-inclusive resolution
+  path before it locks the note and deletes versions + note. Reusing normal get
+  for purge makes soft-deleted notes impossible to purge.
+- **2026-09-20 (B-04):** optimistic note updates use one conditional Postgres
+  `UPDATE ... WHERE current_version_id = ? RETURNING ...` inside the tenant-GUC
+  transaction, then append the version only on success. The row lock and
+  predicate recheck make interleaved writers yield one success and one conflict.
