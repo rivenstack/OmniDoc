@@ -64,12 +64,13 @@ Program of record:
 - **2026-09-19:** F-01 soft-stop **cleared** — frontend lane head
   rewritten to **F-02** (app shell, nav, locale, honest workspace
   switcher). F-02 `ready`
-- **2026-09-20:** Backend lane advanced to **B-02** (Postgres schema +
-  RLS + local Compose) — `lane-backend.md` rewritten; S-02 remains
-  archived
+- **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
+  B-04c eval **GO**; backend lane now **B-04c Implementer** test/Postman
+  closeout (`lane-backend.md`). S-03 opens after that closeout (before
+  B-05)
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
-  is Backend-owned (B-02)
+  is Backend-owned (B-02 completed)
 
 ### Accepted stack (do not re-open except as noted)
 
@@ -105,7 +106,11 @@ Program of record:
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
-| B-02 Postgres schema + RLS + local Compose | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
+| B-02 Postgres schema + RLS + local Compose | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B02-commander-implementer.md` |
+| B-03 Identity sessions + membership binder | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B03-implementer-implementer.md` |
+| B-04 Notes CRUD + version concurrency | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B04-implementer-implementer.md` |
+| B-04c Commander eval (B-01–B-04) | backend | Commander | **completed** (GO) | `docs/handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md` |
+| B-04c Test + Postman closeout | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -162,4 +167,5 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
   `/implementer` (F-02, `lane: frontend`, human: front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (B-02, `lane: backend`, human: back-end programmer)
+  `/implementer` (B-04c test/Postman closeout, `lane: backend`, human:
+  back-end programmer)

@@ -18,7 +18,7 @@ updated: 2026-09-20
 ## Start Command
 
 ```text
-/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute F-02 or B-02 implementation yourself.
+/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute F-02 or B-04c implementation yourself.
 ```
 
 ## Objective
@@ -26,13 +26,13 @@ updated: 2026-09-20
 Owner: `/commander`. This file is the **integration board**, not an
 implementer work assignment.
 
-D-01, S-01a, S-01b, B-01, F-01, and S-02 are **closed and archived**.
-Two humans own parallel lanes:
+D-01, S-01a, S-01b, B-01, F-01, S-02, B-02, B-03, B-04, and Commander
+B-04c eval are **closed and archived**. Two humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
 | Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-02** |
-| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-02** |
+| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-04c** Implementer closeout |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
 not serialize FE behind BE (or vice versa) when dependencies are clear.
@@ -40,8 +40,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 ## Live lane pointers
 
 - Frontend: `docs/handoffs/active/lane-frontend.md` → F-02 (`ready`)
-- Backend: `docs/handoffs/active/lane-backend.md` → B-02 (`ready`)
-  — opened 2026-09-20 after S-02 archive
+- Backend: `docs/handoffs/active/lane-backend.md` → B-04c Implementer
+  test/Postman closeout (`ready`) — Commander eval **GO** 2026-09-20
 - Shared / DevOps heads: none live
 
 ## Cross-lane dependencies
@@ -49,12 +49,21 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | Dependency | Status | Effect |
 |------------|--------|--------|
 | **S-02** | **completed** (archived 2026-09-17) | F-02 unblocked; B-03+/B-04+ unblocked |
-| **B-02** (local Compose Postgres) | **Live** | No FE dependency; unblocks B-03 / B-04 / B-06 |
-| **S-03** (mock corpus, BE) | Not started | **F-03** needs B-03 or S-03 identity fixtures; F-04+ needs mock data |
+| **B-02**–**B-04** | **completed** (archived) | Identity + notes HTTP live; unblocks B-04c closeout |
+| **B-04c** Commander eval | **GO** (archived 2026-09-20) | Implementer test/Postman closeout live |
+| **S-03** (mock corpus, BE) | Not started | Opens **after** Implementer B-04c closeout; **before B-05**. F-03 needs B-03 or S-03; F-04+ needs S-03 |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- B-04c Commander eval GO:
+  `docs/handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`
+- B-04 completed:
+  `docs/handoffs/archive/H-2026-09-20-P1-B04-implementer-implementer.md`
+- B-03 completed:
+  `docs/handoffs/archive/H-2026-09-20-P1-B03-implementer-implementer.md`
+- B-02 completed:
+  `docs/handoffs/archive/H-2026-09-20-P1-B02-commander-implementer.md`
 - S-02 completed:
   `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md`
 - F-01 completed:
@@ -71,14 +80,13 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 ## Commander actions this cycle
 
 1. Leave F-02 to frontend lane human / `/implementer`.
-2. Leave **B-02** to backend lane human / `/implementer`
-   (opened 2026-09-20).
-3. Open **S-03** (deterministic mock corpus) after B-02 or when
-   Commander prioritizes FE mock data — gate for F-03 / F-04+.
+2. Leave **B-04c Implementer closeout** to backend lane human /
+   `/implementer` (promoted 2026-09-20 after Commander GO).
+3. After Implementer B-04c archives, open **S-03** (deterministic mock
+   corpus) **before B-05** — gate for F-03 / F-04+.
 4. When F-02 completes, rewrite `lane-frontend.md` to F-03 only after
    S-03 / B-03 fixtures are ready; otherwise leave F-02 completed.
-5. When B-02 completes, advance backend same-lane to **B-03** (or
-   soft-stop for S-03 if Commander redirects).
+5. Do **not** open B-05 until S-03 completes or `@user` defers.
 6. Update `context.md` when lane statuses change.
 7. Do not open Phase Check until Phase 1 Build exit criteria in
    `docs/planning/implementation-tracks.md`.

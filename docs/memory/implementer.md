@@ -207,3 +207,9 @@
   `UPDATE ... WHERE current_version_id = ? RETURNING ...` inside the tenant-GUC
   transaction, then append the version only on success. The row lock and
   predicate recheck make interleaved writers yield one success and one conflict.
+- **2026-09-20 (B-04c):** closeout is tests/Postman/load only — do not duplicate
+  green `NotesHttpIT` / `IdentitySessionIT` scenarios; add CSRF negatives on
+  remaining notes mutators and one MockMvc lifecycle e2e instead. Local load /
+  Postman need an explicit migrator seed (`apps/api/load/seed-local-fixture.sql`)
+  because Flyway ships schema without actors. After closeout soft-stop the lane
+  for Commander **S-03** (before B-05); do not open either from Implementer.

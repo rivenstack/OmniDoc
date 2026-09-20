@@ -437,6 +437,35 @@ class NotesHttpIT {
 			.andExpect(jsonPath("$.code").value("forbidden"));
 	}
 
+	@Test
+	void notesMutatorsWithoutCsrfAreForbidden() throws Exception {
+		AuthenticatedClient client = signIn();
+		WireNote created = createNote(client, WORKSPACE_A, "CSRF target", "body", null);
+
+		this.mockMvc.perform(patch("/api/v1/notes/{noteId}", created.id())
+				.session(client.session())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(updateJson("No CSRF", "body", created.versionId())))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("forbidden"));
+
+		this.mockMvc.perform(post("/api/v1/notes/{noteId}/soft-delete", created.id())
+				.session(client.session()))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("forbidden"));
+
+		this.mockMvc.perform(post("/api/v1/notes/{noteId}/soft-delete", created.id())
+				.session(client.session())
+				.cookie(client.csrf())
+				.header("X-XSRF-TOKEN", client.csrf().getValue()))
+			.andExpect(status().isNoContent());
+
+		this.mockMvc.perform(post("/api/v1/notes/{noteId}/purge", created.id())
+				.session(client.session()))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("forbidden"));
+	}
+
 	private Callable<PortResult<Note>> writer(
 		Note created, String title, CountDownLatch ready, CountDownLatch start) {
 		return () -> {

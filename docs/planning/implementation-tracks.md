@@ -371,7 +371,7 @@ No production adapters. **Not** TypeScript interfaces in
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (opened 2026-09-20) |
+| **Status** | **completed** — archived `H-2026-09-20-P1-B02-commander-implementer.md` |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | S-01b (done); B-01 vocabulary (done); S-02 contracts (done, consume) |
 | **Blocks** | B-03, B-04, B-06 |
@@ -397,15 +397,24 @@ Depends: B-02, S-02.
 
 ### B-04c — B-01–B-04 quality checkpoint
 
-Depends: B-04. Same-lane gate **before B-05**: evaluate B-01–B-04;
-close unit / integration / load / API e2e gaps for identity + notes;
-add Postman under `apps/api/postman`. Does **not** replace B-12
-(retrieval isolation after B-08). Does **not** open Phase Check.
+Depends: B-04. Same-lane gate **before S-03 / B-05**, two sequential
+owners (exactly one live owner at a time):
+
+1. **Commander** evaluates B-01–B-04 (go/no-go) — **completed GO**
+   2026-09-20 (`H-2026-09-20-P1-B04C-implementer-commander.md`)
+2. On GO, **Implementer** closes unit / integration / load / API e2e
+   gaps + Postman under `apps/api/postman` — **live** `lane-backend.md`
+3. **Commander** then opens **S-03** (mock corpus) **before B-05**
+   (Implementer must not open either)
+
+Does **not** replace B-12 (retrieval isolation after B-08). Does **not**
+open Phase Check.
 
 ### B-05 — Ingestion / chunking jobs + progress port
 
-Depends: B-04c (B-04 product + checkpoint). Indexing lag is a first-class
-state (REC-02).
+Depends: B-04c and **S-03** preferred ahead on the backend lane (FE mock
+journeys). Indexing lag is a first-class state (REC-02). Do not jump to
+B-05 while S-03 is still listed unless `@user` explicitly defers mocks.
 
 ### B-06 — pgvector + mock embed adapter
 
@@ -530,8 +539,9 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-01 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
-| S-02 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| F-02 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
+| B-04c Implementer closeout | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |
 | B-01 | archived completed — [`../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md`](../handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md) |
 | D-01 | archived accepted — [`../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md`](../handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md) |
 | S-01a | archived completed — [`../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md`](../handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md) |
