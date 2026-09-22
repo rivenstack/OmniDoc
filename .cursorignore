@@ -1,0 +1,104 @@
+# OmniDoc — Cursor ignore (Agent / Tab / @ / indexing hardening)
+#
+# Why this file exists:
+# - `.gitignore` mainly affects indexing. `.cursorignore` also blocks Agent,
+#   Tab, Inline Edit, and @-mentions (best-effort).
+# - Cursor already ignores lockfiles, `.env*`, `node_modules/`, media, and
+#   many binaries by default. This file is defense-in-depth + JVM/Nx noise.
+#
+# Do NOT ignore: `docs/`, `context.md`, `architecture.md`, `AGENTS.md`,
+# `MEMORY.md`, handoffs, ADRs, `apps/*/src`, `packages/*/src`, `.cursor/agents/`.
+# Growing Markdown is managed by handoff read-order, not by ignoring docs.
+
+# --- Secrets (never feed to models) ---
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/*.pem
+**/*.p12
+**/*.keystore
+**/secrets/**
+**/credentials.json
+**/service-account*.json
+.cursor/mcp.local.json
+.cursor/mcp.*.local.json
+**/mcp.secrets.json
+
+# --- Dependencies ---
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+.yarn/
+.pnpm-store/
+
+# --- Frontend / Node build & caches ---
+**/dist/
+**/out/
+**/.next/
+**/.nuxt/
+**/.svelte-kit/
+**/.output/
+**/.vercel/
+**/.netlify/
+**/.turbo/
+**/.vite/
+**/.vitest/
+**/.parcel-cache/
+**/.cache/
+coverage/
+**/.nyc_output/
+storybook-static/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# --- Nx ---
+.nx/cache/
+.nx/workspace-data/
+
+# --- Java / Gradle (apps/api) ---
+**/.gradle/
+**/build/
+!docs/**/build/
+**/bin/
+**/out/
+*.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# --- Test / e2e artifacts ---
+test-results/
+playwright-report/
+blob-report/
+cypress/videos/
+cypress/screenshots/
+**/jacoco/
+**/test-output/
+
+# --- Local scratch / OS / IDE ---
+.tmp/
+.temp/
+*.local
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# --- Re-include small tracked CSVs Cursor defaults would drop ---
+!references/**/*.csv

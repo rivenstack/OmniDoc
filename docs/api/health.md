@@ -27,4 +27,4 @@ curl -s http://localhost:8080/actuator/health
 # {"status":"UP"}
 ```
 
-Actuator exposure is limited to `health`. Full Spring Security sessions / CSRF spa() land in B-03. Production OpenRouter / Spring AI adapters stay dark.
+Actuator exposure is limited to `health`. Default profile needs no live DB; for Compose Postgres + Flyway under profile `local`, see [local-postgres.md](./local-postgres.md). Full Spring Security sessions / CSRF spa() land in B-03. Production OpenRouter / Spring AI adapters stay dark.

@@ -1,0 +1,248 @@
+{
+  "info": {
+    "name": "OmniDoc B-01–B-04 local",
+    "description": "Identity + notes integrity against local apps/api. Consumes S-02; does not fork OpenAPI.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Sign in",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const jar = pm.cookies;",
+              "const xsrf = jar.get('XSRF-TOKEN');",
+              "if (xsrf) { pm.environment.set('xsrfToken', xsrf); }",
+              "const body = pm.response.json();",
+              "pm.test('actorId present', () => pm.expect(body.actorId).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/session"
+      }
+    },
+    {
+      "name": "2. Get session",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('actorId', () => pm.expect(pm.response.json().actorId).to.eql('actor-a'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/session"
+      }
+    },
+    {
+      "name": "3. List workspaces",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const ws = pm.response.json().workspaces;",
+              "pm.test('has workspace', () => pm.expect(ws.length).to.be.above(0));",
+              "pm.environment.set('workspaceId', ws[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/workspaces"
+      }
+    },
+    {
+      "name": "4. Create note",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201', () => pm.response.to.have.status(201));",
+              "const note = pm.response.json();",
+              "pm.environment.set('noteId', note.id);",
+              "pm.environment.set('versionId', note.versionId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-XSRF-TOKEN", "value": "{{xsrfToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman note\",\n  \"bodyJson\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [{ \"type\": \"text\", \"text\": \"hello from postman\" }]\n      }\n    ]\n  },\n  \"corpusOwnership\": \"mine\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/workspaces/{{workspaceId}}/notes"
+      }
+    },
+    {
+      "name": "5. Get note",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('id matches', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('noteId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}"
+      }
+    },
+    {
+      "name": "6. Update note — conflict (stale version)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 409', () => pm.response.to.have.status(409));",
+              "pm.test('code conflict', () => pm.expect(pm.response.json().code).to.eql('conflict'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-XSRF-TOKEN", "value": "{{xsrfToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Stale\",\n  \"bodyJson\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [{ \"type\": \"text\", \"text\": \"must lose\" }]\n      }\n    ]\n  },\n  \"expectedVersion\": \"version-does-not-exist\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}"
+      }
+    },
+    {
+      "name": "7. Update note — ok",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const note = pm.response.json();",
+              "pm.test('title updated', () => pm.expect(note.title).to.eql('Updated'));",
+              "pm.environment.set('versionId', note.versionId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-XSRF-TOKEN", "value": "{{xsrfToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated\",\n  \"bodyJson\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [{ \"type\": \"text\", \"text\": \"ok body\" }]\n      }\n    ]\n  },\n  \"expectedVersion\": \"{{versionId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}"
+      }
+    },
+    {
+      "name": "8. Soft-delete note",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-XSRF-TOKEN", "value": "{{xsrfToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}/soft-delete"
+      }
+    },
+    {
+      "name": "9. Get note after soft-delete",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 404', () => pm.response.to.have.status(404));",
+              "pm.test('not_found', () => pm.expect(pm.response.json().code).to.eql('not_found'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}"
+      }
+    },
+    {
+      "name": "10. Purge note",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-XSRF-TOKEN", "value": "{{xsrfToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/v1/notes/{{noteId}}/purge"
+      }
+    }
+  ]
+}
