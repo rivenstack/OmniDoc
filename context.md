@@ -65,9 +65,11 @@ Program of record:
   rewritten to **F-02** (app shell, nav, locale, honest workspace
   switcher). F-02 `ready`
 - **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
-  B-04c eval **GO**; backend lane now **B-04c Implementer** test/Postman
-  closeout (`lane-backend.md`). S-03 opens after that closeout (before
-  B-05)
+  B-04c eval **GO**; B-04c Implementer closeout **completed** and
+  archived. **S-03** mock corpus **completed** (Commander-validated
+  PASS-with-notes after Codex token exhaustion left archive/Outcome
+  incomplete). Backend lane advanced to **B-05** (ingestion /
+  chunking jobs + progress)
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -110,7 +112,9 @@ Program of record:
 | B-03 Identity sessions + membership binder | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B03-implementer-implementer.md` |
 | B-04 Notes CRUD + version concurrency | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B04-implementer-implementer.md` |
 | B-04c Commander eval (B-01–B-04) | backend | Commander | **completed** (GO) | `docs/handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md` |
-| B-04c Test + Postman closeout | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
+| B-04c Test + Postman closeout | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md` |
+| S-03 Deterministic mock corpus | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md` |
+| B-05 Ingestion / chunking + progress | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -119,12 +123,13 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 
 - Production AI/provider activation remains gated (mock-first CX)
 - RTL locale support remains deferred, not closed
-- **F-03+** waits on **S-03** (mock corpus / MSW) or **B-03** (identity)
-  fixtures — S-02 closed 2026-09-17 unblocked F-02
-- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/S-03
+- **F-03+** unblocked by **S-03** fixtures (and/or **B-03** live
+  identity) — FE still needs a narrowly scoped `web → mocks`
+  development/test import exception before in-app MSW wiring
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05
 - DevOps I-* have no human owner yet
-- B-01 Java port sources remain **uncommitted** in the working tree —
-  commit before merge/PR; does not block S-03 authoring
+- Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain
+  **uncommitted** — commit before merge/PR; does not block B-05
 
 ## Open Gates
 
@@ -167,5 +172,5 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
   `/implementer` (F-02, `lane: frontend`, human: front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (B-04c test/Postman closeout, `lane: backend`, human:
-  back-end programmer)
+  `/implementer` (B-05 ingestion/chunking + progress, `lane: backend`,
+  human: back-end programmer)

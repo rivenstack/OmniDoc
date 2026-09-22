@@ -25,6 +25,13 @@
         "command": "vitest run",
         "cwd": "packages/mocks"
       }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p tsconfig.build.json",
+        "cwd": "packages/mocks"
+      }
     }
   }
 }
