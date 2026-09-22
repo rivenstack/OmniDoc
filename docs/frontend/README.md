@@ -195,9 +195,9 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; D-01 tokens and providers wired in F-01. Journey UI lands in F-02+ (live status: [`context.md`](../../context.md)) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — D-01 tokens and providers wired in F-01; authenticated app shell wired in F-02 under `app/(app)/` + `app/shell/`. Journey UI lands in F-03+ (live status: [`context.md`](../../context.md)) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
-| `packages/ui/` | Design system: D-01 tokens (`src/styles/`) and copied-in shadcn/Base UI components (F-01 landed the token layer + foundation primitives) |
+| `packages/ui/` | Design system: D-01 tokens (`src/styles/`), foundation primitives (F-01), and the inventory §1–§2 shell + workspace chrome with its Storybook catalogue (F-02). `pnpm --filter @omnidoc/ui storybook` |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
 | `packages/domain/` | **Not created** — not the backend SoT (ADR-0005); domain ports live as Java interfaces in `apps/api` |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture baseline (ports, tenancy, fixtures) + accepted stack packages |
@@ -212,10 +212,13 @@ Confirmed by [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md)
 module is S-01b-owned.
 
 ```text
-apps/web/                 # Next.js 16.3.5 UI application (scaffold; D-01 tokens + providers wired)
+apps/web/                 # Next.js 16.3.5 UI application (tokens + providers + app shell wired)
+  app/(app)/              # authenticated route group — the app shell wraps only these routes
+  app/shell/              # shell host: nav IA, hotkeys, route-change focus (no data)
 apps/api/                 # JVM Gradle module — Spring Boot API / workers (ADR-0005);
                           # S-01b-owned; never a Node app
 packages/ui/              # D-01 design tokens + shadcn/ui components (copy-in, owned)
+  .storybook/             # Storybook 10.6.0 catalogue (state coverage + a11y addon)
 packages/contracts/       # shared request/response/stream types (OpenAPI → TS)
 packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
@@ -232,6 +235,82 @@ or any provider SDK. That boundary is enforced in CI by
 `@nx/enforce-module-boundaries` (ADR-0002), not by review etiquette.
 Do not create scaffolding until an implementation handoff authorizes it;
 package manager is **pnpm 12.4.1**.
+
+### Shell conventions (F-02)
+
+The authenticated shell is split: components in `packages/ui`, wiring in
+`apps/web/app/shell/`. What that means day to day:
+
+- **Components take props and never fetch.** `WorkspaceSwitcher`,
+  `MembersPanel`, `CommandPalette`, `Sidebar`, and the rest receive data
+  plus callbacks. There is no data layer in `packages/ui`, and `apps/web`
+  ships **no fixtures** — `packages/mocks` (S-03) is the only fixture
+  authority.
+- **Contract types come from `@omnidoc/contracts`.** Shell types derive
+  from the generated OpenAPI types (`Workspace`, `WorkspaceList`,
+  `CorpusOwnership`); never re-declare a contract shape locally.
+- **One direction source.** `apps/web/app/layout.tsx` sets `lang`/`dir`
+  from `app/locale.ts`; `DirectionProvider` supplies runtime direction to
+  Base UI primitives and sets no DOM `dir`. No component sets its own.
+  Shell CSS is logical only (`ms-*`, `ps-*`, `start-*`, `end-*`, `border-e`),
+  and `ms-auto` is the standard way to push a chip to the inline end.
+- **Logical CSS means Tailwind's logical names, not the CSS property names.**
+  `start-*`/`end-*` are `inset-inline-start`/`inset-inline-end`;
+  `border-s`/`border-e` are the logical borders. `inset-inline-0`,
+  `border-inline-end`, and friends are **not** utilities — they compile to
+  nothing, so the element silently loses its anchoring or its separator and
+  no build step complains. A source-discipline test in
+  `packages/ui/src/components/shell/shell.test.tsx` fails on that class of
+  typo, and `AppShell` asserts the fixed mobile tab bar carries both
+  `start-0` and `end-0`.
+- **Custom text roles must survive `cn`.** `tailwind-merge` knows Tailwind's
+  *default* scales only, so the D-01 roles (`text-od-body-sm`,
+  `text-od-micro`, …) were classified as colours and silently dropped when
+  combined with `text-od-text-*` — the element rendered at the inherited body
+  size with no test signal. `packages/ui/src/lib/utils.ts` now names the size
+  roles in the merge config; adding a new `--text-od-*` role means adding it
+  there too. `utils.test.ts` guards size-vs-colour merging.
+- **The rail narrows; it does not snap.** `AppShell` animates the grid track,
+  and each nav item is `w-full` so its width follows the track for free while
+  it animates its own `padding`/`gap` and fades the label — the label is
+  clipped, **not** swapped to `sr-only`, which would both snap and remove the
+  transition target. Rail items are `2.25rem` squares (`w-9`, `px-2.5`)
+  centred on one inline line with the header controls. A source-discipline
+  test fails if the geometry transition is removed.
+- **`<bdi>` for anything user-derived** — workspace names, member names,
+  page titles, palette rows, initials, emails.
+- **Exactly one `banner`.** `TopBar` owns it; `PageHeader` renders a
+  `<div>` deliberately, because a `<header>` inside `<main>` is still
+  resolved as a `banner` landmark by assistive-technology heuristics.
+- **Accessibility is mechanical, not aspirational.** Skip link first,
+  `aria-current` on the active nav item, palette focus trap + `Escape` +
+  focus restore, and every animated class paired with
+  `motion-reduce:transition-none` (a test asserts that pairing).
+- **Honest workspace chrome (REC-18).** At n≈1 the switcher is a label
+  plus a “Solo workspace” badge, not a one-item menu. The sample corpus is
+  grouped and labelled separately. Failure copy is the generic “You don’t
+  have access to that workspace.” and never discloses whether an id
+  exists. No org charts, member directories, or SSO walls.
+- **Capture is a control, not a nav destination.** The nav spine is
+  `apps/web/app/shell/nav.ts` — Inbox · Notes · Search · Ask, plus
+  `isActiveRoute`. “New note” is deliberately **not** in it: the shell
+  renders it through `Sidebar`'s `newNoteAction` slot and the
+  `MobileTabBar`'s `captureAction`, and the command palette offers it as a
+  command routed through the same hook point. Listing it as well put two
+  identical controls in the sidebar. Its decorative icons live in
+  `nav-icons.tsx`, so `nav.ts` stays JSX-free and therefore unit-testable
+  (the app’s test transform cannot parse JSX — `tsconfig.base.json` sets
+  `jsx: "preserve"` for Next).
+- **Overlays animate via Base UI’s state attributes.** Base UI only
+  animates what `data-starting-style` / `data-ending-style` select. A bare
+  `transition-opacity` with no such rule pins opacity at 1 and the surface
+  pops in and out — the transition classes look correct and do nothing.
+- **Storybook is the state-coverage surface.** `pnpm --filter
+  @omnidoc/ui storybook` (dev) and `pnpm --filter @omnidoc/ui
+  storybook:build`. A component is not spec-complete until every state in
+  its inventory row has a story. Reduced motion is reviewable with the
+  **Motion** toolbar global, which toggles a Storybook-only harness class
+  mirroring the real media query.
 
 ---
 
@@ -445,11 +524,13 @@ Concrete work that needs **no further decisions**:
 4. **Draft an accessibility checklist** for the four journeys (capture,
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
-5. **Extend the D-01 design system** — the token layer and foundation
-   primitives already live in `packages/ui`
+5. **Extend the D-01 design system** — tokens, foundation primitives, and
+   the inventory §1–§2 shell components already live in `packages/ui`
    ([`docs/design/foundations/tokens.md`](../design/foundations/tokens.md)
-   is the token authority). Read the component inventory before adding
-   anything; do not invent components, tokens, or IA outside it.
+   is the token authority), and every delivered state is browsable in
+   Storybook (`pnpm --filter @omnidoc/ui storybook`). Read the component
+   inventory before adding anything; do not invent components, tokens, or
+   IA outside it.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.
@@ -458,8 +539,8 @@ Concrete work that needs **no further decisions**:
 
 ### Still blocked until their implementation handoffs
 
-- FE journey source work (F-02+; tokens and primitives landed in F-01, and
-  F-02 also needs the S-02 contracts)
+- FE journey source work (F-03+; the app shell landed in F-02, and F-03
+  additionally needs the S-03 mock corpus or B-03 identity fixtures)
 - Implementing production provider adapters
 - Shipping an RTL locale
 - Adopting anything on ADR-0003's deferred list (client cache library,

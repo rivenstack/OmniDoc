@@ -24,115 +24,113 @@
 
 ## Durable Lessons
 
-- Parallel docs tasks: write only Allowed Write Paths; never touch
-  `context.md` / `current.md` / research trees owned by sibling agents
-- Ignore secret-bearing local MCP overrides; keep tracked `.cursor/mcp.json`
-  non-secret
-- When verifying docs packs: check no double-brace placeholders, no vendor
-  named as decided, and that relative links resolve
-- After Architect rewrites `architecture.md`, refresh onboarding docs in
-  the same wave or immediately after — stale “starter skeleton” wording
-  is a Medium defect (DEF-001 class). Point at `docs/adr/` for decisions.
-- Fixture work for humans should cross-reference `architecture.md` mock
-  corpus requirements rather than duplicating a second authority.
-- Answer-port `no_supported_answer` / `refused_policy` are success
-  states; tenant isolation must hold at retrieval time.
-- Canonical product name is **OmniDoc** (not OmniNote). Public remote:
-  `https://github.com/rivenstack/OmniDoc.git` (default branch `main`).
-  Do not claim CI exists until it is actually configured.
-- **2026-09-15:** Node S-01 archived `blocked` before execution. Do **not**
-  scaffold Node `apps/api` or Better Auth. Successors: **S-01a** (FE Nx)
-  and **S-01b** (Gradle Spring Boot). Domain ports are Java interfaces in
-  the API module — not TS `packages/domain` as backend SoT.
-- **2026-09-15 ADR-0005 accepted pins:** Java 21 + Boot 4.1.x; Gradle
-  beside Nx (`run-commands`); Spring Security sessions; Spring AI adapters
-  only; Spring Data JDBC (CRUD); JdbcTemplate + pgvector for vector/RLS;
-  Flyway; Log4j2 JSON; Python not Phase 1.
-- Two `/implementer` sessions OK when `lane` and write paths differ
-  (frontend vs backend).
-- **2026-09-15 (S-01a):** pnpm 12 ignores the `pnpm` key in
-  `package.json` — build approval lives as `allowBuilds:` in
-  `pnpm-workspace.yaml` (`pnpm approve-builds <pkg>` writes it there).
-- **2026-09-15 (S-01a):** `@nx/eslint-plugin@23.2.1`
-  `enforce-module-boundaries` schema puts `bannedExternalImports` and
-  `allowedExternalImports` **per depConstraint** (not top-level) and
-  names the tag list `onlyDependOnLibsWithTags` (not `onlyDependOn`).
-  The rule bails silently on **uninstalled** npm imports — proving the
-  banned-external path needs the package temporarily installed.
-- **2026-09-15 (S-01a):** `flat/typescript` needs `@eslint/js` +
-  `typescript-eslint` peers; `flat/react` additionally pulls
-  `eslint-plugin-import` et al. — base+typescript suffices for
-  boundary-only lint.
-- **2026-09-15 (S-01a):** keep Nx cache under `node_modules/.cache/nx`
-  via `cacheDirectory` to avoid touching `.gitignore` outside
-  Allowed Write Paths.
-- **2026-09-16 (S-01b):** Boot **4.1.1** Initializr maps Web →
-  `spring-boot-starter-webmvc` (not `spring-boot-starter-web`). MockMvc
-  autoconfigure lives under
-  `org.springframework.boot.webmvc.test.autoconfigure`. Prefer MockMvc
-  over TestRestTemplate unless also adding `spring-boot-restclient`
-  (`RestTemplateBuilder` moved).
-- **2026-09-16 (S-01b):** ArchUnit 1.4+ fails empty `should()` sets —
-  keep at least one class in `com.omnidoc.api.web` (e.g. marker) or set
-  `allowEmptyShould(true)`. Deliberate Spring AI leak proof needs a
-  temporary `org.springframework.ai` artifact on the classpath.
-- **2026-09-16 (S-01b):** put `.gradle/` in `apps/api/.gitignore` rather
-  than editing root `.gitignore` outside Allowed Write Paths. Option B
-  Gradle-at-`apps/api` + Nx `run-commands` works without `@nx/gradle`.
-- **2026-09-16 (S-01b):** exclude `UserDetailsServiceAutoConfiguration`
-  on the scaffold app so Security does not log a generated password
-  before B-03 session wiring.
-- **2026-09-17 (S-02):** Canonical HTTP SoT is `docs/api/openapi.yaml`.
-  Generate TS with `openapi-typescript` 7.13.0 into
-  `packages/contracts/src/generated/openapi.ts` — do not hand-edit that
-  file. Ask SSE event _names_ live in `docs/api/ask-sse.md`; JSON
-  payloads are OpenAPI `AskSse*` components. Keep `export const appName`
-  — `apps/web` still imports it and is outside this write path.
-- **2026-09-17 (S-02):** `partial` and `conflict` are legal on both
-  `AskOutcome` and `ErrorCode` but mean different things; distinguish by
-  field (`Answer.outcome` vs `ErrorBody.code`), not by banning the token.
-- **2026-09-17 (S-02):** Adding contracts codegen deps updates the root
-  `pnpm-lock.yaml` as a workspace consequence. Springdoc in `apps/api`
-  must later match `docs/api/`, not become a second authority.
+Task-specific detail lives in the archived handoff
+(`docs/handoffs/archive/`), not here. Keep entries short and reusable by
+a future session with a **different** task.
 
-- **2026-09-17 (F-01):** Tailwind v4 needs two project-level hooks for a
-  copy-in UI package: `@source` globs **inside the CSS entry** (a pnpm
-  workspace package is symlinked under `node_modules`, which Tailwind's
-  auto-detection skips) and `transpilePackages: ["@omnidoc/ui"]` in
-  `next.config.mjs` (the package ships TS source, not built JS).
-- **2026-09-17 (F-01):** `@custom-variant` declared in an **imported** CSS
-  file does register globally, and `@theme inline` re-exposes non-Tailwind
-  role names (`--od-*`) under Tailwind's namespaces as 1:1 aliases. Verify
-  by inspecting the built CSS, not by assuming.
-- **2026-09-17 (F-01):** Tailwind v4 **tree-shakes unused `@theme`
-  variables** — a token referenced by nothing is absent from the output.
-  Fine for utilities (they pull their variables back in when used), but a
-  raw-CSS consumer of an unused token would get an undefined variable.
-- **2026-09-17 (F-01):** two `@types/react` copies make `tsc` fail with
-  "Two different types with this name exist, but they are unrelated" —
-  `node_modules/@types` at the workspace root is **auto-included**, so a
-  package pinning a different `@types/react` than the root breaks. Keep
-  `@types/react` / `@types/react-dom` on the root's version everywhere.
-- **2026-09-17 (F-01):** likewise pin a UI package's **devDependency**
-  `react`/`react-dom` to the app's exact version, or the app bundle ends up
-  with two React copies and invalid hook calls. (`@omnidoc/ui` uses
-  19.2.7 to match `apps/web`; the ledger's 19.3.0 there would duplicate.)
-- **2026-09-17 (F-01):** under Vitest 5 `import.meta.url` is not a `file:`
-  URL, so `fileURLToPath(new URL(...))` throws "The URL must be of scheme
-  file". Read fixtures with `path.join(process.cwd(), ...)` and rely on the
-  Nx target's `cwd`.
-- **2026-09-17 (F-01):** Vitest/Vite rejects `esbuild: { jsx: "automatic" }`
-  ("'jsx' does not exist in type 'ESBuildOptions'"). Set
-  `"jsx": "react-jsx"` in the package tsconfig instead — the shared base's
-  `preserve` (for Next) does not emit a runtime.
-- **2026-09-17 (F-01):** jsdom has no `matchMedia`, which `next-themes`
-  calls; add a stub via `test.setupFiles`. Also RTL only auto-cleans up
-  when vitest globals are on — call `afterEach(cleanup)` explicitly.
-- **2026-09-17 (F-01):** lint traps in test/setup code: literal
-  `false && x` trips `no-constant-binary-expression` (use a variable), and
-  `() => {}` trips `@typescript-eslint/no-empty-function` (use
-  `() => undefined`).
-- **2026-09-17 (F-01):** do **not** add `api` to a frontend
-  `nx run-many` verification — `api:build`/`api:test` need a Java 21
-  toolchain that is absent locally, and it is another lane's problem.
-  Scope to `--projects=ui,web,contracts,mocks`.
+- Write only Allowed Write Paths; never touch `context.md` / `current.md`
+  / sibling agents' trees. Two parallel `/implementer` sessions are OK
+  when `lane` and write paths differ.
+- Ignore secret-bearing local MCP overrides; keep tracked
+  `.cursor/mcp.json` non-secret.
+- Canonical product name is **OmniDoc**; remote
+  `https://github.com/rivenstack/OmniDoc.git` (`main`). Never claim CI
+  exists until configured.
+- Do **not** scaffold Node `apps/api` or Better Auth; domain ports are
+  Java interfaces in `apps/api` (ADR-0005). Stack pins live in the ADRs —
+  do not restate them here.
+- After Architect rewrites `architecture.md`, refresh onboarding docs in
+  the same wave — stale wording is a defect (DEF-001 class).
+- Fixture work cross-references `architecture.md` §9, never forks a
+  second fixture authority. Answer-port `no_supported_answer` /
+  `refused_policy` are success states; tenant isolation holds at
+  retrieval time.
+- pnpm 12 ignores the `pnpm` key in `package.json` — build approvals
+  (`allowBuilds:`) live in `pnpm-workspace.yaml`.
+- Keep `@types/react` / `react` / `react-dom` on the root's exact version
+  everywhere (including UI devDeps) or duplicate-React/type errors follow.
+- Keep Nx cache under `node_modules/.cache/nx` and per-app ignores inside
+  the app (e.g. `.gradle/`, `storybook-static/`) rather than editing the
+  root `.gitignore`/flat config outside Allowed Write Paths.
+- `@nx/enforce-module-boundaries`: `bannedExternalImports` /
+  `allowedExternalImports` are per-`depConstraint`; the rule bails
+  silently on uninstalled imports. Flat eslint: base+typescript suffices
+  for boundary-only lint.
+- Verification: scope FE `nx run-many` to JS projects
+  (`ui,web,contracts,mocks`) — `api:*` needs a Java toolchain that is
+  another lane's problem.
+- Copy-in UI package wiring: `@source` globs inside the CSS entry +
+  `transpilePackages: ["@omnidoc/ui"]`; contracts codegen writes
+  `packages/contracts/src/generated/openapi.ts` (never hand-edit); the
+  canonical HTTP SoT is `docs/api/openapi.yaml`, not generated TS.
+- Storybook for a copy-in TS UI package uses `@storybook/react-vite` (not
+  `nextjs`); Tailwind v4 needs `@tailwindcss/vite` in `viteFinal`; never
+  add a second token/CSS entry. No pseudo-states addon in 10.6.0 — render
+  hover tokens directly; reduced motion via a Storybook-only harness
+  class on `documentElement`, kept out of product CSS.
+- Base UI: `Tooltip.Trigger` has no `nativeButton`; `Menu.Trigger` /
+  `Dialog.Close` must render `ref`-forwarding elements or popup placement
+  breaks. `Dialog.Popup` traps focus, escapes, and restores focus. Focus
+  assertions need a short wait after open.
+- A `<header>` inside `<main>` still resolves as a `banner` landmark —
+  `PageHeader` uses `<div>`; a regression test enforces exactly one
+  `banner`.
+- Cheap drift guards that catch real regressions: source-discipline tests
+  (logical-CSS-only, no component-set `dir`, every `transition-` paired
+  with `motion-reduce:transition-none`).
+- **Dead Tailwind classes are silent.** `inset-inline-0` and
+  `border-inline-end` are CSS *property* names, not utilities — Tailwind
+  emits no rule, nothing warns, and the element just loses its anchoring or
+  its separator. The logical names are `start-*`/`end-*` and
+  `border-s`/`border-e`. Grep the compiled CSS for a class before believing
+  it works; a source-discipline test now fails on that whole family.
+- **A `fixed` element with no inline anchor is not full-width.** It
+  shrink-wraps and sits at its static position. Always assert both inline
+  edges (`start-0` + `end-0`) rather than eyeballing a screenshot.
+- **Base UI animates only what its state attributes select.** A
+  `transition-*` class with no `data-[starting-style]`/`data-[ending-style]`
+  rule compiles fine and does nothing — opacity stays pinned and the surface
+  pops in and out. The class list looks correct, so only a live frame sample
+  catches it. Anchored menus also want `origin-[var(--transform-origin)]`.
+- **`grid-template-columns` is animatable** when both track lists
+  interpolate (`15rem 1fr` ↔ `3.25rem 1fr`); a bare track swap otherwise
+  reflows the whole shell in one frame.
+- **Overflow direction decides alignment.** When an item is wider than its
+  content box, a block-level item overflows toward `inline-end` only while a
+  flex-centred sibling splits the overflow across both sides — so two
+  controls meant to share an inline line sit a pixel or two apart. Centre
+  both the same way instead of tuning padding.
+- **Nav lists must not duplicate a dedicated action.** If the shell renders
+  a capture control from a slot, the nav data must not also list it —
+  `mobileNav` filtered it and the sidebar did not, which produced two
+  identical buttons and two identical rail icons. Keep the spine data-only.
+- **Split JSX out of modules you want to unit-test in `apps/web`.** The
+  app's test transform cannot parse JSX (`jsx: "preserve"` for Next; Vite
+  8's SSR transform rejects it and `esbuild: { jsx }` does not override it).
+  A `.ts` module for structure plus a `.tsx` module for icons keeps the
+  rules testable without touching test config.
+- Correct repository docs that teach a defect:
+  `docs/frontend/README.md` listed `border-inline-end` as the logical border
+  utility, i.e. it was the source of the dead class.
+- jsdom has no `matchMedia` (stub via `setupFiles`); RTL auto-cleanup
+  needs vitest globals, else call `afterEach(cleanup)`. Under Vitest 5
+  `import.meta.url` is not `file:` — use `path.join(process.cwd(), …)`.
+- `apps/web/next-env.d.ts` flips between `.next/dev/types/*` and
+  `.next/types/*` after `next build` — `git checkout --` it to keep
+  diffs intentional. Integrated-browser screenshots can be stale right
+  after `setViewportSize`; trust DOM measurements / the a11y snapshot.
+- **`tailwind-merge` only knows Tailwind's default scales.** Custom role
+  utilities (`text-od-body-sm`, `text-od-micro`, …) are classified as
+  *colours*, so they collapse against a real colour (`text-od-text-secondary`)
+  and the last one wins — the size is silently dropped with no build error.
+  The class list is wrong at *composition* time, so grepping the compiled CSS
+  or the DOM still shows the size rule exists; only reading the rendered
+  `class` attribute reveals the loss. Extend the merge config
+  (`extendTailwindMerge`) and unit-test the merge, not just the utility.
+- **Collapse should animate the item's own box, not swap snapped classes.**
+  Animate the shell's grid track and give each nav item `w-full` so it follows
+  the track, plus `transition-[width,padding,gap]` and a label that fades
+  (clipped, never `sr-only`). Swapping `size-10` ↔ `h-10 ps-3` in one frame
+  makes the items jump while the track is still moving. Size the rail square
+  with padding (`w-9` + `px-2.5` around a `1rem` glyph) so centring does not
+  depend on a `justify-center` that fights the label's flex growth.

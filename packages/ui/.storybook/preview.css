@@ -1,0 +1,19 @@
+/* ==========================================================================
+   Storybook-only harness CSS — NOT a product stylesheet.
+
+   The design system resolves reduced motion with a real media query in
+   `src/styles/tokens.css` (`@media (prefers-reduced-motion: reduce)`). A
+   browser preference cannot be forced from a story, so this file mirrors that
+   rule under a class that the `Motion` toolbar global toggles. It exists so a
+   reviewer can *see* the static equivalent of every animated state; it adds no
+   product mechanism and no token.
+   ========================================================================== */
+
+.od-emulate-reduced-motion *,
+.od-emulate-reduced-motion *::before,
+.od-emulate-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

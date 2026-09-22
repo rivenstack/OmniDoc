@@ -5,10 +5,8 @@
 
 @import "@omnidoc/ui/styles/globals.css";
 
-/* S-01a scaffold class, still used by `app/page.tsx`. Now expressed with
-   D-01 layout tokens and logical properties only (LTR-now / RTL-ready). */
-.shell {
-  margin-inline: auto;
-  padding-inline: var(--od-space-4);
-  max-inline-size: var(--od-layout-content-max);
-}
+/* F-02 note: the S-01a `.shell` helper class was removed. The authenticated
+   shell now owns its own grid in `@omnidoc/ui` (`AppShell`), which reads the
+   D-01 layout tokens directly (`--od-layout-sidebar`,
+   `--od-layout-content-max`) and uses logical properties only. Keeping a second
+   width helper here would be a second authority for shell geometry. */

@@ -238,4 +238,9 @@ Before finishing:
 - Add only durable, reusable lessons to the relevant memory file.
 - Do not copy entire task outputs or temporary status into memory.
 - Correct memory entries that have become false.
+- Before appending, ask: "Will a future session with a *different* task need this?"
+- If no, the lesson belongs in the handoff/archive, not memory.
+- Entries are one or two lines, date-stamped.
+- If the file exceeds 100 lines, prune the oldest task-specific entries first —
+  replace, don't only append.
 - Persist status on the assigned handoff when parallel.

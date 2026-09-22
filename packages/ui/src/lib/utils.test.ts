@@ -16,4 +16,25 @@ describe("cn", () => {
   it("keeps non-conflicting utilities", () => {
     expect(cn("rounded-md", "border")).toBe("rounded-md border");
   });
+
+  it("treats the custom text scale as font-size, not colour", () => {
+    // Regression: tailwind-merge only knows the default Tailwind scales, so
+    // `text-od-body-sm` used to be classed as a colour and collapsed against
+    // `text-od-text-secondary`, dropping the size. The merge config in
+    // `utils.ts` names the D-01 roles as a font-size group.
+    expect(cn("text-od-body-sm", "text-od-text-secondary")).toBe(
+      "text-od-body-sm text-od-text-secondary",
+    );
+    expect(cn("text-od-micro", "text-od-text-secondary")).toBe(
+      "text-od-micro text-od-text-secondary",
+    );
+    // A default Tailwind colour and a custom size are independent too.
+    expect(cn("text-red-500", "text-od-body-sm")).toBe(
+      "text-red-500 text-od-body-sm",
+    );
+  });
+
+  it("still resolves two custom font sizes to the last one", () => {
+    expect(cn("text-od-body-sm", "text-od-body")).toBe("text-od-body");
+  });
 });

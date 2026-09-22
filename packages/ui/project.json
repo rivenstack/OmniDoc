@@ -15,7 +15,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint .",
+        "command": "eslint . --ignore-pattern 'storybook-static/**'",
         "cwd": "packages/ui"
       }
     },
@@ -25,6 +25,14 @@
         "command": "vitest run",
         "cwd": "packages/ui"
       }
+    },
+    "storybook:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "storybook build",
+        "cwd": "packages/ui"
+      },
+      "outputs": ["{projectRoot}/storybook-static"]
     }
   }
 }

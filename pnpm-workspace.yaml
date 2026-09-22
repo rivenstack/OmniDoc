@@ -3,4 +3,10 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  # Required by the Storybook toolchain added in F-02 (`@storybook/react-vite`
+  # → Vite 8 → esbuild). esbuild's install script only places its platform
+  # binary; the dependency itself is the ledger-pinned transitive of Vite.
+  # This is a root JS-graph config change, flagged in the F-02 Outcome because
+  # it sits outside the handoff's Allowed Write Paths.
+  esbuild: true
   nx: true
