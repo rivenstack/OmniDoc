@@ -63,7 +63,25 @@ Program of record:
   tests pass)
 - **2026-09-19:** F-01 soft-stop **cleared** — frontend lane head
   rewritten to **F-02** (app shell, nav, locale, honest workspace
-  switcher). F-02 `ready`
+  switcher). F-02 was `ready`
+- **2026-09-22:** `@user` paused **F-02 before execution**. D-01 visuals
+  are historical, not a build ticket. Live design authority:
+  `docs/design/system-ux.md` (system contracts) and
+  `docs/design/now.md` (living plan). Look is stock shadcn until a
+  design language is chosen
+- **2026-09-22:** `@user` chose the **visible kit** slice — **F-02a
+  completed**: `/kit` page of stock shadcn primitives in `apps/web`
+  (no shell, no journeys). `packages/ui` tests 121/121, typechecks green.
+  Design language = swappable token layer; a future look is a token
+  retune, not a component rewrite
+- **2026-09-23:** `@user` confirmed the **F-01→F-11 sequence as the plan
+  of record** (PM tracks it). Task format: title + short description +
+  integration details (API/state/fixtures); UI details stay open. New
+  rule: implementer asks `@user` for a reference (link / pasted code /
+  prompt, image welcome) before building any visual block, and offers
+  options on real choices. **F-02 (shell) reopened as the next step**;
+  the D-01-era F-02 archive stays historical. Design language = swappable
+  token layer
 - **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
   B-04c eval **GO**; B-04c Implementer closeout **completed** and
   archived. **S-03** mock corpus **completed** (Commander-validated
@@ -105,7 +123,8 @@ Program of record:
 | S-01a FE Nx + boundary CI | shared | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
 | S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
-| F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **ready** | `docs/handoffs/active/lane-frontend.md` |
+| F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **ready** — next in sequence; reopened 2026-09-23 under new design rules (structure from `system-ux.md`; references from `@user`) | `docs/handoffs/active/lane-frontend.md` |
+| F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
 | B-02 Postgres schema + RLS + local Compose | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B02-commander-implementer.md` |

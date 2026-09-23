@@ -49,6 +49,6 @@ Postgres is backend-owned; AWS deploy is DevOps (often unassigned).
 | Boundaries / ADRs | `/architect` |
 | Evidence / vendors | `/researcher` |
 | Customer UX claims | `/ux-researcher` |
-| Visual specs | `/designer` |
+| System UX / design language | `/designer` |
 | Construction | `/implementer` |
 | Verification | `/phase-check` |

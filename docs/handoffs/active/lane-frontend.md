@@ -1,5 +1,5 @@
 ---
-handoff_id: H-2026-09-19-P1-F02
+handoff_id: H-2026-09-23-P1-F02-user-implementer
 affinity: implementation
 track: parallel
 status: ready
@@ -7,209 +7,194 @@ phase: "1"
 task: "F-02"
 lane: frontend
 human_owner: front-end-programmer
-from: commander
+from: user
 to: implementer
-created: 2026-09-19
+created: 2026-09-23
 ---
 
-# F-02 — App shell, nav, locale, honest workspace switcher
+# F-02 — App shell + navigation (structure, not pixels)
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-frontend.md and execute F-02 exactly. Build the app shell and honest workspace switcher per D-01 shell spec and inventory §1–§2, wired against @omnidoc/contracts types. Do not open F-03. Do not touch apps/api, packages/mocks, or packages/contracts authorship. Do not activate production AI. Do not overwrite docs/handoffs/current.md or lane-backend.md.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute F-02 exactly. Build the app shell + nav per docs/design/system-ux.md (structure only). For every visual block, ask @user for a reference (link, pasted code, or a prompt — image welcome) before building it. UI details stay open; do not follow D-01 layouts or inventory. Do not open F-03. Do not touch apps/api, packages/mocks, packages/contracts authorship, docs/handoffs/current.md, or lane-backend.md.
 ```
 
 ## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end
-programmer. **allowed_task_classes:** `F-*` only (this handoff = F-02).
+programmer. **allowed_task_classes:** `F-02` only.
 
 Build the authenticated app shell — sidebar, top bar, mobile tab bar,
-skip link, command palette, content region — and the **honest workspace
-switcher** (REC-18) in `packages/ui`, wired into `apps/web`. Consume the
-S-02 canonical contracts (`@omnidoc/contracts`) as **types only**. Keep
-the single `lang`/`dir` source and LTR-now discipline established in
-F-01.
+skip link, content region, command palette — and the honest workspace
+switcher. The **old sequence is the plan of record** (F-01 → F-02 →
+F-03 → …), so this step happens now, but under the new design system:
 
-The F-01 soft-stop is **cleared**: S-02 is completed and archived
-(`docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md`),
-so F-02 is unblocked.
+- **Structure and behavior** come from `docs/design/system-ux.md`
+  (destinations, honest workspace chrome, selector-not-authority,
+  single `lang`/`dir` source).
+- **UI details stay open.** Sidebar width, placement, motion, palette —
+  none are fixed. For every visual block, ask `@user` for a reference
+  (link / pasted code / prompt, images welcome); if none exists, offer
+  options and let `@user` choose. Do not reproduce D-01 layouts.
+- Non-visual work (state management, data wiring, contracts types) is
+  yours to implement as planned below. Where the plan leaves a real
+  choice, ask.
 
 ## Required Reading
 
-1. `context.md` (read-only)
-2. `docs/planning/implementation-tracks.md` (F-02 row; do not edit status
-   tables beyond what Completion Instructions allow)
-3. `architecture.md` §2 (tenancy / selector semantics), §8 (locale /
-   direction), §9 (sample-vs-mine)
-4. `AGENTS.md`
-5. ADR-0001 §1–§5/§7, ADR-0002 (FE graph), ADR-0003, ADR-0004 (chrome only)
-6. `docs/design/shell/app-shell-and-navigation.md` (the shell spec —
-   primary authority for this task)
-7. `docs/design/components/inventory.md` §1–§2 (names + states), §12
-   (state-coverage rule), §13 (import boundary)
-8. `docs/design/accessibility/a11y-and-rtl-readiness.md` (§2 focus
-   contract, §3 keyboard map, §4 SR patterns)
-9. `docs/design/states/sample-vs-mine.md` (switcher + sample separation)
-10. `docs/api/README.md` + `docs/api/openapi.yaml` (consume only —
-    `Workspace`, `WorkspaceList`, `Principal`, `CorpusOwnership`)
-11. Archived F-01 outcome —
-    `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md`
-    (token layer, providers, copy-in conventions, bounded gaps)
-12. `docs/frontend/README.md`
-13. This handoff
+1. `docs/design/system-ux.md` — what must exist and what binds the API
+2. `docs/design/now.md` — the visible plan; log your reference choices
+   in its Decisions log
+3. This file
+4. `context.md` (read-only)
+5. `packages/ui` exports (F-01 primitives — use them; do not extend
+   tokens)
+6. `docs/api/openapi.yaml` + `packages/contracts` generated types
+   (consume only)
+7. ADR-0003 (component source rules: copy-in shadcn on Base UI; RSC +
+   Server Actions; Zustand only where client state is real)
+8. Superseded D-01-era F-02 (history only — scope reference, not
+   authority):
+   `docs/handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md`
 
 ## Inputs / Evidence
 
-- D-01 design package: `docs/design/**` (accepted; consume only)
-- S-02 contracts: `packages/contracts` generated types + `docs/api/`
-  (consume only — backend-authored SoT)
-- F-01 foundation: tokens, `cn()`, DirectionProvider/ThemeProvider, and
-  foundation primitives already in `packages/ui`
-- Auth SoT: Spring Security sessions (ADR-0005); identity **port** only
-  in the client; workspace id is a **selector**, never authority
+- System contracts: `docs/design/system-ux.md` §1 (destinations:
+  New note, Inbox, Notes, Collections, Search, Ask, workspace switcher,
+  search entry, mode, corpus, citation inspection, usage) and §2
+  (tenancy: selector-not-authority, generic forbidden denial)
+- F-01 primitives + token role layer in `packages/ui`
+- S-02 canonical contracts; S-03 mock fixtures exist (backend lane),
+  but this handoff wires **types only** — no data fetching
+- Visible kit at `/kit` (F-02a) — the primitive gallery to build from
+
+## Task details
+
+| Concern | This task |
+| --- | --- |
+| API connections | `@omnidoc/contracts` types only (`Workspace`, `WorkspaceList`, `Principal`, `CorpusOwnership` where the switcher needs them). **No fetching.** Components receive data via props; live wiring waits for a later slice with MSW |
+| State management | Server-first shell (RSC). Client state kept minimal: sidebar collapse / palette open — local state first; Zustand (ADR-0003) only if state must be shared across distant components. Ask if unsure |
+| Routing / IA | Destinations from `system-ux.md` §1 (New note, Inbox, Notes, Collections, Search, Ask). Routes may be stub pages; structure over completeness |
+| Workspace switcher | Selector, never authority; generic forbidden copy ("You don't have access to that workspace."); sample workspace separated and labelled; honest at n≈1 ("Solo workspace" is fine — do not fake org scale) |
+| Locale / direction | Single `lang`/`dir` source stays `apps/web/app/locale.ts` → `layout.tsx`; `DirectionProvider` is the only direction source; logical CSS; `bdi` around workspace names / identifiers |
+| Accessibility | Release gate per `quality/ui-qa-checklist.md`: skip link first focusable, landmarks, visible focus, keyboard-operable nav and palette, Escape dismiss, focus restore |
+| Mobile | Capture/nav reachable without gestures; a mobile tab bar or equivalent is part of the shell's job |
+| Look | Stock shadcn + whatever references `@user` gives. No new tokens; no palette invention |
+
+## Reference protocol (per visual block)
+
+Blocks in scope: sidebar, top bar, mobile nav, content region frame,
+command palette, workspace switcher, skip link.
+
+1. Before building a block's UI, ask `@user`: *do you have a reference —
+   a link, pasted code, or a prompt (image welcome) — for this?*
+2. No reference → offer 2–3 options (e.g. default shadcn composition;
+   thin custom block on Base UI; skip the block this slice) and wait.
+3. Log each choice in `docs/design/now.md` (Decisions log).
+4. Skip link and focus management are **not** optional and not visual
+   choices — they are gate requirements; build them without asking.
 
 ## Allowed Write Paths
 
-- `packages/ui/**` (shell components, Storybook scaffolding, tests)
-- `apps/web/**` only as needed for shell wiring (layout, landmarks,
-  focus management, palette hotkey)
-- `docs/frontend/README.md` (only to reflect shell conventions actually
-  landed; no status essays)
+- `packages/ui/**` (shell components as copy-in blocks; Storybook
+  scaffolding only if `@user` opts in)
+- `apps/web/**` shell wiring (layout, landmarks, routes, focus
+  management, palette hotkey)
+- `docs/frontend/README.md` (landed conventions only)
+- `docs/handoffs/active/lane-frontend.md` (status, Outcome)
+- `docs/design/now.md` (Decisions log + Current slice lines)
+- `context.md` (status lines only)
 - `docs/memory/implementer.md` (durable lessons only)
-- This file: status, Outcome; archive + rewrite rules in Completion
 
 **Must not touch:** `apps/api/**`, `docs/api/**`, `docs/adr/**`,
-`docs/design/**` (consume only), `packages/mocks/**` (S-03 owns
-fixtures), `packages/contracts/**` authorship (consume generated types
-only), `docs/handoffs/current.md`,
-`docs/handoffs/active/lane-backend.md`, `context.md`, `architecture.md`,
-`docs/planning/**`
+`docs/design/system-ux.md` (contracts change only via `@user`),
+`packages/mocks/**`, `packages/contracts/**` authorship,
+`docs/handoffs/current.md`, `docs/handoffs/active/lane-backend.md`,
+`docs/planning/**` (status lines above are the exception),
+`packages/ui/src/styles/tokens.css`.
 
 ## Out of scope
 
-- Auth / sign-in UI (F-03 — also needs B-03 or S-03 identity fixtures)
-- Capture / editor (F-04), organize (F-05), retrieve (F-06), Ask (F-07)
-- `ModeChip` / `ModeDetailsPopover` / corpus usage chrome (F-08 dual-mode
-  chrome) — reserve a TopBar slot only; render nothing in it yet
-- Mock corpus / MSW handlers (`packages/mocks` — S-03, backend-produced)
-- OpenAPI / SSE contract authorship (backend lane)
-- Production AI / provider SDKs
-- AWS / DevOps I-*
+- Journeys: auth (F-03), capture (F-04), organize (F-05), retrieve
+  (F-06), ask (F-07), dual-mode chrome (F-08), sample path (F-09)
+- Fetching / MSW wiring in-app; fixtures authorship
+- Token values, palettes, motion systems (references first)
+- Production AI; RTL locale; AWS
 
 ## Deliverables
 
-1. **Shell components copy-in** per inventory §1–§2, each with **every
-   state in its row**: `AppShell`, `Sidebar`, `SidebarNavItem`,
-   `MobileTabBar`, `TopBar`, `PageHeader`, `SkipLink`, `CommandPalette`,
-   `ContentRegion`, `WorkspaceSwitcher`, `WorkspaceSwitcherItem`,
-   `SoloWorkspaceBadge`, `MembersPanel`, `MemberRow`, `ThemeToggle`.
-   No components outside the inventory (§12 rule).
-2. **Shell wiring in `apps/web`**: skip link as first focusable element;
-   `banner` / `navigation` / `main` landmarks; focus order per shell spec
-   §2.4; route-change focus to the content heading; `Cmd/Ctrl+K` palette
-   (focus-trapped, Escape-dismissible, focus restored to trigger);
-   `Cmd/Ctrl+N` new-note hook point (action itself lands with F-04).
-3. **Honest workspace switcher** (REC-18): single-workspace label +
-   "Solo workspace" badge; few-workspaces real list; sample workspace
-   separated and labelled "Sample — public demo notes"; selector-not-
-   authority semantics with the generic forbidden copy ("You don't have
-   access to that workspace."); no fake org scale, member directories,
-   or SSO theatre.
-4. **Typed against S-02 contracts**: switcher/nav props use
-   `@omnidoc/contracts` types (`Workspace`, `WorkspaceList`,
-   `CorpusOwnership`). Components receive data via props — **no fetching
-   and no fixture authorship**; live wiring waits for S-03 MSW fixtures.
-5. **Storybook 10.6.0 scaffolding in `packages/ui`** — closes F-01
-   bounded gap #1 — plus stories covering **every state** of every
-   component delivered here (inventory §12), with reduced-motion variants
-   where motion is listed.
-6. **Locale / direction preserved**: single `lang`/`dir` source remains
-   `apps/web/app/locale.ts` → `layout.tsx`; Base UI `Direction` remains
-   the only direction source; logical CSS only; `bdi` isolation where
-   workspace names / identifiers render.
-7. Outcome on this handoff.
+1. Shell structure with the §1 destinations present and navigable
+   (stub routes fine).
+2. Honest workspace switcher per the Task details table.
+3. Skip link + landmarks + focus management per the a11y gate.
+4. Shell components as copy-in blocks in `packages/ui`, consuming token
+   roles; every block's look traceable to a `@user` reference or an
+   explicit logged choice.
+5. Stub `New note` action (no editor yet — F-04 owns TipTap).
+6. Outcome here; decision log rows in `now.md`; status in `context.md`.
 
 ## Constraints / Prohibited Decisions
 
-- Do not invent tokens or components not in the D-01 inventory
-- Do not author MSW handlers, fixtures, or a second fixture authority
-- Do not hand-edit `packages/contracts/src/generated/openapi.ts` or fork
-  contract shapes locally
-- Do not import provider SDKs into `apps/web` or `packages/ui`
-- Do not claim RTL locale support
-- Do not start F-03 / F-04 in this handoff
-- Do not author OpenAPI or Java ports
-- No simulated enterprise scale in any shell copy (REC-18)
+- Do not invent visual details no reference covers
+- Do not reproduce D-01 widths, layout diagrams, or inventory states
+- Do not add tokens or edit `tokens.css`
+- Do not author fixtures, OpenAPI, or Java code
+- Do not import provider SDKs into `apps/web` / `packages/ui`
+- Do not claim RTL locale support; do not activate production AI
+- Do not fake enterprise scale (org charts, seats, SSO chrome)
 
 ## Acceptance Criteria
 
-- Inventory §1–§2 shell components exist with all listed states
-- Storybook stories exist for every state of every delivered component
-- Shell a11y: skip link first focusable, landmarks present, focus order
-  per spec §2.4, palette keyboard-complete with focus restore
-- Workspace switcher is honest at n≈1–few; sample vs Mine separated and
-  labelled; failure copy is the generic forbidden message
-- Contracts consumed as generated types; no local shape forks
-- LTR-now + logical CSS + single `lang`/`dir` source preserved
-- No provider SDK; no `apps/api`, `packages/mocks`, or contracts-author
-  writes
-- Scaffold tests / typecheck / lint / build for touched FE packages stay
-  green; Storybook build (or `storybook:build` equivalent) passes
-
-## Directionality / accessibility checks
-
-- Primary locale `en`; single `lang`/`dir` source; `DirectionProvider`
-  sets no DOM `dir`
-- Logical CSS only; no physical-direction insets; expand/collapse and
-  chevron semantics are start/end aware (shell spec §8)
-- Visible focus everywhere; ring meets non-text contrast in both themes
-- Mode chip slot is inert this handoff — no status announcements wired
-  until F-08
-- `prefers-reduced-motion` respected for palette/sheet/sidebar motion
-- Mobile (~390px): bottom tab bar per shell spec §3; no gesture-only
-  actions; capture never depends on a swipe
+- Every §1 destination reachable; nav states honest (no fake scale)
+- Workspace id used as selector only; forbidden copy is generic
+- Skip link first focusable; landmarks present; palette
+  keyboard-complete with focus restore; visible focus everywhere
+- Single `lang`/`dir` source; logical CSS; `bdi` on identifiers/UGC
+- Each built block has a logged `@user` reference or logged choice
+- Contracts consumed as generated types; no local shape forks; no
+  fetching in this task
+- `packages/ui` + `apps/web` typecheck, tests, build green
+- `current.md`, backend lane, contracts, mocks untouched
 
 ## Stop / escalate conditions
 
-- **Soft-stop:** After F-02 completes, do **not** open F-03 until
-  Commander marks **S-03** (mock corpus / MSW) or **B-03** (identity)
-  ready — F-03 needs identity fixtures. Set this file `status: blocked`
-  with Outcome `waiting on S-03/B-03` if rewriting early is attempted —
-  prefer leaving F-02 completed and waiting for Commander.
-- **Hard-stop:** write-path collision with backend; pressure to reopen
-  ADRs; production AI activation; claiming RTL locale shipped; inventing
-  components or fixtures not authorized here.
+- **Soft-stop:** a block has no reference and `@user` is unavailable →
+  stop that block, not the task; log the open choice in `now.md`.
+- **Hard-stop:** pressure to build from D-01 specs; write-path
+  collision with backend; ADR reopen; production AI activation;
+  claiming RTL shipped.
 
 ## Dependencies / Risks
 
-- Depends on: F-01 (completed), S-02 (completed 2026-09-17)
-- Blocks: F-03+ (F-03 additionally needs S-03/B-03; F-04 needs S-03
-  fixtures for data)
-- Parallel: B-02 on backend — no mutual dependency
-- Risk: inventing a second fixture authority — forbidden; render from
-  typed props only
-- Risk: Storybook 10 + Next 16 / React 19 integration friction — if the
-  pinned Storybook 10.6.0 cannot be made to build within this handoff,
-  return it as a bounded gap instead of substituting an unpinned version
+- Depends on: F-01 (completed), F-02a (completed — kit exists)
+- Blocks: F-03+ (auth next in sequence; identity fixtures from S-03/B-03
+  are ready)
+- Parallel: backend B-06 — no mutual dependency
+- Risk: stub routes without data could tempt fetching — keep props-only
+- Risk: "honest chrome" copy drift — the generic forbidden denial is a
+  system contract; copy it exactly
 
 ## Gates
 
 - Production AI activation remains gated
-- RTL locale remains deferred
+- RTL locale remains deferred (readiness discipline applies)
 - UT-* remain unrun
+- Design language remains unchosen (stock shadcn + references)
 
 ## Completion Instructions
 
-1. Implement F-02 deliverables inside Allowed Write Paths.
-2. Append Outcome; set this file `status: completed`.
-3. Archive a copy to
-   `docs/handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md`
-   (immutable).
-4. **Do not** rewrite this path to F-03. Soft-stop: notify that the lane
-   waits on **S-03 / B-03**. Commander opens F-03 on this same path when
-   fixtures are ready.
+1. Complete deliverables inside Allowed Write Paths.
+2. Append Outcome; set `status: completed`.
+3. Archive to
+   `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md`
+   (immutable). The older F-02 archives stay as history.
+4. **Same-lane sequence rule:** the F-01→F-11 order is the plan of
+   record. On completion, rewrite this path to **F-03 (auth UI)** —
+   identity fixtures (S-03/B-03) are ready — using the same format:
+   structure from `system-ux.md`, references from `@user`, integration
+   details in the Task details table. If a cross-lane dep is unmet,
+   soft-stop instead.
 5. Durable lessons only in `docs/memory/implementer.md`.
-6. Do **not** update `context.md` or `current.md` unless Commander
-   authorizes — prefer Outcome here for Commander integration.
+6. Do not overwrite `current.md` or `lane-backend.md`; update
+   `context.md` status lines only.

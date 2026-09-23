@@ -100,11 +100,12 @@ Notes that matter day to day:
   identity **port** survives. The workspace id is a **selector** only;
   membership is resolved server-side and a mismatch is a 403, not a
   frontend fallback.
-- **Tokens live in `packages/ui/src/styles/`.** `tokens.css` is the single
-  D-01 mirror and `globals.css` is the only Tailwind v4 entry; the app
-  imports it rather than declaring Tailwind itself. Register UI-package
-  component source with `@source` when adding new directories, or classes
-  generated there will silently go missing.
+- **Tokens live in `packages/ui/src/styles/`.** `tokens.css` holds the
+  F-01 values (copied from D-01). As of 2026-09-22 those values are not a
+  lock — see `docs/design/now.md`. `globals.css` is the only Tailwind v4
+  entry; the app imports it rather than declaring Tailwind itself.
+  Register UI-package component source with `@source` when adding new
+  directories, or classes generated there will silently go missing.
 
 ### Still pending / open
 
@@ -195,9 +196,9 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; D-01 tokens and providers wired in F-01. Journey UI lands in F-02+ (live status: [`context.md`](../../context.md)) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired. F-02 shell is the live task (reopened 2026-09-23, structure from `system-ux.md`). Live UI plan: [`docs/design/now.md`](../design/now.md) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
-| `packages/ui/` | Design system: D-01 tokens (`src/styles/`) and copied-in shadcn/Base UI components (F-01 landed the token layer + foundation primitives) |
+| `packages/ui/` | UI package: F-01 shadcn/Base UI primitives. D-01 token values are not a lock (2026-09-22). Plan: [`docs/design/now.md`](../design/now.md) |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
 | `packages/domain/` | **Not created** — not the backend SoT (ADR-0005); domain ports live as Java interfaces in `apps/api` |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture baseline (ports, tenancy, fixtures) + accepted stack packages |
@@ -212,10 +213,10 @@ Confirmed by [ADR-0002](../adr/ADR-0002-workspace-and-tooling.md)
 module is S-01b-owned.
 
 ```text
-apps/web/                 # Next.js 16.3.5 UI application (scaffold; D-01 tokens + providers wired)
+apps/web/                 # Next.js 16.3.5 UI application (scaffold; F-01 tokens + providers wired)
 apps/api/                 # JVM Gradle module — Spring Boot API / workers (ADR-0005);
                           # S-01b-owned; never a Node app
-packages/ui/              # D-01 design tokens + shadcn/ui components (copy-in, owned)
+packages/ui/              # shadcn/ui components (copy-in, owned); F-01 token values, not a D-01 lock
 packages/contracts/       # shared request/response/stream types (OpenAPI → TS)
 packages/mocks/           # deterministic fixtures + MSW handlers
 docs/api/                 # Canonical HTTP/OpenAPI/SSE contracts
@@ -445,11 +446,12 @@ Concrete work that needs **no further decisions**:
 4. **Draft an accessibility checklist** for the four journeys (capture,
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
-5. **Extend the D-01 design system** — the token layer and foundation
-   primitives already live in `packages/ui`
-   ([`docs/design/foundations/tokens.md`](../design/foundations/tokens.md)
-   is the token authority). Read the component inventory before adding
-   anything; do not invent components, tokens, or IA outside it.
+5. **Do not extend D-01 as a spec** — F-02 runs from the new rules:
+   structure from [`docs/design/system-ux.md`](../design/system-ux.md),
+   visible plan in [`docs/design/now.md`](../design/now.md), and a
+   `@user` reference (link / pasted code / prompt) per visual block
+   before you build it. Stock shadcn is the look until a design language
+   is chosen. The component inventory is not a whitelist.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.
@@ -476,7 +478,7 @@ Concrete work that needs **no further decisions**:
 | Phase order, task ownership, handoff routing, “who owns this?”, Wave integration | **`/commander`** |
 | Technical evidence, provider terms, shortlists (not selection) | `/researcher` |
 | Journey/trust UX evidence and design-facing recommendations | `/ux-researcher` |
-| Visual system and implementation-ready UI specs | `/designer` |
+| System UX contracts and design language (not implementation specs) | `/designer` |
 | Reproducible construction after architecture acceptance | `/implementer` |
 | Independent verification | `/phase-check` |
 

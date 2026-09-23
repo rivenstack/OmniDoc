@@ -7,8 +7,10 @@
 - `/researcher` — technical, market, legal/provider, and evidence research
 - `/ux-researcher` — customer behavior, journeys, trust/conversion UX,
   design-facing recommendations (Cursor id: `ux_researcher`)
-- `/designer` — visual systems, components, RTL-readiness UI specifications
-- `/implementer` — reproducible implementation
+- `/designer` — system UX contracts and design language; not implementation specs
+- `/implementer` — reproducible implementation; asks the user for a
+  visual reference (link, pasted code, or prompt) before building any
+  UI block, and offers options on real choices
 - `/phase-check` — independent verification
 
 `/ux-researcher` is the canonical prose label. Registered Cursor
@@ -61,10 +63,36 @@ research, and may supply bounded inputs to UX Researcher.
 
 ## Design Scope
 
-Designer owns design system, typography, brand direction, components,
-layouts, responsive behavior, LTR-now / RTL-ready component behavior, and
-implementation-ready UI specs. Designer works from accepted UX research
-and architecture; does not invent customer findings.
+Designer owns two stable layers only, and offers options before locking
+either:
+
+1. **System UX** — behavior and information that other systems must honor
+   (API, database, ports, product invariants). Examples: which header
+   items exist; whether search is on demand. Not position, motion, or
+   component recipes. Live file: `docs/design/system-ux.md`.
+2. **Design language** — the look lives as a **token layer**
+   (`packages/ui/src/styles/tokens.css`), not a hardcoded spec. Components
+   are copied-in shadcn blocks that consume semantic roles
+   (`--primary`, `--muted`, `--radius`…), so retuning those values
+   re-skins the whole app without touching screens. Designer documents
+   the language's intent (`docs/design/language.md`) from resources the
+   user supplies; the user chooses among options. Until then, stock
+   shadcn defaults (ADR-0003) are the look. Swapping the skin later is
+   expected and cheap; changing the *role* contract is not.
+
+Positions, motion, spacing, and how a screen is built stay flexible in
+`docs/design/now.md` and in the build. Designer does not tell the
+implementer which code to write. Designer works from accepted UX research
+and architecture; does not invent customer findings. D-01 visual specs are
+historical, not implementation authority.
+
+The **F-01→F-11 sequence is the plan of record** (tracked by the PM);
+each task is title + short description + integration details
+(API connections, state management, fixtures), with UI details open.
+The implementer asks the user for a reference (link, pasted code, or a
+prompt — image welcome) before building each visual block; with no
+reference, it offers options. See `docs/design/now.md` and
+`docs/planning/implementation-tracks.md`.
 
 ## Workflow
 

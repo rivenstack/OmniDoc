@@ -1,9 +1,10 @@
 /* ==========================================================================
    OmniDoc design tokens — F-01
    --------------------------------------------------------------------------
-   Authority: docs/design/foundations/tokens.md (D-01, Commander-accepted
-   2026-09-16). This file is the single implementation mirror of that
-   document. Do not add token names or values that are not in D-01.
+   Values below were copied from D-01 during F-01. As of 2026-09-22 that
+   spec is not a lock (docs/design/now.md). Do not add tokens just to
+   match D-01. A later design language, chosen by the user, may replace
+   these values. Stock shadcn roles remain the bridge until then.
 
    Stack: Tailwind CSS 4.3.3 + shadcn/ui on Base UI (ADR-0003).
    Locale: `en` (LTR) only. RTL is deferred, not closed — every declaration

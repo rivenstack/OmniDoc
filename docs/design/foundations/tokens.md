@@ -1,5 +1,9 @@
 # Foundations — Design Tokens
 
+> **Historical (2026-09-22).** Not a token lock. Do not require new UI to
+> match these values. Look is stock shadcn until a design language is
+> chosen. See [`../now.md`](../now.md).
+
 **Owner:** `/designer` · **Handoff:** D-01
 **Stack mapping:** Tailwind CSS 4.3.3 + shadcn/ui on Base UI (`@base-ui/react` 1.8.0),
 `next-themes` 0.4.6 (ADR-0003).

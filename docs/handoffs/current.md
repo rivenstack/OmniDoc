@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-09-20
+updated: 2026-09-22
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -32,7 +32,7 @@ archived**. Two humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-02** |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-02 ready** (next in sequence; new design rules) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05** |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -40,7 +40,10 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → F-02 (`ready`)
+- Frontend: `docs/handoffs/active/lane-frontend.md` → F-02 **ready**
+  (reopened 2026-09-23; next in the F-01→F-11 sequence). Structure from
+  `docs/design/system-ux.md`; UI details from `@user` references. Next
+  after F-02: F-03 (auth) — identity fixtures ready.
 - Backend: `docs/handoffs/active/lane-backend.md` → B-05 ingestion /
   chunking jobs + progress (`ready`) — opened 2026-09-20 after S-03
   Commander-validated PASS
@@ -87,13 +90,20 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. Leave F-02 to frontend lane human / `/implementer`.
+1. **F-02 is the live frontend ticket** — reopened 2026-09-23 under the
+   new design rules (structure from `system-ux.md`; per-block references
+   from `@user`; no D-01 layouts). Leave it to the frontend lane human /
+   `/implementer`. On completion the lane advances to **F-03** per the
+   same-lane sequence rule.
 2. Leave **B-05** to backend lane human / `/implementer` (opened
    2026-09-20 after S-03 archive).
 3. When B-05 completes, open **B-06** on the backend lane (or soft-stop
    if a cross-lane/contract issue blocks).
-4. When F-02 completes, rewrite `lane-frontend.md` to F-03 — S-03
-   identity fixtures are ready; B-03 live identity also available.
+4. F-02a (visible kit) is completed and archived. F-02 now runs from the
+   new head; when it completes, rewrite `lane-frontend.md` to F-03 —
+   S-03 identity fixtures are ready; B-03 live identity also available.
+   Each F-* step: structure from `system-ux.md`, references from
+   `@user`, integration details per the tracks file.
 5. Update `context.md` when lane statuses change.
 6. Do not open Phase Check until Phase 1 Build exit criteria in
    `docs/planning/implementation-tracks.md`.

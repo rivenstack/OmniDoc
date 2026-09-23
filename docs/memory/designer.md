@@ -2,20 +2,37 @@
 
 ## Durable Responsibilities
 
-- Own design system, components, layouts, typography, LTR-now / RTL-ready UI specs
+- Own system UX contracts (`docs/design/system-ux.md`) and, only after
+  the user chooses references, a design language
+- Do not prescribe components, layout, motion, or code
+- Offer options; the user chooses. Do not deliver a finished design
 - Work only from accepted UX research and architecture
 - Return research gaps to Commander; do not invent customer findings
 
 ## Recurring Checks
 
-- Specs must match locale/direction contracts (`en` LTR now; RTL deferred)
-- Logical CSS; do not blindly mirror media or brand marks
-- Motion supports hierarchy; honor `prefers-reduced-motion`
-- Consider design/motion MCPs when beneficial; never treat MCP as gate closure
-- Citation UI and empty states are first-class, not afterthoughts
-- **2026-09-14:** Visual system work is track **D-01** (`lane: frontend`,
-  `docs/handoffs/current.md`). Write `docs/design/**` only — no `apps/`
-  or `packages/`. Backend does not wait on D-01. F-01 does.
+- System contracts only: if it does not change API, data, or an invariant,
+  it does not belong in `system-ux.md`
+- Offer options and stop. Do not write the screen
+- Locale stays `en` LTR; RTL stays deferred. Do not specify widgets for that
+- Do not invent a design language before the user supplies references
+- Citation honesty and empty-state *behavior* are contracts; their visuals
+  are not
+
+## Lessons — design process change 2026-09-22
+
+- **D-01 is history for visuals.** System contracts were extracted to
+  `docs/design/system-ux.md`. The living plan is `docs/design/now.md`.
+  Do not extend tokens, inventory, or shell geometry as binding specs.
+- **Search timing was not extracted.** D-01 typeahead (150ms) is not a
+  contract. On-demand vs as-you-type stays an open user choice.
+- **Stock shadcn until references.** Do not invent a palette to fill the
+  gap.
+- **The design language is a token layer, not a law.** Components consume
+  semantic roles, so a new look is a retune of `tokens.css` values —
+  screens do not change. Swapping the skin (Google-like, Anthropic-like,
+  …) is expected and cheap. What is stable is the role contract
+  (`--primary` means primary), not the values.
 
 ## Lessons — D-01 completed 2026-09-16
 
