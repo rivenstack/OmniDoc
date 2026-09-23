@@ -1,7 +1,7 @@
 # Now — UI plan
 
 **Living page.** Edit this during the build. Keep it short.
-**Updated:** 2026-09-22
+**Updated:** 2026-09-23
 
 Choose here. Do not wait for a finished mock to review.
 
@@ -11,7 +11,7 @@ Choose here. Do not wait for a finished mock to review.
 | --- | --- |
 | What must the API and data honor? | [`system-ux.md`](./system-ux.md) |
 | What are we building now? | This file |
-| How should it look? | Stock shadcn until you supply references and choose a language |
+| How should it look? | **Mintlify** design language — values in `packages/ui/src/styles/tokens.css` |
 | Old visual spec | Other files in `docs/design/` — history only (D-01) |
 
 ## Stable vs flexible
@@ -32,22 +32,25 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-02 — app shell + navigation** (next step in the F-01→F-11 sequence,
-reopened 2026-09-23 under this system): structure and behavior from
-`system-ux.md`; UI details stay open — the implementer asks you for a
-reference (link / pasted code / prompt, image welcome) before building
-each block. Live head:
+**F-01 remake — done 2026-09-23 (branch `F01-ui-remake`).** The F-01
+primitives were rebuilt on the current shadcn v4 (`base-nova`, Base UI)
+sources, the icon library moved to Tabler, and the token layer was retuned
+to the **Mintlify** design language. `/kit` is the visible proof. F-02
+(shell) is the next step and keeps its reference protocol: UI details stay
+open, one reference per visual block. Live head:
 `docs/handoffs/active/lane-frontend.md`.
 
-**Landed 2026-09-22:** `/kit` in `apps/web` — stock primitives on one
-page (buttons, fields, badges, card, skeleton, spinner, theme switch).
-No shell, no journeys. Run `pnpm nx run @omnidoc/web:dev` and open
+**Landed 2026-09-22:** `/kit` in `apps/web` — primitives on one page.
+Remade 2026-09-23 (below). Run `pnpm --filter @omnidoc/web dev` and open
 `/kit`.
 
-**Already in the repo (F-01):** `packages/ui` has a token file and a few
-shadcn primitives (button, input, badge, card, and related). The token
-values are the current shadcn-ish skin, not a lock. Retuning them is
-exactly how a chosen design language lands later.
+**Landed 2026-09-23 (F-01 remake):** `packages/ui` now carries the shadcn
+v4 `base-nova` component sources (Button, IconButton, Input, Textarea,
+Label, Badge, Card, Separator, Skeleton, Spinner) plus the v4 form family
+(Field/FieldGroup/FieldLabel/FieldError, InputGroup) and Empty. `Button`
+lost its `loading` prop (compose `Spinner` + `disabled`), and `IconButton`
+gained icon size steps. `components.json` is `style: base-nova`,
+`iconLibrary: tabler` in both packages.
 
 **Backend:** unchanged. B-05 stays on the backend lane.
 
@@ -86,3 +89,13 @@ until a product screen is actually next.
 | 2026-09-22 | Design language clarified: a swappable token layer. New look = retune `tokens.css` values; components and screens stay. |
 | 2026-09-23 | Sequence confirmed: F-01→F-11 order is the plan of record. Task format = title + short description + integration details; UI details stay open. |
 | 2026-09-23 | F-02 (shell) reopened as next step under the new rules. Reference protocol live: implementer asks for a reference per block, offers options on real choices. |
+| 2026-09-23 | **Design language chosen: Mintlify** (from the popular-web-designs references). White canvas, near-black text, brand green accent, pill controls, border-driven depth. Lands as token values + component shape — not a new spec. |
+| 2026-09-23 | Icon library: **Tabler** (`@tabler/icons-react` 3.48.0) replaces lucide in both `components.json` files and all components. |
+| 2026-09-23 | shadcn config moved to v4 **`base-nova`** (Base UI variants) so `shadcn add` fetches current components; F-01 primitives were re-copied on those sources. |
+| 2026-09-23 | New v4 form/empty family added: `Field`/`FieldGroup`/`FieldLabel`/`FieldError`, `InputGroup`, `Empty`. Raw `Label`+`Input` layout is no longer the form pattern. |
+| 2026-09-23 | `Button` has no `loading` prop; compose `Spinner` + `disabled` (v4 pattern). `IconButton` keeps the label-by-type guarantee. |
+| 2026-09-23 | Fonts: Inter + Geist Mono self-hosted through `next/font` (build-time fetch, no runtime third-party request). Token layer keeps a system fallback stack. |
+| 2026-09-23 | A11y-over-template deviations: focus rings are full-opacity `ring-ring` (upstream `/50` fails 3:1 on white), and status/focus colors are darkened until they pass WCAG contrast. |
+| 2026-09-23 | Phase-check follow-up: destructive tints retuned (danger step `#ad3f3f`, hover tints at 15%) and error rings/borders made full-opacity, so destructive/invalid states pass contrast too. |
+| 2026-09-23 | Logged deviation: control borders stay whisper-thin (below the 3:1 boundary bar) per the Mintlify look; fields are identified by label + placeholder + a passing focus ring. **User-confirmed 2026-09-23.** |
+| 2026-09-23 | No browser in the implementer session: visual check handed to `@user` — `/kit` checked in light and dark, result **"looks good"**. Implementer rule updated to ask rather than infer. |

@@ -2,26 +2,66 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import {
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCheck,
+  IconClock,
+  IconDeviceDesktop,
+  IconDots,
+  IconInfoCircle,
+  IconMoon,
+  IconNotes,
+  IconPlus,
+  IconSearch,
+  IconSun,
+} from "@tabler/icons-react";
 import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
   IconButton,
   Input,
-  Label,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
   Separator,
   Skeleton,
   Spinner,
   Textarea,
 } from "@omnidoc/ui";
 
-const themes = ["light", "dark", "system"] as const;
+const themes = [
+  { value: "light", label: "Light theme", icon: IconSun },
+  { value: "dark", label: "Dark theme", icon: IconMoon },
+  { value: "system", label: "System theme", icon: IconDeviceDesktop },
+] as const;
 
+/**
+ * Visible UI kit (F-02a, remade 2026-09-23).
+ *
+ * Stock shadcn v4 `base-nova` components on Base UI, skinned with the
+ * Mintlify design language (tokens only — no component forks for looks).
+ * Not an app shell and not a product screen.
+ */
 export function KitGallery() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -33,41 +73,60 @@ export function KitGallery() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-10 px-4 py-10">
       <header className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">Stock primitives</p>
+        <p className="text-sm text-muted-foreground">
+          Mintlify design language · shadcn v4 base-nova on Base UI · Tabler
+          icons
+        </p>
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">UI kit</h1>
+          <h1 className="text-od-display">UI kit</h1>
           <div className="flex gap-2" role="group" aria-label="Theme">
-            {themes.map((value) => (
-              <Button
+            {themes.map(({ value, label, icon: Icon }) => (
+              <IconButton
                 key={value}
-                size="sm"
+                label={label}
                 variant={mounted && theme === value ? "default" : "outline"}
+                pressed={mounted && theme === value}
                 onClick={() => setTheme(value)}
               >
-                {value}
-              </Button>
+                <Icon aria-hidden="true" />
+              </IconButton>
             ))}
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Existing shadcn primitives only. Not an app shell and not a product
-          screen.
+          Primitives only. Not an app shell and not a product screen.
         </p>
       </header>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Buttons</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button>Default</Button>
+        <h2 className="text-od-h2">Buttons</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button>New note</Button>
           <Button variant="secondary">Secondary</Button>
           <Button variant="outline">Outline</Button>
           <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
+          <Button variant="destructive">Delete</Button>
           <Button variant="link">Link</Button>
-          <Button loading>Loading</Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="xs">Extra small</Button>
+          <Button size="sm">Small</Button>
+          <Button size="lg">Large</Button>
           <Button disabled>Disabled</Button>
-          <IconButton label="Toggle theme icon" variant="outline">
-            {mounted && theme === "dark" ? <Moon /> : <Sun />}
+          <Button disabled>
+            <Spinner data-icon="inline-start" />
+            Saving
+          </Button>
+          <Button>
+            <IconPlus data-icon="inline-start" aria-hidden="true" />
+            New note
+          </Button>
+          <Button variant="outline">
+            Open
+            <IconArrowRight data-icon="inline-end" aria-hidden="true" />
+          </Button>
+          <IconButton label="Search">
+            <IconSearch aria-hidden="true" />
           </IconButton>
         </div>
       </section>
@@ -75,44 +134,150 @@ export function KitGallery() {
       <Separator />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Fields</h2>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="kit-note">Note title</Label>
-          <Input id="kit-note" placeholder="Untitled" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="kit-body">Body</Label>
-          <Textarea id="kit-body" placeholder="Write something" />
-        </div>
+        <h2 className="text-od-h2">Fields</h2>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="kit-title">Title</FieldLabel>
+            <Input id="kit-title" placeholder="Untitled" />
+            <FieldDescription>Shown in the notes list.</FieldDescription>
+          </Field>
+          <Field data-invalid>
+            <FieldLabel htmlFor="kit-slug">Slug</FieldLabel>
+            <Input
+              id="kit-slug"
+              defaultValue="weekly review"
+              aria-invalid
+            />
+            <FieldError>Use lowercase letters and dashes only.</FieldError>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="kit-body">Body</FieldLabel>
+            <Textarea id="kit-body" placeholder="Write something…" />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="kit-search">Search</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <IconSearch aria-hidden="true" />
+              </InputGroupAddon>
+              <InputGroupInput id="kit-search" placeholder="Search notes" />
+              <InputGroupButton aria-label="Run search">
+                <IconArrowRight aria-hidden="true" />
+              </InputGroupButton>
+            </InputGroup>
+            <FieldDescription>
+              Search is its own operation, separate from Ask.
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
       </section>
 
       <Separator />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Badges</h2>
+        <h2 className="text-od-h2">Badges</h2>
+        <p className="text-sm text-muted-foreground">
+          Always icon + text — never colour alone.
+        </p>
         <div className="flex flex-wrap gap-2">
-          <Badge>Neutral</Badge>
-          <Badge variant="accent">Accent</Badge>
-          <Badge variant="success">Success</Badge>
-          <Badge variant="warning">Warning</Badge>
-          <Badge variant="danger">Danger</Badge>
-          <Badge variant="info">Info</Badge>
-          <Badge variant="outline">Outline</Badge>
+          <Badge variant="secondary">
+            <IconNotes aria-hidden="true" />
+            Draft
+          </Badge>
+          <Badge variant="outline">
+            <IconClock aria-hidden="true" />
+            Pending
+          </Badge>
+          <Badge variant="info">
+            <IconInfoCircle aria-hidden="true" />
+            Indexing
+          </Badge>
+          <Badge variant="success">
+            <IconCheck aria-hidden="true" />
+            Ready
+          </Badge>
+          <Badge variant="warning">
+            <IconAlertTriangle aria-hidden="true" />
+            Partial index
+          </Badge>
+          <Badge variant="destructive">
+            <IconAlertTriangle aria-hidden="true" />
+            Failed
+          </Badge>
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Card</h2>
+        <h2 className="text-od-h2">Card</h2>
         <Card>
           <CardHeader>
-            <CardTitle>Sample card</CardTitle>
-            <CardDescription>A surface, not a feature.</CardDescription>
+            <CardTitle>Weekly review</CardTitle>
+            <CardDescription>
+              Three notes mention the pricing test.
+            </CardDescription>
+            <CardAction>
+              <IconButton label="Note actions" size="icon-sm">
+                <IconDots aria-hidden="true" />
+              </IconButton>
+            </CardAction>
           </CardHeader>
           <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Spinner label="Loading" />
+            <Spinner label="Indexing notes" />
             <Skeleton className="h-4 w-40" />
           </CardContent>
+          <CardFooter className="gap-2">
+            <Button size="sm">Open</Button>
+            <Button size="sm" variant="ghost">
+              Dismiss
+            </Button>
+          </CardFooter>
         </Card>
+      </section>
+
+      <Separator />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-od-h2">Empty state</h2>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconNotes aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>No notes yet</EmptyTitle>
+            <EmptyDescription>
+              Capture a thought and it lands in your Inbox.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button size="sm">
+              <IconPlus data-icon="inline-start" aria-hidden="true" />
+              New note
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </section>
+
+      <Separator />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-od-h2">Reading &amp; identifiers</h2>
+        <p className="od-reading-measure text-sm leading-relaxed text-muted-foreground">
+          Answer prose caps at the reading measure. A citation points at a
+          note, a version and a chunk — never at a passage the server did not
+          return.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Workspace{" "}
+          <bdi className="od-isolate font-medium text-foreground">
+            Northwind &amp; Co.
+          </bdi>{" "}
+          · chunk <bdi className="od-isolate od-tabular">0198f2c1</bdi>
+        </p>
+        <div className="flex items-center gap-3">
+          <Spinner label="Loading notes" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="size-8 rounded-full" />
+        </div>
       </section>
     </div>
   );

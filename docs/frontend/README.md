@@ -78,7 +78,7 @@ pin below was registry-verified on 2026-09-14).
 | Styling / components | Tailwind CSS 4.3.3 + shadcn/ui 4.21.0 on Base UI `@base-ui/react` 1.8.0 | [ADR-0003](../adr/ADR-0003-frontend-application-toolchain.md) |
 | Data / state | RSC + Server Actions first; Zustand 5.0.15 for editor/UI state; **no client cache library in v1** | ADR-0003 |
 | Testing | Vitest 5.0.0 + Testing Library 16.3.3 + Playwright 1.63.0 + `@axe-core/playwright` 4.13.0 + MSW 2.15.0 + Storybook 10.6.0 | ADR-0003 |
-| Supporting libs | react-hook-form 7.88.0 + Zod 4.6.5; react-markdown 10.1.0 + remark-gfm + **rehype-sanitize** (mandatory); Shiki 4.4.3; lucide-react 1.46.0; next-themes 0.4.6; ESLint 10.10.0 + Prettier 3.9.6 | ADR-0003 |
+| Supporting libs | react-hook-form 7.88.0 + Zod 4.6.5; react-markdown 10.1.0 + remark-gfm + **rehype-sanitize** (mandatory); Shiki 4.4.3; `@tabler/icons-react` 3.48.0; next-themes 0.4.6; ESLint 10.10.0 + Prettier 3.9.6 | ADR-0003 |
 
 Notes that matter day to day:
 
@@ -101,11 +101,17 @@ Notes that matter day to day:
   membership is resolved server-side and a mismatch is a 403, not a
   frontend fallback.
 - **Tokens live in `packages/ui/src/styles/`.** `tokens.css` holds the
-  F-01 values (copied from D-01). As of 2026-09-22 those values are not a
-  lock — see `docs/design/now.md`. `globals.css` is the only Tailwind v4
-  entry; the app imports it rather than declaring Tailwind itself.
+  **Mintlify** design-language values (chosen by `@user` 2026-09-23) as a
+  swappable token layer — roles are the contract, values are not. See
+  `docs/design/now.md`. `globals.css` is the only Tailwind v4 entry; the app
+  imports it rather than declaring Tailwind itself.
   Register UI-package component source with `@source` when adding new
   directories, or classes generated there will silently go missing.
+- **Components are shadcn v4 `base-nova` on Base UI.** `components.json`
+  is `style: base-nova` / `iconLibrary: tabler`; copy new components with
+  `npx shadcn@latest add <name>` and keep them on logical CSS
+  (`ps-*`/`pe-*`/`ms-*`/`me-*`). Forms compose `FieldGroup` + `Field`; do
+  not lay out raw `Label` + `Input` pairs.
 
 ### Still pending / open
 
@@ -198,7 +204,7 @@ You can contribute via ordinary PRs without running agents.
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
 | `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired. F-02 shell is the live task (reopened 2026-09-23, structure from `system-ux.md`). Live UI plan: [`docs/design/now.md`](../design/now.md) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
-| `packages/ui/` | UI package: F-01 shadcn/Base UI primitives. D-01 token values are not a lock (2026-09-22). Plan: [`docs/design/now.md`](../design/now.md) |
+| `packages/ui/` | UI package: shadcn v4 `base-nova` primitives on Base UI, Mintlify token layer (2026-09-23). Plan: [`docs/design/now.md`](../design/now.md) |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
 | `packages/domain/` | **Not created** — not the backend SoT (ADR-0005); domain ports live as Java interfaces in `apps/api` |
 | [`architecture.md`](../../architecture.md) | OmniDoc architecture baseline (ports, tenancy, fixtures) + accepted stack packages |
@@ -450,8 +456,8 @@ Concrete work that needs **no further decisions**:
    structure from [`docs/design/system-ux.md`](../design/system-ux.md),
    visible plan in [`docs/design/now.md`](../design/now.md), and a
    `@user` reference (link / pasted code / prompt) per visual block
-   before you build it. Stock shadcn is the look until a design language
-   is chosen. The component inventory is not a whitelist.
+   before you build it. The look is the Mintlify token layer (chosen
+   2026-09-23); the component inventory is not a whitelist.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.

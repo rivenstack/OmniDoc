@@ -3,16 +3,17 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * D-01 token-mirror test.
+ * Design-token mirror test.
  *
- * Mechanical guard that `tokens.css` still declares every token D-01 is the
- * authority for. It deliberately asserts **names only** — the values are the
- * Designer's to change, and D-01's token-authority note explicitly allows the
- * Implementer to tune numeric lightness steps. What must not drift is the
- * existence and spelling of a role, because components and specs reference it.
+ * Mechanical guard that `tokens.css` still declares every token the design
+ * system is the authority for. It deliberately asserts **names only** — the
+ * values belong to the chosen design language (currently Mintlify, see
+ * `docs/design/now.md`) and may be retuned without touching components. What
+ * must not drift is the existence and spelling of a role, because components
+ * and docs reference it.
  *
- * If this test fails, either a token was dropped/renamed (fix the CSS) or D-01
- * changed (get the design update, then update this list).
+ * If this test fails, either a token was dropped/renamed (fix the CSS) or the
+ * design language changed (get the update, then update this list).
  *
  * Resolved from the project cwd (`packages/ui`), which the Nx `test` target
  * pins via `cwd`.
@@ -23,7 +24,7 @@ const tokensCss = readFileSync(
 );
 
 const REQUIRED_TOKENS = [
-  // §2.1 primitive ramps
+  // primitive ramps
   ...[0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map(
     (step) => `--od-neutral-${step}`,
   ),
@@ -35,32 +36,42 @@ const REQUIRED_TOKENS = [
   "--od-danger-500",
   "--od-info-500",
 
-  // §3 type
+  // type
   "--od-font-sans",
   "--od-font-mono",
+  "--od-font-heading",
   ...["display", "h1", "h2", "h3", "body", "body-sm", "caption", "micro"].map(
     (role) => `--od-text-${role}`,
   ),
+  ...["display", "h1", "h2", "h3", "body", "body-sm", "caption", "micro"].flatMap(
+    (role) => [`--od-text-${role}-leading`, `--od-text-${role}-weight`],
+  ),
+  ...["display", "h1", "h2", "h3", "micro"].map(
+    (role) => `--od-text-${role}-tracking`,
+  ),
   "--od-measure-reading",
 
-  // §4 spacing and layout
+  // spacing and layout
   ...[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map((step) => `--od-space-${step}`),
   "--od-layout-sidebar",
+  "--od-layout-sidebar-rail",
   "--od-layout-reading",
   "--od-layout-citation-rail",
   "--od-layout-content-max",
   "--od-layout-composer-max",
 
-  // §5 radius and elevation
-  ...["xs", "sm", "md", "lg", "full"].map((step) => `--od-radius-${step}`),
+  // radius and elevation
+  ...["xs", "sm", "md", "lg", "xl", "full"].map(
+    (step) => `--od-radius-${step}`,
+  ),
   ...[0, 1, 2, 3].map((step) => `--od-elevation-${step}`),
 
-  // §6 motion
+  // motion
   ...["instant", "fast", "base", "slow"].map((step) => `--od-duration-${step}`),
   "--od-ease-standard",
   "--od-ease-emphasis",
 
-  // §2.2 shadcn-compatible semantic roles
+  // shadcn-compatible semantic roles
   "--background",
   "--foreground",
   "--card",
@@ -80,8 +91,10 @@ const REQUIRED_TOKENS = [
   "--border",
   "--input",
   "--ring",
+  // base radius for calc()-derived inner radii (shadcn v4 contract)
+  "--radius",
 
-  // §2.2 OmniDoc domain roles
+  // OmniDoc domain roles
   "--od-surface-canvas",
   "--od-surface-raised",
   "--od-surface-sunken",
@@ -97,7 +110,7 @@ const REQUIRED_TOKENS = [
   "--od-status-info",
 ] as const;
 
-describe("D-01 token mirror (packages/ui/src/styles/tokens.css)", () => {
+describe("design-token mirror (packages/ui/src/styles/tokens.css)", () => {
   it.each(REQUIRED_TOKENS)("declares %s", (token) => {
     expect(tokensCss).toContain(`${token}:`);
   });
@@ -105,26 +118,74 @@ describe("D-01 token mirror (packages/ui/src/styles/tokens.css)", () => {
   it("ships both themes from one class-driven source", () => {
     expect(tokensCss).toContain(":root {");
     expect(tokensCss).toContain(".dark {");
-    // D-01 §2.3: dark mode is class-driven, so the `dark:` variant must be
-    // registered against `.dark` and not a media query.
+    // Dark mode is class-driven, so the `dark:` variant must be registered
+    // against `.dark` and not a media query.
     expect(tokensCss).toContain("@custom-variant dark");
     expect(tokensCss).not.toMatch(/@media\s*\(prefers-color-scheme/);
   });
 
-  it("keeps the reduced-motion guarantee global (D-01 §6.1)", () => {
+  it("remaps the semantic roles (not just the surfaces) in the dark block", () => {
+    const darkStart = tokensCss.indexOf(".dark {");
+    const darkEnd = tokensCss.indexOf("\n}", darkStart);
+    const darkBlock = tokensCss.slice(darkStart, darkEnd);
+
+    // A dropped remap would silently leak the light value into dark mode;
+    // assert the roles that carry text, focus and status in both themes.
+    for (const role of [
+      "--background:",
+      "--foreground:",
+      "--card:",
+      "--primary:",
+      "--muted-foreground:",
+      "--border:",
+      "--input:",
+      "--ring:",
+      "--od-text-primary:",
+      "--od-focus-ring:",
+      "--od-status-supported:",
+      "--od-status-error:",
+    ]) {
+      expect(darkBlock).toContain(role);
+    }
+  });
+
+  it("keeps the reduced-motion guarantee global", () => {
     expect(tokensCss).toContain("@media (prefers-reduced-motion: reduce)");
   });
 
+  it("declares the shadcn v4 state variants the copied-in components use", () => {
+    // Inlined from shadcn/tailwind.css; the base-nova sources depend on them.
+    for (const variant of [
+      "data-open",
+      "data-closed",
+      "data-checked",
+      "data-unchecked",
+      "data-selected",
+      "data-disabled",
+      "data-active",
+      "data-horizontal",
+      "data-vertical",
+    ]) {
+      expect(tokensCss).toContain(`@custom-variant ${variant}`);
+    }
+  });
+
+  it("bridges the heading font and radius roles into Tailwind namespaces", () => {
+    expect(tokensCss).toContain("--font-heading:");
+    expect(tokensCss).toContain("--radius-xl:");
+    expect(tokensCss).toContain("--radius-lg:");
+  });
+
   it("exposes the isolation, measure, tabular and logical-size hooks", () => {
-    // a11y §7.3 — identifiers/code/URLs/UGC isolation
+    // identifiers/code/URLs/UGC isolation
     expect(tokensCss).toContain("@utility od-isolate");
-    // D-01 §3.1 — answer/note reading measure
+    // answer/note reading measure
     expect(tokensCss).toContain("@utility od-reading-measure");
-    // D-01 §3.1 — tabular figures for counters, offsets, timestamps
+    // tabular figures for counters, offsets, timestamps
     expect(tokensCss).toContain("@utility od-tabular");
-    // D-01 §3.3 — long unbroken strings never cause page scroll
+    // long unbroken strings never cause page scroll
     expect(tokensCss).toContain("@utility od-unbroken");
-    // a11y §7.2 — logical inline sizing instead of physical `width`
+    // logical inline sizing instead of physical `width`
     expect(tokensCss).toContain("@utility od-inline-full");
   });
 

@@ -90,6 +90,28 @@ example: sidebar, top bar, sign-in card, result row, citation panel):
 Never harden UI details the user has not chosen: no invented palettes,
 motion systems, or component recipes beyond the references given.
 
+## Verify UI in a browser — ask the user, don't infer
+
+Automated tests and static analysis are not a visual or interaction
+review. When a task changes UI:
+
+1. If the session has browser tooling, use it (load the page, light/dark,
+   keyboard focus, console errors) and record what you actually saw.
+2. If the session has **no browser**, do not substitute more AI analysis
+   for a rendering check, and do not claim "looks right". **Ask the user
+   to open the page and report back** — give exact steps and what to look
+   for (e.g. "open `/kit`, toggle light and dark, tab through the form,
+   tell me what looks off"). The user has the real fonts, layout, and
+   interactions in front of them; their feedback is faster and safer than
+   any amount of inference.
+3. Treat the user's report as primary evidence: fix what they report,
+   re-run the automated gate, and ask again when the fix is visual.
+4. Never write "visually verified" without a browser or a human. State
+   "not visually verified — awaiting user check" instead.
+
+This applies to any environment check you cannot run (visual, interactive,
+device-specific): ask, don't guess.
+
 ## Frontend standards (`lane: frontend` or FE portion of `shared`)
 
 Stack is **accepted** (not pending): Next.js 16 App Router, TipTap,

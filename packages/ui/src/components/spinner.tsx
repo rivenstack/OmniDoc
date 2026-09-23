@@ -1,62 +1,34 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { LoaderCircle } from "lucide-react";
+import { IconLoader } from "@tabler/icons-react";
+import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
 
 /**
- * Foundations / primitives — `Spinner` (D-01 component inventory §3).
+ * Foundations / primitives — `Spinner` (shadcn v4 `base-nova`, adapted).
  *
- * Source: `shadcn+` — a shadcn/Lucide spinner with project-specific props.
+ * Source: `shadcn` registry, tabler icon library. Adaptations: the accessible
+ * name is a `label` prop (default "Loading") instead of a fixed string, so
+ * the caller can name what is actually loading.
  *
- * States covered: spinning · static (reduced motion).
+ * States covered: spinning · static (reduced motion — the global
+ * `prefers-reduced-motion` rule in `tokens.css` stops the animation while
+ * the element keeps its name).
  *
- * D-01 §6.1: under `prefers-reduced-motion: reduce` the spinner becomes a
- * non-animated indicator. The element keeps its accessible name in both
- * states, so the loading state is still announced. Announce it **once** from
- * the surrounding status region — never per streamed token (a11y §1.5, §4).
+ * Announce loading **once** from the surrounding status region — never per
+ * streamed token. Compose into buttons as
+ * `<Button disabled><Spinner data-icon="inline-start" />Saving…</Button>`.
  */
-const spinnerVariants = cva(
-  "animate-spin motion-reduce:animate-none text-muted-foreground",
-  {
-    variants: {
-      size: {
-        sm: "size-4",
-        default: "size-5",
-        lg: "size-6",
-      },
-    },
-    defaultVariants: {
-      size: "default",
-    },
-  },
-);
-
-export type SpinnerProps = Omit<
-  React.ComponentProps<"span">,
-  "children" | "role"
-> &
-  VariantProps<typeof spinnerVariants> & {
-    /** Accessible name announced for the loading state. */
-    label?: string;
-  };
-
 export function Spinner({
   className,
-  size,
   label = "Loading",
   ...props
-}: SpinnerProps) {
+}: ComponentProps<"svg"> & { label?: string }) {
   return (
-    <span
+    <IconLoader
       data-slot="spinner"
       role="status"
-      className={cn("inline-flex items-center", className)}
+      aria-label={label}
+      className={cn("size-4 animate-spin", className)}
       {...props}
-    >
-      <LoaderCircle
-        aria-hidden="true"
-        className={cn(spinnerVariants({ size }))}
-      />
-      <span className="sr-only">{label}</span>
-    </span>
+    />
   );
 }

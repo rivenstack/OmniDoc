@@ -82,6 +82,12 @@ Program of record:
   options on real choices. **F-02 (shell) reopened as the next step**;
   the D-01-era F-02 archive stays historical. Design language = swappable
   token layer
+- **2026-09-23:** **F-01 remake** (branch `F01-ui-remake`, not merged):
+  **Mintlify** design language chosen and landed as token values; F-01
+  primitives rebuilt on shadcn v4 `base-nova` (Base UI) sources with
+  **Tabler** icons; new v4 form/empty family (Field, InputGroup, Empty);
+  `/kit` remade; FE checks green (lint/typecheck/test/build). F-02 stays
+  the next step; ADR-0003's icon-library row needs an Architect amendment
 - **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
   B-04c eval **GO**; B-04c Implementer closeout **completed** and
   archived. **S-03** mock corpus **completed** (Commander-validated

@@ -128,7 +128,7 @@ Pinned by `@user` decision; rationale in
 | remark-gfm | 4.0.1 | — | 2026-09-14 | MIT | Tables/strikethrough etc. |
 | rehype-sanitize | **6.0.0** | 2023-08-26 | 2026-09-14 | MIT | **Mandatory** sanitization control |
 | Shiki | 4.4.3 | 2026-08-10 | 2026-09-14 | MIT | Server-side code highlighting |
-| lucide-react | 1.46.0 | 2026-09-14 | 2026-09-14 | ISC | Icons (shadcn default) |
+| `@tabler/icons-react` | **3.48.0** | 2026-09-22 | 2026-09-23 | MIT | Icons (chosen 2026-09-23; replaces lucide-react 1.46.0) |
 | next-themes | 0.4.6 | 2025-03-11 | 2026-09-14 | MIT | Dark mode |
 | next-intl (deferred) | 4.14.5 | — | 2026-09-14 | MIT | Only if an RTL/second locale is scheduled |
 

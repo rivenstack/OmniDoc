@@ -1,56 +1,27 @@
-import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
 
 /**
- * Foundations / primitives — `Textarea` (D-01 component inventory §3).
+ * Foundations / primitives — `Textarea` (shadcn v4 `base-nova`, adapted).
  *
- * Source: `shadcn`. Native `<textarea>` plus D-01 token classes.
+ * Source: `shadcn` registry. Adaptations: full-opacity focus ring, 12px
+ * inline padding, and the `od-unbroken` guard so pasted tokens/URLs never
+ * cause horizontal page scroll.
  *
- * States covered: default · focus · error · auto-grow.
+ * States covered: default · focus · error · disabled · auto-grow.
  *
- * `autoGrow` maps to CSS `field-sizing: content` so growth needs no JS and no
- * resize observer. Error state is driven by `aria-invalid` (a11y §1.6).
+ * Auto-grow maps to CSS `field-sizing: content` (upstream default), so
+ * growth needs no JS and no resize observer. Error state is driven by
+ * `aria-invalid`.
  */
-const textareaVariants = cva(
-  [
-    "flex min-h-20 rounded-md border border-input bg-background",
-    "ps-3 pe-3 py-2 text-od-body-sm text-foreground",
-    "od-inline-full od-unbroken",
-    "placeholder:text-od-text-tertiary",
-    "transition-colors duration-[var(--od-duration-instant)] ease-standard",
-    "motion-reduce:transition-none",
-    "disabled:cursor-not-allowed disabled:opacity-50",
-    "read-only:bg-od-surface-sunken",
-    "aria-invalid:border-destructive",
-  ],
-  {
-    variants: {
-      autoGrow: {
-        true: "field-sizing-content",
-        false: "resize-y",
-      },
-    },
-    defaultVariants: {
-      autoGrow: false,
-    },
-  },
-);
-
-export type TextareaProps = ComponentProps<"textarea"> &
-  VariantProps<typeof textareaVariants>;
-
-export function Textarea({
-  className,
-  autoGrow,
-  rows = 4,
-  ...props
-}: TextareaProps) {
+export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return (
     <textarea
       data-slot="textarea"
-      rows={autoGrow ? undefined : rows}
-      className={cn(textareaVariants({ autoGrow }), className)}
+      className={cn(
+        "flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none od-unbroken placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive md:text-sm dark:bg-input/30 dark:disabled:bg-input/80",
+        className,
+      )}
       {...props}
     />
   );

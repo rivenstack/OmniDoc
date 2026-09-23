@@ -64,10 +64,13 @@ F-03 → …), so this step happens now, but under the new design system:
   New note, Inbox, Notes, Collections, Search, Ask, workspace switcher,
   search entry, mode, corpus, citation inspection, usage) and §2
   (tenancy: selector-not-authority, generic forbidden denial)
-- F-01 primitives + token role layer in `packages/ui`
+- F-01 primitives + token role layer in `packages/ui` — **remade
+  2026-09-23** on shadcn v4 `base-nova` (Base UI) sources with the Mintlify
+  token layer and Tabler icons
 - S-02 canonical contracts; S-03 mock fixtures exist (backend lane),
   but this handoff wires **types only** — no data fetching
-- Visible kit at `/kit` (F-02a) — the primitive gallery to build from
+- Visible kit at `/kit` (F-02a, remade 2026-09-23) — the primitive gallery
+  to build from
 
 ## Task details
 
@@ -80,7 +83,7 @@ F-03 → …), so this step happens now, but under the new design system:
 | Locale / direction | Single `lang`/`dir` source stays `apps/web/app/locale.ts` → `layout.tsx`; `DirectionProvider` is the only direction source; logical CSS; `bdi` around workspace names / identifiers |
 | Accessibility | Release gate per `quality/ui-qa-checklist.md`: skip link first focusable, landmarks, visible focus, keyboard-operable nav and palette, Escape dismiss, focus restore |
 | Mobile | Capture/nav reachable without gestures; a mobile tab bar or equivalent is part of the shell's job |
-| Look | Stock shadcn + whatever references `@user` gives. No new tokens; no palette invention |
+| Look | Mintlify token layer (chosen 2026-09-23, values in `packages/ui/src/styles/tokens.css`) + whatever layout references `@user` gives per block. No palette invention; token values change only through the token layer |
 
 ## Reference protocol (per visual block)
 
@@ -180,7 +183,8 @@ command palette, workspace switcher, skip link.
 - Production AI activation remains gated
 - RTL locale remains deferred (readiness discipline applies)
 - UT-* remain unrun
-- Design language remains unchosen (stock shadcn + references)
+- Design language chosen: **Mintlify** (2026-09-23). Layout references per
+  visual block still apply
 
 ## Completion Instructions
 
