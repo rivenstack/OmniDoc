@@ -22,5 +22,13 @@
 @source "../providers";
 @source "../lib";
 
+/* Test files are scanned for classes only if they are real render targets;
+   excluding them keeps audit strings in assertions from generating dead
+   utilities in the app CSS. */
+@source not "../components/**/*.test.tsx";
+@source not "../components/**/*.test.ts";
+@source not "../lib/**/*.test.ts";
+@source not "../providers/**/*.test.tsx";
+
 /* The app tree that renders these components. */
 @source "../../../../apps/web/app";

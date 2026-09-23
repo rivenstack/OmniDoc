@@ -58,16 +58,12 @@ Return to /commander before /designer starts.
 ## Designer Request Template
 
 ```markdown
-/designer Convert approved UX research into an implementation-ready design system.
+/designer Read docs/design/now.md and docs/design/system-ux.md.
 
-Define:
-- Brand direction
-- Components and layouts
-- Typography
-- LTR-now / RTL-ready discipline (logical CSS, locale-driven lang/dir)
-- Accessibility and responsive rules
-
-Do not change architecture decisions.
+Document only system UX that other systems must honor, or a design
+language after I choose among options you extract from references I give
+you. Do not prescribe components, layout, motion, or code. Offer options
+and stop. Do not change architecture decisions.
 ```
 
 ## Implementer Request Template

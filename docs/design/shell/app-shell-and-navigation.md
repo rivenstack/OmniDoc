@@ -1,5 +1,11 @@
 # App Shell and Navigation
 
+> **Historical (2026-09-22).** F-02 was paused before this layout was
+> built; it proceeded on 2026-09-23 under the new rules (structure from
+> `../system-ux.md`, look from user references). Widths, regions, and
+> component recipes here are still not binding.
+> The plan is [`../now.md`](../now.md).
+
 **Owner:** `/designer` · **Handoff:** D-01
 **Evidence:** REC-03, REC-07, REC-13, REC-18; CITE-01/CITE-02 (capture
 speed), CITE-17 (empty/error honesty analogy).

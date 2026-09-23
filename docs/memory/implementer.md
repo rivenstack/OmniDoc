@@ -213,3 +213,39 @@
   Postman need an explicit migrator seed (`apps/api/load/seed-local-fixture.sql`)
   because Flyway ships schema without actors. After closeout soft-stop the lane
   for Commander **S-03** (before B-05); do not open either from Implementer.
+- **2026-09-23 (F-01 remake):** shadcn v4 config is `style: base-nova`
+  (Base UI variants) + `iconLibrary: tabler`. Run `shadcn add` from
+  `packages/ui` (framework "Manual") so files and deps land in the library,
+  not the app. The CLI rewrites registry icons to the configured library
+  (lucide `Loader2Icon` → tabler `IconLoader`).
+- **2026-09-23 (F-01 remake):** the CLI also wants to install its `cn`
+  package; this project keeps its own `cn` in `packages/ui/src/lib/utils.ts`
+  and rewrites `from "cn"` imports after copy-in.
+- **2026-09-23 (F-01 remake):** upstream shadcn v4 focus rings are
+  `ring-ring/50`; at 50% over white even a dark green ring is ~1.9:1 and
+  fails the 3:1 non-text contrast bar. Copied-in components use
+  full-opacity `ring-ring`, and status colors were darkened until they pass
+  ≥4.5:1 on their own 10% tint. Never copy upstream class strings without a
+  contrast pass.
+- **2026-09-23 (F-01 remake):** base-nova components depend on
+  `shadcn/tailwind.css` custom variants (`data-checked`, `data-horizontal`,
+  …). This design system inlines that block in `tokens.css` (attributed)
+  instead of adding the CLI as a dependency; re-sync it on shadcn upgrades.
+- **2026-09-23 (F-01 remake):** pnpm 12 `allowBuilds` is strict — any
+  package with a build script that is not listed fails
+  `pnpm install --frozen-lockfile` (msw here). List it explicitly
+  (`msw: false`, its postinstall is a no-op without `msw.workerDirectory`).
+  `pnpm add --ignore-scripts` still works for adding deps meanwhile.
+- **2026-09-23 (F-01 remake):** Tailwind v4 compiles `rounded-full` to
+  `border-radius:3.40282e38px` (not `9999px`), and `@custom-variant` /
+  `@utility` declared inside an imported package CSS do register globally —
+  verify tokens and variants in the built CSS, not by inspection of source.
+- **2026-09-23 (F-01 remake):** `next/font` self-hosts Inter + Geist Mono
+  and exposes `--font-inter` / `--font-geist-mono`; the token layer keeps a
+  system fallback stack so tests, Storybook, and plain-CSS consumers still
+  render without the app.
+- **2026-09-23 (F-01 remake):** no browser in the session ≠ visually
+  verified. Ask `@user` to open the page and report back (light/dark,
+  focus order, what looks off) — the user has the real rendering and their
+  feedback is faster and safer than more AI inference. Never write
+  "visually verified" without a browser or a human.

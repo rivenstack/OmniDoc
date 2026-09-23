@@ -1,48 +1,28 @@
-import { cva, type VariantProps } from "class-variance-authority";
+"use client";
+
 import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
 
 /**
- * Foundations / primitives — `Label` (D-01 component inventory §3).
+ * Foundations / primitives — `Label` (shadcn v4 `base-nova`).
  *
- * Source: `shadcn`. A native `<label>` — Base UI exposes no standalone Label
- * primitive at 1.8.0, and the native element already gives correct
- * label/control association by `htmlFor` (a11y §1.3).
+ * Source: `shadcn` registry. A native `<label>`; association happens through
+ * `htmlFor`. Forms compose it through `Field` / `FieldLabel` rather than
+ * laying out raw labels and controls.
  *
- * States covered: default · required · muted.
- *
- * The required marker is visual only; the control itself must still carry the
- * `required`/`aria-required` attribute so assistive tech reports it.
+ * Required state is not drawn here: the control carries `required` /
+ * `aria-required` so assistive tech reports it, and `FieldDescription` can
+ * spell it out in text. A visual-only asterisk would be a second, weaker
+ * source of truth.
  */
-const labelVariants = cva(
-  [
-    "flex items-center gap-1 text-od-caption font-medium text-foreground",
-    "select-none",
-    // A disabled peer/label relationship should not look interactive.
-    "peer-disabled:cursor-not-allowed peer-disabled:opacity-60",
-  ],
-  {
-    variants: {
-      variant: {
-        default: "",
-        required: "after:text-destructive after:content-['*']",
-        muted: "text-muted-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
-
-export type LabelProps = ComponentProps<"label"> &
-  VariantProps<typeof labelVariants>;
-
-export function Label({ className, variant, ...props }: LabelProps) {
+export function Label({ className, ...props }: ComponentProps<"label">) {
   return (
     <label
       data-slot="label"
-      className={cn(labelVariants({ variant }), className)}
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className,
+      )}
       {...props}
     />
   );

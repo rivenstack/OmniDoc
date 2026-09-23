@@ -11,6 +11,23 @@ Supporting context only — not authority for live status or architecture.
 - Persist every agent handoff in Markdown
 - Keep agent sessions focused when context is large
 - Prefer handoff-scoped section reads over attaching huge design docs
+- Design work offers a few options; `@user` chooses. Do not deliver a
+  finished visual design for review
+- Designer documents system UX and (only after references are chosen) a
+  design language. Do not prescribe layout, motion, or implementation.
+  Until a language is chosen, UI uses stock shadcn defaults (ADR-0003)
+- The design language is a swappable token layer: copied-in shadcn
+  components consume semantic roles, so a new look = retune token values
+  in `packages/ui` — components and screens do not change. The role
+  contract is stable; the values are not
+- The visible UI plan is `docs/design/now.md`. D-01 visual specs are
+  historical, not a build ticket
+- The F-01→F-11 sequence is the plan of record (PM tracks it); tasks are
+  title + short description + integration details, UI details open
+- Implementer asks the user for a reference (link / pasted code /
+  prompt, image welcome) before building any visual block; offers
+  options where the plan leaves a real choice; logs choices in
+  `docs/design/now.md`
 - Treat accessibility and LTR-now / RTL-readiness discipline as release
   gates (do not claim RTL locale support exists while it is deferred)
 - Portfolio / freelancing credibility project: look and behave production-

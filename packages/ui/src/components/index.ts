@@ -1,32 +1,60 @@
 /**
- * Foundations / primitives barrel — D-01 component inventory §3.
+ * Foundations / primitives barrel — shadcn v4 (`base-nova`, Base UI).
  *
  * Copied-in shadcn / Base UI components are project-owned in `packages/ui`
- * (ADR-0002/0003). They consume D-01 semantic tokens only and never import a
+ * (ADR-0002/0003). They consume semantic tokens only and never import a
  * provider SDK, Spring/Java types, or `packages/mocks` production paths
- * (inventory §13; enforced by `@nx/enforce-module-boundaries`).
+ * (enforced by `@nx/enforce-module-boundaries`).
  *
- * F-01 lands the foundation tier these compose on. The remaining §3 rows
- * (Select, Combobox, Popover, Tooltip, Sheet, Dialog, AlertDialog,
- * DropdownMenu, Tabs, Avatar, ScrollArea, Checkbox, RadioGroup, Switch,
- * PasswordInput, FieldHint, Kbd) are added by the F-* slices that first need
+ * The foundation tier is Button/IconButton, Input/Textarea/Label, the Field
+ * form family, InputGroup, Badge, Card, Separator, Skeleton, Spinner, and
+ * Empty. The remaining shadcn components (Select, Dialog, Sheet, Tooltip,
+ * DropdownMenu, Tabs, Avatar, …) are added by the F-* slices that first need
  * them, through the same copy-in path configured by `components.json`.
  */
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Input } from "./input";
-export { Textarea, type TextareaProps } from "./textarea";
-export { Label, type LabelProps } from "./label";
+export { Textarea } from "./textarea";
+export { Label } from "./label";
 export { Badge, badgeVariants, type BadgeProps } from "./badge";
 export {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  type CardProps,
 } from "./card";
-export { Separator, type SeparatorProps } from "./separator";
+export { Separator } from "./separator";
 export { Skeleton } from "./skeleton";
-export { Spinner, type SpinnerProps } from "./spinner";
+export { Spinner } from "./spinner";
+export {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldTitle,
+} from "./field";
+export {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText,
+  InputGroupTextarea,
+} from "./input-group";
+export {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "./empty";

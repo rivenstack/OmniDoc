@@ -27,7 +27,7 @@ and
 
 | Lane | Human | Typical agents | Write path (implementation) |
 |------|-------|----------------|-----------------------------|
-| `frontend` | Frontend developer | `/designer`, then `/implementer` | `docs/design/**` (D-01 only); then `apps/web`, `packages/ui` |
+| `frontend` | Frontend developer | `/designer`, then `/implementer` | `docs/design/now.md`, `docs/design/system-ux.md`; then `apps/web`, `packages/ui`. D-01 visuals are not a write target |
 | `backend` | Backend developer | `/implementer` | Java API module (path per ADR-0005 after U-BE); `packages/mocks` (producer) + `packages/contracts` (with S-02). **Not** Node `apps/api` until/unless U-BE keeps Node |
 | `shared` | Either; use only for true shared slices | `/implementer` | Paths listed on the handoff only |
 | `devops` | Unassigned — split later | — | AWS / deploy / prod secrets. **Not** on the Phase 1 critical path |
@@ -64,9 +64,9 @@ handoff yet.
 | Phase | Status | Meaning |
 |-------|--------|---------|
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
-| Design close-out (D-01) | **closed** | Visual system + journey specs — Commander-accepted 2026-09-16 |
+| Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-02 live (FE); B-02 live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-02 live (FE, reopened under new design rules); B-05 live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -106,7 +106,7 @@ Phase 0 (closed)
 
 | | |
 |--|--|
-| **Status** | **completed** — archived `docs/handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md` (Commander-accepted 2026-09-16) |
+| **Status** | **completed, then demoted** — archived `docs/handoffs/archive/H-2026-09-14-P1-D01-commander-designer.md` (Commander-accepted 2026-09-16). Visuals are historical as of 2026-09-22. Do not implement from them. |
 | **Lane / agent** | `frontend` / `/designer` |
 | **Depends on** | Phase 0 (done) |
 | **Blocks** | F-01+ journey UI (F-01 now unblocked). Did **not** block R-BE, S-01a, or B-01+ |
@@ -280,62 +280,174 @@ Depends: D-01, S-01a. Map D-01 tokens into `packages/ui` (Tailwind 4 +
 shadcn/Base UI). Refresh stale ADR status in `docs/frontend/README.md`
 (§6 auth implementation is ADR-0005 Spring sessions).
 
+### F-02a — Visible UI kit (stock shadcn)
+
+| | |
+|--|--|
+| **Status** | **completed** 2026-09-22 — archived [`docs/handoffs/archive/H-2026-09-22-P1-F02A-user-implementer.md`](../handoffs/archive/H-2026-09-22-P1-F02A-user-implementer.md) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-01 |
+| **Blocks** | Nothing. Side slice between F-01 and F-02 |
+| **Write path** | `apps/web/app/kit/**`, stub pointer, lane status docs |
+
+Chosen in `docs/design/now.md` (not the old F-02→F-03 sequence). One
+page of existing stock shadcn primitives at `/kit`. No shell, no
+journeys, no token edits.
+
 ### F-02 — App shell, nav, locale, honest workspace switcher
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (`ready` 2026-09-19) |
+| **Status** | **ready** — `docs/handoffs/active/lane-frontend.md` (reopened 2026-09-23, next in sequence; D-01-era head archived) |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
-| **Depends on** | F-01, S-02 |
-| **Blocks** | F-03+ (F-03 additionally needs S-03/B-03; F-04 needs S-03 fixtures) |
-| **Write path** | `packages/ui/**` (shell + Storybook), `apps/web` shell wiring, `docs/frontend/README.md` |
+| **Depends on** | F-01, F-02a, S-02 |
+| **Blocks** | F-03+ |
+| **Write path** | `packages/ui/**` (shell blocks), `apps/web` shell wiring, `docs/frontend/README.md` |
 
-Depends: F-01, S-02. Single `lang`/`dir` source; REC-18 honest
-org/workspace chrome at n≈1–few; no fake enterprise teams.
+**Short description:** authenticated shell — sidebar, top bar, mobile
+nav, skip link, content region, command palette — plus the honest
+workspace switcher.
 
-### F-03 — Auth / session UI against mock identity
+**Integrations:** `@omnidoc/contracts` types only (Workspace,
+WorkspaceList, Principal, CorpusOwnership); **no fetching** — props
+until a later wiring slice. Single `lang`/`dir` source
+(`apps/web/app/locale.ts`); DirectionProvider only. State: RSC-first;
+minimal client state (palette open, sidebar collapse), Zustand only if
+shared state is real.
 
-Depends: F-02, and B-03 **or** S-03 identity fixtures. Sign-in;
-workspace selector is a **selector** only (server authority).
+**Behavior contracts:** destinations from `system-ux.md` §1; workspace
+id is a selector (generic forbidden denial); honest at n≈1; a11y release
+gate (skip link, landmarks, focus, keyboard palette).
+
+**Look:** stock shadcn + references `@user` supplies per block
+(sidebar, top bar, tab bar, palette, switcher). No D-01 layouts; no
+token edits.
+
+### F-03 — Auth / session UI
+
+**Short description:** sign-in / sign-out; session-aware shell entry;
+workspace selector as a pure selector.
+
+**Integrations:** identity **port** → Java session API (ADR-0005);
+`@omnidoc/contracts` (`Principal`, `WorkspaceList`); MSW identity
+fixtures (S-03) for mocks; B-03 live identity available. No client auth
+library (ADR-0001 §6 library superseded). State: form state local;
+server-side redirects; never trust client-only ACL.
+
+**Look:** references from `@user` (sign-in card, form fields); offer
+options otherwise.
+
+Depends: F-02, and B-03 **or** S-03 identity fixtures.
 
 ### F-04 — Capture (TipTap)
 
-Depends: F-02, S-02 notes. TipTap 3.31.3; ProseMirror JSON SoT; autosave;
-paste/import CTAs (REC-01, REC-02).
+**Short description:** create/edit notes — title + rich body, autosave,
+paste and file-import CTAs; New note lands directly in the editor.
+
+**Integrations:** notes port via S-02 HTTP (CRUD, version concurrency);
+MSW fixtures. State: ProseMirror JSON as SoT (ADR-0001 §2); Zustand for
+editor UI state (ADR-0003); save states idle/saving/saved/conflict per
+`system-ux.md` §2; per-file indexing status for imports.
+
+**Look:** references from `@user` (editor toolbar/chrome); offer
+options otherwise.
+
+Depends: F-02, S-02 notes, and S-03 fixtures for data.
 
 ### F-05 — Organize
 
-Depends: F-04. Inbox + light optional folders/tags (REC-03).
+**Short description:** inbox as the unfiled home; light optional
+folders/tags; no structure required to capture.
+
+**Integrations:** notes/collections via S-02 list + mutation endpoints;
+MSW fixtures. State: server-first lists; selection state local.
+
+**Look:** references from `@user` (list rows, collection tree); offer
+options otherwise.
+
+Depends: F-04.
 
 ### F-06 — Retrieve
 
-Depends: F-02, S-02 search, and B-07 **or** search fixtures. Snippets;
-indexing progress (REC-02).
+**Short description:** search screen — results, snippets, filters,
+indexing notice, pivot to Ask.
+
+**Integrations:** search port via S-02; B-07 **or** search fixtures.
+Snippets and highlighting boundaries come from the server (no client
+invention). State: server-driven results; filter chips local. Search
+interaction: as-you-type is the current preference (user-changeable;
+not a contract).
+
+**Look:** references from `@user` (search field, result row, filters);
+offer options otherwise.
+
+Depends: F-02, S-02 search, and B-07 **or** search fixtures.
 
 ### F-07 — Ask UI
 
-Depends: S-03, and B-08 **or** ask fixtures. Streaming chrome;
-passage-level citations; refusal / partial / conflict as **success**
-(REC-04, REC-05, REC-10).
+**Short description:** ask-your-notes — composer, streaming answer,
+passage-level citations, refusal/partial/conflict as success.
+
+**Integrations:** answer port via S-02 + SSE; B-08 **or** ask fixtures.
+Citation payload identity comes from the server (`architecture.md` §4);
+client never attaches citations it did not receive. State: streaming is
+server-driven; no client answer cache.
+
+**Look:** references from `@user` (composer, answer card, citation
+panel); offer options otherwise.
+
+Depends: S-03, and B-08 **or** ask fixtures.
 
 ### F-08 — Dual-mode chrome
 
-Depends: F-07, S-02 vault/usage/mode (**metadata only**). Mode×corpus
-labels, cookbook/wizard, usage strip, failure copy that names the mode
-(REC-13–17). Cookbook is not a trust-boundary bypass. No provider SDK
-in the client.
+**Short description:** mode × corpus labelling, usage strip, BYOK
+cookbook wizard, failure copy that names the mode.
+
+**Integrations:** S-02 vault/usage/mode (**metadata only**); mode and
+corpus are real server data, not decoration. No provider SDK in the
+client; cookbook is not a trust-boundary bypass. State: mode from
+server; key handling masked-prefix only.
+
+**Look:** references from `@user` (chips, wizard steps, failure
+banners); offer options otherwise.
+
+Depends: F-07, S-02 vault/usage/mode (**metadata only**).
 
 ### F-09 — Public labelled sample workspace UI
 
-Depends: F-07, S-03 sample fixtures, B-09. REC-08.
+**Short description:** labelled sample corpus path — first-run and
+60-second portfolio script.
+
+**Integrations:** S-03 sample fixtures; B-09 public read path; Sample vs
+Mine stays real data (`system-ux.md` §1). State: read-only surfaces;
+no new authorities.
+
+**Look:** references from `@user` (sample banner, switcher tagging);
+offer options otherwise.
+
+Depends: F-07, S-03 sample fixtures, B-09.
 
 ### F-10 — Empty / loading / error / indexing + a11y / RTL-readiness
 
-Incremental on touched surfaces; full pass before Phase 2. Checklist:
-[`quality/ui-qa-checklist.md`](../../quality/ui-qa-checklist.md). Do not
+**Short description:** incremental habitability states on touched
+surfaces; full pass before Phase 2.
+
+**Integrations:** states derive from ports (`system-ux.md` §2);
+checklist is the gate:
+[`quality/ui-qa-checklist.md`](../../quality/ui-qa-checklist.md).
+
+**Look:** no visual prescriptions; fix against the checklist.
+
+Incremental on touched surfaces; full pass before Phase 2. Do not
 claim RTL locale support.
 
 ### F-11 — Playwright + axe journeys on mocks
+
+**Short description:** end-to-end journey automation on deterministic
+mocks; feeds the Phase 2 CX gate.
+
+**Integrations:** MSW fixtures (no live AI); axe + Playwright in the FE
+graph (ADR-0003).
 
 Depends: F-04–F-09. Feeds Phase 2 CX gate.
 
@@ -524,7 +636,9 @@ Postgres(+pgvector) for those 6 months. Not the default.
 
 ## Phase 1 Build exit (both lanes, still no live AI)
 
-- D-01 specs exist and F-01 tokens match them
+- System UX contracts in `docs/design/system-ux.md` are honored. Visual
+  match to D-01 tokens is **not** required (demoted 2026-09-22). Look is
+  stock shadcn until a design language is chosen (`docs/design/now.md`)
 - Four journeys usable on deterministic mocks; refusal / partial /
   conflict are success states
 - Zero cross-tenant failures in B-12
@@ -547,7 +661,7 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-02 | [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
+| F-02 | **ready** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (reopened 2026-09-23); history: [`../handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md`](../handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md) |
 | B-05 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |

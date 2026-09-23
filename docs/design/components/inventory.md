@@ -1,5 +1,9 @@
 # Component Inventory — `packages/ui`
 
+> **Historical (2026-09-22).** Not a whitelist. Do not block a screen
+> because a component is missing here, and do not build a component
+> because it is listed here. See [`../now.md`](../now.md).
+
 **Owner:** `/designer` · **Handoff:** D-01
 **Stack:** shadcn/ui on Base UI (`@base-ui/react` 1.8.0), Tailwind 4.3.3
 (ADR-0003). Components are **copy-in and project-owned** in `packages/ui`

@@ -1,61 +1,70 @@
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
 
 /**
- * Foundations / primitives — `Badge` (D-01 component inventory §3).
+ * Foundations / primitives — `Badge` (shadcn v4 `base-nova`, adapted).
  *
- * Source: `shadcn`. States covered: neutral · accent · success · warning ·
- * danger · info · outline.
+ * Source: `shadcn` registry (Base UI variant). Adaptations: full-opacity
+ * focus ring, logical icon padding (`ps-*`/`pe-*`), and the OmniDoc status
+ * variants on top of the upstream set.
  *
- * Accessibility (D-01 §2.4, §7; a11y §1.6): a badge is **never** the only
- * signal. Every status usage must pair a badge with an icon **and** a text
- * label — "always icon + text, never color-only" (QA 2.1, 4.4). A badge's own
- * text is required by the component, but the caller still owns the icon.
+ * Accessibility (release gate): a badge is **never** the only signal. Every
+ * status usage pairs a badge with an icon **and** a text label — "always
+ * icon + text, never colour-only". The caller owns the icon and the label.
  *
- * Contrast (D-01 §7): the `danger` variant uses D-01's own explicit
- * `--destructive` / `--destructive-foreground` pair. D-01 defines no
- * foreground pairing for the success / warning / info ramps, so those variants
- * deliberately keep `--foreground` text on a 10% tint of the status hue and
- * carry the status through border + icon + label instead of inventing a
- * text-on-status pairing that was never specified or contrast-checked.
+ * Status colours are the accessible text steps defined in `tokens.css`
+ * (≥4.5:1 on their own 10% tint), so the tinted pill stays readable in both
+ * themes. `destructive` is upstream's tinted variant, not a solid red fill.
+ *
+ * Variants: default · secondary · destructive · outline · ghost · link ·
+ * success · warning · info.
  */
 export const badgeVariants = cva(
-  [
-    "inline-flex shrink-0 items-center gap-1 rounded-full border",
-    "ps-2 pe-2 py-0.5 text-od-micro font-medium whitespace-nowrap",
-    "[&_svg]:pointer-events-none [&_svg]:shrink-0",
-    "[&_svg:not([class*='size-'])]:size-3",
-  ],
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2.5 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
-        neutral: "border-transparent bg-muted text-muted-foreground",
-        accent: "border-transparent bg-accent text-accent-foreground",
+        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        secondary:
+          "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+        destructive:
+          "bg-destructive/10 text-destructive focus-visible:ring-destructive [a]:hover:bg-destructive/15",
+        outline:
+          "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
+        ghost:
+          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
+        link: "text-primary underline-offset-4 hover:underline",
         success:
-          "border-od-status-supported/60 bg-od-status-supported/10 text-foreground",
+          "bg-od-status-supported/10 text-od-status-supported [a]:hover:bg-od-status-supported/20",
         warning:
-          "border-od-status-partial/60 bg-od-status-partial/10 text-foreground",
-        danger: "border-transparent bg-destructive text-destructive-foreground",
-        info: "border-od-status-info/60 bg-od-status-info/10 text-foreground",
-        outline: "border-border bg-transparent text-foreground",
+          "bg-od-status-partial/10 text-od-status-partial [a]:hover:bg-od-status-partial/20",
+        info: "bg-od-status-info/10 text-od-status-info [a]:hover:bg-od-status-info/20",
       },
     },
     defaultVariants: {
-      variant: "neutral",
+      variant: "default",
     },
   },
 );
 
-export type BadgeProps = ComponentProps<"span"> &
+export type BadgeProps = useRender.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants>;
 
-export function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <span
-      data-slot="badge"
-      className={cn(badgeVariants({ variant }), className)}
-      {...props}
-    />
-  );
+export function Badge({ className, variant = "default", render, ...props }: BadgeProps) {
+  return useRender({
+    defaultTagName: "span",
+    props: mergeProps<"span">(
+      {
+        className: cn(badgeVariants({ variant }), className),
+      },
+      props,
+    ),
+    render,
+    state: {
+      slot: "badge",
+      variant,
+    },
+  });
 }

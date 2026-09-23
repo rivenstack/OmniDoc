@@ -1,21 +1,22 @@
-import type { ReactNode } from "react";
-import { cn } from "../lib/utils";
-import { buttonVariants } from "./button";
 import type { VariantProps } from "class-variance-authority";
+import type { ComponentProps, ReactNode } from "react";
+import { cn } from "../lib/utils";
+import { Button, buttonVariants } from "./button";
 
 /**
- * Foundations / primitives — `IconButton` (D-01 component inventory §3).
+ * Foundations / primitives — `IconButton` (project component on shadcn v4).
  *
- * Source: `shadcn+` — a shadcn button with project-specific props. Its only
- * project addition is the **required** accessible name: an icon-only control
- * without a label fails the accessibility release gate (a11y §1.3), so the
- * type makes it impossible to omit accidentally.
+ * Not a registry item: shadcn v4 exposes icon buttons as
+ * `<Button size="icon">`. This wrapper exists for one accessibility reason —
+ * the accessible name is **required by type**, so an unnamed icon-only
+ * control cannot ship (release gate: no icon button without a label).
  *
- * States covered: default · hover · focus · disabled · pressed.
+ * States covered: default · hover · focus · disabled · pressed
+ * (`aria-pressed`).
  */
 export type IconButtonProps = Omit<
-  React.ComponentProps<"button">,
-  "aria-label" | "children"
+  ComponentProps<typeof Button>,
+  "aria-label" | "children" | "size"
 > &
   Pick<VariantProps<typeof buttonVariants>, "variant"> & {
     /** Accessible name. Required — never render an unnamed icon button. */
@@ -24,31 +25,30 @@ export type IconButtonProps = Omit<
     children: ReactNode;
     /** Renders a toggle button (`aria-pressed`). */
     pressed?: boolean;
+    /** Icon-only size step. Defaults to the 32px `icon` square. */
+    size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   };
 
 export function IconButton({
   className,
   label,
   variant = "ghost",
+  size = "icon",
   pressed,
   children,
-  type = "button",
   ...props
 }: IconButtonProps) {
   return (
-    <button
-      type={type}
+    <Button
       data-slot="icon-button"
+      size={size}
+      variant={variant}
       aria-label={label}
       aria-pressed={pressed}
-      className={cn(
-        buttonVariants({ variant, size: "icon" }),
-        "shrink-0 rounded-md",
-        className,
-      )}
+      className={cn(className)}
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 }

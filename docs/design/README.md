@@ -1,10 +1,17 @@
 # OmniDoc — Design Package (D-01)
 
+> **Historical as of 2026-09-22.** These files are not implementation
+> authority. Live contracts: [`system-ux.md`](./system-ux.md). Living
+> plan: [`now.md`](./now.md). F-02 (shell from this package) was paused
+> before execution on 2026-09-22 and reopened 2026-09-23 under the new
+> rules — structure only, look from user references. Stock shadcn is the
+> look until a design language is chosen.
+
 **Owner:** `/designer`
-**Handoff:** `H-2026-09-14-P1-D01` (`docs/handoffs/current.md`)
+**Handoff:** `H-2026-09-14-P1-D01` (archived)
 **Lane:** `frontend`
-**Status:** implementation-ready specs (last planning deliverable,
-2026-09-16)
+**Status:** historical visual spec (Commander-accepted 2026-09-16;
+demoted as a build ticket 2026-09-22)
 **Locale scope:** primary `en` (LTR) only. RTL / mixed-BiDi is
 **deferred, not closed** — these specs define **readiness discipline**,
 not shipped RTL support.

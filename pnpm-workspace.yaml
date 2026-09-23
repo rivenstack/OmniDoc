@@ -4,3 +4,11 @@ packages:
 
 allowBuilds:
   nx: true
+  # msw's postinstall only copies the worker script when a project declares
+  # `msw.workerDirectory`; nothing here does. Deny it explicitly so
+  # `pnpm install --frozen-lockfile` does not fail the ignored-builds gate.
+  msw: false
+
+minimumReleaseAgeExclude:
+  - '@tabler/icons-react@3.48.0'
+  - '@tabler/icons@3.48.0'

@@ -22,11 +22,9 @@ Read, in order:
 1. `context.md`
 2. `architecture.md`
 3. `AGENTS.md`
-4. The assigned lane handoff (`docs/handoffs/active/lane-frontend.md`
-   or `lane-backend.md`; optional `lane-shared.md` / `lane-devops.md`) —
-   note **`lane:`** and Allowed Write Paths. During dual-track build,
-   `docs/handoffs/current.md` is the Commander index, not an implementer
-   work ticket
+4. The assigned lane handoff (`docs/handoffs/active/lane-frontend.md` or
+   `lane-backend.md` — never treat `current.md` as an implementer work
+   ticket during dual-track build) — note **`lane:`** and Allowed Write Paths
 5. `docs/planning/implementation-tracks.md` (write-path boundaries)
 6. Accepted ADRs for the assigned area:
    - Frontend / shared FE: ADR-0001 §1–§5, §7; ADR-0002 (FE graph);
@@ -34,7 +32,10 @@ Read, in order:
    - Backend: ADR-0005; ADR-0001 §3–§5 / §6 port; ADR-0004; ADR-0002
      polyglot layout
 7. `docs/memory/implementer.md`
-8. Design specs under `docs/design/**` when the task is UI
+8. For UI tasks: `docs/design/system-ux.md` (contracts) and
+   `docs/design/now.md` (living plan). D-01 visual files under
+   `docs/design/**` are historical — not layout, token, or component
+   authority
 
 ## Lane discipline
 
@@ -65,6 +66,30 @@ Do not overwrite `docs/handoffs/current.md` unless authorized.
   keys or provider credentials.
 - Update relevant documentation for the owned paths.
 - Prefer evidence-backed extensions behind adapters (Extension-First).
+
+## Visual blocks — ask for a reference before building UI
+
+For **every visual block or component shell** a task introduces (for
+example: sidebar, top bar, sign-in card, result row, citation panel):
+
+1. **Stop and ask the user for a reference** before writing its markup:
+   - a link to an existing component or block,
+   - pasted code to adapt, or
+   - a prompt describing how to build it — screenshots/images welcome.
+2. If the user has no reference, **offer a few options** (for example:
+   default shadcn composition, a thin custom block on Base UI, reuse of
+   an existing project component), wait for the choice, and log it in
+   `docs/design/now.md`.
+3. Build the chosen reference's *structure*, not its pixel geometry —
+   token roles from `packages/ui` still apply; D-01 layouts are not
+   binding.
+4. This applies to UI only. Pure-logic work (state management, data
+   wiring, contracts consumption, tests) needs no reference — implement
+   it as the plan says, and where the plan leaves a real choice, offer
+   options and let the user pick instead of deciding silently.
+
+Never harden UI details the user has not chosen: no invented palettes,
+motion systems, or component recipes beyond the references given.
 
 ## Frontend standards (`lane: frontend` or FE portion of `shared`)
 

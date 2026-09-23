@@ -105,7 +105,7 @@ share the same handoff protocol.
 | `/architect` | Boundaries, ADRs, ports |
 | `/researcher` | Technical / market / legal / provider evidence |
 | `/ux-researcher` (`ux_researcher`) | Customer behavior, journeys, design-facing UX |
-| `/designer` | Visual system, components, LTR-now / RTL-ready UI specs |
+| `/designer` | System UX contracts and design language; not implementation specs |
 | `/implementer` | Reproducible construction |
 | `/phase-check` | Independent verification |
 
