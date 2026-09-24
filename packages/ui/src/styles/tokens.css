@@ -490,6 +490,22 @@
     outline-offset: 2px;
   }
 
+  /* Blink/WebKit autofill paints its own opaque background and text colour
+     over the input and ignores the declared `background-color` (the grey
+     slate fill users see on the sign-in form). The only reliable cover is a
+     near-infinite inset box-shadow in the themed surface colour; the value
+     and caret colours are pinned alongside. Uses the raw semantic roles so
+     it remaps with the `.dark` block like every other surface. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--background) inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
   /* Single global reduced-motion rule. Per-component `motion-reduce:`
      utilities are layered on top; this guarantees no animation survives if
      a component forgets its fallback. */

@@ -15,6 +15,10 @@
 @import "tw-animate-css";
 @import "./tokens.css";
 
+/* Decorative background patterns (`.grid-pattern`, …). Plain CSS classes, not
+   Tailwind utilities, so they must be imported here to reach the app bundle. */
+@import "./patterns.css";
+
 /* Tailwind's automatic source detection roots at the consuming project and
    ignores `node_modules`. `packages/ui` is consumed through a pnpm symlink in
    `node_modules`, so its component source must be registered explicitly or
