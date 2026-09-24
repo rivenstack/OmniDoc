@@ -128,12 +128,14 @@ export function NavUser({ principal, onSignOut, className }: NavUserProps) {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                <UserAvatar principal={principal} />
-                <UserIdentity principal={principal} />
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+                  <UserAvatar principal={principal} />
+                  <UserIdentity principal={principal} />
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
