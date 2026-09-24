@@ -1,47 +1,50 @@
-import type { Workspace } from "@omnidoc/ui";
+import { redirect } from "next/navigation";
+import { selectWorkspaceAction, signOutAction } from "../lib/identity/actions";
+import { signInHref } from "../lib/identity/constants";
+import { getShellSession, readRequestedPath } from "../lib/identity/session";
+import { IdentityUnavailable } from "./identity-unavailable";
 import { AppShell } from "./shell";
-import type { ShellUser } from "./nav-user";
 
 /**
- * Render-only placeholder workspaces for the F-02 shell.
+ * Authenticated shell entry — the session-aware boundary.
  *
- * This is **not** a fixture authority and **not** live data: the F-02 slice is
- * props-only (`@omnidoc/contracts` types, no fetching). S-03 fixtures / B-03
- * identity replace this when the MSW wiring slice lands. One real workspace
- * plus the separated, labelled sample keeps the switcher honest at n≈1.
+ * The session is read through the identity port (ADR-0001 §6 keeps the port;
+ * ADR-0005 makes the implementation Spring Security HTTP-only session cookies
+ * in the Java API). Three outcomes are kept distinct:
+ *
+ * - authenticated → the F-02 shell, with **server-resolved** workspaces
+ * - unauthenticated → sign-in, remembering the page the user was headed for
+ * - identity service unreachable → an honest "could not confirm" screen, never
+ *   a sign-in form the user cannot use and never a shell that would imply
+ *   membership nobody verified
+ *
+ * Workspace membership is never resolved here from client input: the selector
+ * is a preference over the list the server returns (`architecture.md` §2).
  */
-const placeholderWorkspaces: Workspace[] = [
-  {
-    id: "ws_local_primary",
-    tenantId: "tenant_local",
-    name: "My workspace",
-  },
-  {
-    id: "ws_sample_demo",
-    tenantId: "tenant_public_sample",
-    name: "Sample — public demo notes",
-  },
-];
-
-const sampleWorkspaceIds = ["ws_sample_demo"];
-
-/**
- * Render-placeholder identity until F-03 wires the session principal.
- * The `NavUser` block renders from this; the Sign out item only appears once
- * F-03 provides a handler that can act.
- */
-const placeholderUser: ShellUser = { name: "Local user" };
-
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getShellSession();
+
+  if (session.status === "unauthenticated") {
+    redirect(signInHref(await readRequestedPath()));
+  }
+
+  if (session.status === "unavailable") {
+    return <IdentityUnavailable />;
+  }
+
   return (
     <AppShell
-      workspaces={placeholderWorkspaces}
-      sampleWorkspaceIds={sampleWorkspaceIds}
-      user={placeholderUser}
+      principal={session.principal}
+      workspaces={session.workspaces}
+      workspacesUnavailable={session.workspacesUnavailable}
+      sampleWorkspaceIds={session.sampleWorkspaceIds}
+      currentWorkspaceId={session.currentWorkspaceId}
+      onSignOut={signOutAction}
+      onSelectWorkspace={selectWorkspaceAction}
     >
       {children}
     </AppShell>

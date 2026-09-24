@@ -40,6 +40,11 @@ scaffolding until an implementation handoff authorizes it — and do not
 treat ADR-0001 categories 3–7 as settled: those remain **`proposed`**.
 Live status: [`context.md`](context.md). ADR index: [`docs/adr/`](docs/adr/README.md).
 
+## Running the project locally
+
+Bring up the whole stack — Postgres, the JVM API, and the web app:
+**[`docs/running-locally.md`](docs/running-locally.md)**.
+
 ## Frontend contributors
 
 Start here: **[`docs/frontend/README.md`](docs/frontend/README.md)**

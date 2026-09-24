@@ -18,6 +18,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  type Principal,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,55 +26,49 @@ import {
   useSidebar,
 } from "@omnidoc/ui";
 
-/**
- * Render-placeholder identity shape for the shell.
- *
- * `@omnidoc/contracts` exposes only `Principal` (`actorId`) today; a name /
- * email-bearing profile schema does not exist yet. F-03 (session UI) replaces
- * this placeholder with contract-typed consumption — do not extend this shape
- * into a second identity authority.
- */
-export type ShellUser = {
-  name: string;
-  email?: string;
-};
-
 export type NavUserProps = {
-  user: ShellUser;
   /**
-   * Wired by the F-03 session slice. When absent, no Sign out item renders —
-   * the menu never shows a control that cannot act.
+   * The session principal, straight from `@omnidoc/contracts`.
+   *
+   * `Principal` carries `actorId` and nothing else, so that is what the account
+   * menu shows. F-03 deliberately did **not** keep the F-02 placeholder name: a
+   * display name would be a second identity authority beside the contract. A
+   * profile schema is a contract change, not a frontend decision.
+   */
+  principal: Principal;
+  /**
+   * When absent, no Sign out item renders — the menu never shows a control that
+   * cannot act. In the shell this is the `signOutAction` server action.
    */
   onSignOut?: () => void;
   className?: string;
 };
 
 function UserIdentity({
-  user,
+  principal,
   className,
 }: {
-  user: ShellUser;
+  principal: Principal;
   className?: string;
 }) {
   return (
     <div
       className={cn("grid flex-1 text-start text-sm leading-tight", className)}
     >
+      {/*
+        `bdi` isolates the identifier (LTR-now / RTL-readiness): an actor id is
+        an opaque token, so its direction must not be inferred from the
+        surrounding copy nor allowed to leak into it.
+      */}
       <span className="truncate font-medium">
-        {/* `bdi` isolates user-generated names (LTR-now / RTL-readiness). */}
-        <bdi>{user.name}</bdi>
+        <bdi>{principal.actorId}</bdi>
       </span>
-      {user.email && (
-        <span className="truncate text-xs text-muted-foreground">
-          <bdi>{user.email}</bdi>
-        </span>
-      )}
     </div>
   );
 }
 
-function UserAvatar({ user }: { user: ShellUser }) {
-  const initial = user.name.trim().charAt(0).toUpperCase() || "U";
+function UserAvatar({ principal }: { principal: Principal }) {
+  const initial = principal.actorId.trim().charAt(0).toUpperCase() || "U";
   return (
     <Avatar className="size-8 shrink-0 rounded-lg">
       <AvatarFallback className="rounded-lg">{initial}</AvatarFallback>
@@ -91,7 +86,7 @@ function UserAvatar({ user }: { user: ShellUser }) {
  * the upstream Upgrade/Billing items have no analog; the honest menu carries
  * the theme toggle and — once a session exists — Sign out.
  */
-export function NavUser({ user, onSignOut, className }: NavUserProps) {
+export function NavUser({ principal, onSignOut, className }: NavUserProps) {
   const { isMobile } = useSidebar();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -112,7 +107,7 @@ export function NavUser({ user, onSignOut, className }: NavUserProps) {
             render={
               <SidebarMenuButton
                 size="lg"
-                aria-label={`Account: ${user.name}`}
+                aria-label={`Account: ${principal.actorId}`}
                 className={cn(
                   "data-popup-open:bg-muted data-popup-open:text-foreground",
                   className,
@@ -120,8 +115,8 @@ export function NavUser({ user, onSignOut, className }: NavUserProps) {
               />
             }
           >
-            <UserAvatar user={user} />
-            <UserIdentity user={user} />
+            <UserAvatar principal={principal} />
+            <UserIdentity principal={principal} />
             <IconSelector
               aria-hidden="true"
               className="ms-auto size-4 shrink-0"
@@ -133,12 +128,14 @@ export function NavUser({ user, onSignOut, className }: NavUserProps) {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                <UserAvatar user={user} />
-                <UserIdentity user={user} />
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+                  <UserAvatar principal={principal} />
+                  <UserIdentity principal={principal} />
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem

@@ -99,6 +99,28 @@ Program of record:
   **F-03 (auth UI)** — identity fixtures ready. (Local `api:test` fails
   only because Postgres is not running — pre-existing/environmental,
   backend lane; not touched.)
+- **2026-09-24:** **F-03 completed and archived** (branch `F03-auth-ui`).
+  The identity **port** landed in `apps/web/app/lib/identity/` (typed over
+  `docs/api/openapi.yaml`; `JSESSIONID` + `XSRF-TOKEN` relayed by Next;
+  **no** client auth library) and the shell is session-aware: `proxy.ts`
+  (Next 16's renamed middleware) sends a cookie-less browser to sign-in with
+  the requested path remembered, and `(app)/layout.tsx` resolves **three**
+  states — authenticated → shell, rejected → sign-in, identity service
+  unreachable → an honest "can't confirm" screen. Sign out and workspace
+  selection are server actions; the account menu consumes the contract
+  `Principal`. The **sign-in block** landed on the reference `@user` supplied
+  (`packages/ui/src/shell/login.tsx` + `apps/web/app/sign-in/page.tsx`), with
+  the unbacked controls (social sign-in, remember-device, recovery, account
+  creation) rendered **disabled with an explanatory note** per `@user`. Adding
+  the `Checkbox` primitive surfaced two registry defects, both fixed on
+  copy-in (see `docs/memory/implementer.md`). FE checks green (ui + web,
+  48 web tests); build green, 11 routes. Verified live: `/sign-in` reachable
+  anonymously, `307` for a session holder, guard intact elsewhere, and the
+  compiled CSS carries the block's utilities. Frontend lane advances to
+  **F-04 (capture / TipTap)**. Gaps recorded: `Workspace` has no sample
+  marker; the generic forbidden denial has no reachable trigger yet;
+  sign-in was never smoke-tested against the real Java API (B-03 needs the
+  `local` profile + Postgres).
 - **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
   B-04c eval **GO**; B-04c Implementer closeout **completed** and
   archived. **S-03** mock corpus **completed** (Commander-validated
@@ -141,7 +163,8 @@ Program of record:
 | S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
-| F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **ready** — next in sequence; identity fixtures (S-03/B-03) ready; sign-in look open until `@user` reference | `docs/handoffs/active/lane-frontend.md` |
+| F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
+| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **ready** — next in sequence; notes contract (S-02) and B-04 live; TipTap 3.31.3 + Zustand 5.0.15 are pinned but **not installed** | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -162,7 +185,7 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - RTL locale support remains deferred, not closed
 - **F-03+** unblocked by **S-03** fixtures (and/or **B-03** live
   identity) — FE still needs a narrowly scoped `web → mocks`
-  development/test import exception before in-app MSW wiring
+  development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-04 will hit it too**
 - AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05
 - DevOps I-* have no human owner yet
 - Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain

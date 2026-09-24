@@ -6,7 +6,8 @@ This directory is **not** a backlog. Do not copy task tables here.
 
 | Need | Read |
 |------|------|
-| Full owned backlog (F-*, B-*, S-*, I-*) | [`docs/planning/implementation-tracks.md`](../../docs/planning/implementation-tracks.md) |
+| Scheduled program of record (F-*, B-*, S-*, I-*) | [`docs/planning/implementation-tracks.md`](../../docs/planning/implementation-tracks.md) |
+| Unscheduled candidates (`BL-*`, **not** task codes) | [`docs/planning/feature-backlog.md`](../../docs/planning/feature-backlog.md) |
 | Live phase / active task summary | [`context.md`](../../context.md) |
 | Main-track assignment | [`docs/handoffs/current.md`](../../docs/handoffs/current.md) |
 | Parallel lane assignments | [`docs/handoffs/active/`](../../docs/handoffs/active/) |

@@ -314,3 +314,84 @@
   `onMouseDown` with `preventDefault()` (no focus stolen, no
   close→focus→reopen loop), plus Enter/Space in `onKeyDown`. Do **not** wire
   `onFocus` — dialog focus restoration re-fires it.
+- **2026-09-24 (F-03):** Next 16 renamed the file convention:
+  `middleware.ts` → **`proxy.ts`** with `export function proxy`. The old name
+  still builds but warns. `proxy.ts` sits at the app root, so add it to
+  `tsconfig.app.json` `include` or `web:typecheck` silently skips it.
+- **2026-09-24 (F-03):** `apps/web` **cannot** import `@omnidoc/mocks`
+  (`scope:tooling`; `scope:app` may only depend on `scope:shared`). The FE
+  mock-wiring exception is a boundary change —
+  `packages/mocks/project.json` tags **and** `eslint.config.mjs` — so it is
+  not something a frontend-lane session can grant itself. Verify with
+  `npx nx lint web` before planning any fixture import.
+- **2026-09-24 (F-03):** layouts receive **no pathname**, so a session
+  redirect cannot return the user to the requested route on its own. The
+  working pattern is a cookie-less-check redirect in `proxy.ts` (with `next`
+  in the URL) plus a request header carrying the path for the stale-session
+  case. `safeNextPath` must reject `//host`, absolute URLs and backslashes —
+  otherwise sign-in becomes an open redirect.
+- **2026-09-24 (F-03):** Spring Security details the FE must respect: the
+  session cookie is `JSESSIONID` (httpOnly), CSRF is `spa()` (readable
+  `XSRF-TOKEN` + `X-XSRF-TOKEN` header), **POST `/api/v1/session` is
+  CSRF-exempt** while `DELETE` is not, and the identity controllers are
+  profile-gated on a live DataSource — so a bare API answers **404** on
+  sign-in, which must not be reported to the user as a wrong password.
+- **2026-09-24 (F-03):** when Next calls the API server-side, relay cookies
+  explicitly (`Cookie` upstream, re-issue `Set-Cookie` downstream). Read
+  multiple cookies with `headers.getSetCookie()` — never split the
+  comma-joined `get("set-cookie")`, since `Expires` contains a comma.
+  `secure` must follow the API origin or the browser drops the cookie on
+  http localhost.
+- **2026-09-24 (F-03):** verifying session UI **without a browser**: build,
+  `npx next start -p <spare port>`, run a throwaway stub identity API in
+  `/tmp` (never in the repo), and assert with `curl`. Client-component props
+  appear in the RSC flight payload with escaped quotes
+  (`currentWorkspaceId\":\"…\"`), which makes server-resolved state directly
+  assertable from HTML.
+- **2026-09-24 (F-03):** `Principal` is `actorId` and nothing else. Rendering
+  a name/email means inventing a contract shape — the honest move is to show
+  the identifier and let a profile schema be a contract change.
+- **2026-09-24 (F-03, sign-in block):** `npx shadcn@latest add <name>` run from
+  `packages/ui` works, but its output **always** needs a pass: it emits
+  `import { cn } from "cn"` and adds a real `cn` dependency (rewrite the import
+  to `../lib/utils`, then `pnpm remove cn`), its focus/error rings are
+  half-opacity (raise to full — same 3:1 rule as F-01), and `rounded-[4px]`
+  should become `rounded-xs`. Verify `git status` afterwards for unexpected
+  `tokens.css` or lockfile churn.
+- **2026-09-24 (F-03, sign-in block):** Base UI renders `Checkbox` as
+  `<span role="checkbox">` plus a visually-hidden native input. Two
+  consequences, both real bugs if missed: (1) upstream `disabled:` utilities
+  can never match — style the `data-disabled` attribute instead (the custom
+  variant already exists in `tokens.css`); (2) the consumer's `id` lands on the
+  **hidden input**, so a `htmlFor`-only label points at an `aria-hidden`
+  element and the visible control has no accessible name — use
+  `aria-labelledby` pointing at the label's `id`.
+- **2026-09-24 (F-03, sign-in block):** a `packages/ui` block that must submit
+  to a server action takes the action as a **prop** and uses `useActionState`
+  internally. That keeps `packages/ui` free of app imports, gives the pending
+  state for free, and still submits as a plain form post before hydration.
+  Corollary: a `"use server"` module may only export async functions, so shared
+  constants (paths, `safeNextPath`) live in a separate plain module.
+- **2026-09-24 (F-03, sign-in block):** a URL-supplied post-login destination
+  is attacker-controlled. `safeNextPath` must reject absolute URLs,
+  protocol-relative `//host` and backslashes, and it must be applied **twice** —
+  in the page (before it reaches the form) and in the action (on submit). The
+  form input is a convenience, never the authority.
+- **2026-09-24 (F-03, sign-in block):** when a UI package block is testable only
+  by rendering, `vi.fn()` with no parameters types `mock.calls[0]` as `[]` —
+  pass the function type explicitly
+  (`vi.fn<(state: S, form: FormData) => Promise<S>>(…)`) or the destructured
+  `FormData` argument fails typecheck. Mock factories referencing outer
+  variables need `vi.hoisted`, and stubbing a value for a **loop** needs
+  `mockResolvedValue`, not `mockResolvedValueOnce`.
+- **2026-09-24 (F-03, sign-in block):** Base UI's `Checkbox` also ships an
+  optional indeterminate state that the registry output does **not** wire. It
+  is deliberately left out here rather than half-implemented (a half-checked box
+  that cannot report `aria-checked="mixed"` is worse than none) — add it with
+  the ARIA value when a surface needs tri-state.
+- **2026-09-24 (F-03, environment):** **never use `path` (or `status`,
+  `commands`, `pipestatus`) as a shell variable name in zsh.** `path` is a tied
+  array for `$PATH`, so `path=/inbox` in a loop silently wipes PATH for the rest
+  of the session (`command not found: node`, `curl`, `tail`). Recovery is
+  `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"`
+  — on this machine `node`, `npx`, `pnpm` and `curl` all live under `/usr/sbin`.

@@ -3,6 +3,10 @@
 Everyday setup for backend developers. Schema is code; each machine runs
 its own Compose DB. Hosted RDS is later (I-* / DevOps) — not this guide.
 
+For the full stack (Postgres + API + web app) see
+[`docs/running-locally.md`](../running-locally.md); this file remains the
+detail reference for the database layer.
+
 ## Prerequisites
 
 - Docker Engine **and** Compose **v2** (`docker compose`, space — not the

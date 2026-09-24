@@ -6,6 +6,13 @@
     "incremental": true,
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "next.config.mjs", "app/**/*.ts", "app/**/*.tsx", "vitest.config.ts"],
+  "include": [
+    "next-env.d.ts",
+    "next.config.mjs",
+    "proxy.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "vitest.config.ts"
+  ],
   "exclude": ["node_modules", ".next"]
 }

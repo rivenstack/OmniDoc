@@ -1,7 +1,7 @@
 # Now — UI plan
 
 **Living page.** Edit this during the build. Keep it short.
-**Updated:** 2026-09-23
+**Updated:** 2026-09-24
 
 Choose here. Do not wait for a finished mock to review.
 
@@ -31,6 +31,20 @@ retune of `packages/ui/src/styles/tokens.css` values, plus density or
 radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
+
+**F-03 session identity — done 2026-09-24 (branch `F03-auth-ui`).**
+The shell is session-aware and sign-in is real. `apps/web/app/lib/identity/` is
+the identity **port** (typed over `docs/api/openapi.yaml`); `proxy.ts` sends a
+browser with no session cookie to sign-in and remembers the requested path;
+the `(app)` layout resolves the session server-side — authenticated → shell,
+rejected → sign-in, identity service unreachable → an honest "can't confirm"
+screen. Sign out and workspace selection are server actions, and the account
+menu consumes the contract `Principal`. The **sign-in block**
+(`packages/ui/src/shell/login.tsx`, route `apps/web/app/sign-in/page.tsx`) was
+built from the reference `@user` supplied on 2026-09-24.
+
+**F-04 capture — next in sequence.** Not started. `@user` references per block
+are required before each visual piece (see Open choices).
 
 **F-02 shell — landed 2026-09-23.** The authenticated shell now exists:
 collapsible nested sidebar (workspace switcher at top, nav, Collections
@@ -68,11 +82,21 @@ not binding. Cross-lane gates (S-03, B-07, B-08, B-09) still apply.
 
 ## Open choices
 
-**F-03 (auth UI):** the sign-in card and form-field look are open until
-`@user` supplies a reference (link / pasted code / prompt, image welcome) or
-chooses among offered options. Identity fixtures (S-03 / B-03) are ready.
-Everything else (session-aware shell entry, workspace selector semantics) is
-bound by `system-ux.md` + `architecture.md` and is not a choice.
+**F-04 (capture / TipTap):** every visual block is open until `@user` supplies
+a reference or chooses among offered options — editor shell/chrome,
+formatting toolbar, title field, save-state indicator, import/paste
+affordance, conflict surface. Bound and **not** choices: save-state semantics
+(`idle`/`saving`/`saved`/`conflict`), conflict visibility without a client-side
+winner, ProseMirror JSON as the stored body, per-file indexing status, the
+editor's accessible name, and the generic forbidden copy.
+
+**Closed 2026-09-24 (F-03):** the sign-in card and form-field look `@user`
+supplied are built. Three things F-03 could **not** decide remain open:
+`Workspace` in `@omnidoc/contracts` carries no sample marker, so no sample
+corpus can be separated in the switcher yet (F-09 + a contract change); the
+generic forbidden denial has no reachable trigger on any F-03 surface, so its
+copy is unreviewed in situ; and the identity-unavailable entry screen has no
+reference, so it uses the stock `Empty` primitive and is open to review.
 
 ## Rules for anyone editing this page
 
@@ -119,3 +143,19 @@ bound by `system-ux.md` + `architecture.md` and is not a choice.
 | 2026-09-24 | **Two `@user` review fixes to the F-02 shell.** (1) *Top-bar separator alignment + spacing.* The primitive's vertical default is `self-stretch`, which beats a definite `h-*` and pins the rule to the flex start, so the 20px separator hugged the top; the consumer now passes `data-vertical:self-auto` to hand alignment back to the container (`items-center`), and `me-1.5` evens the two *optical* gaps (the trigger's 16px glyph sits in a 28px hit box, so its perceived gap is 8 + 6 = 14px, matching the search field's 8 + 6 = 14px). The override holds because `cn` runs tailwind-merge, which drops the primitive's conflicting class — the generated CSS actually orders `self-stretch` last, so this must not be "simplified" into relying on source order. (2) *Trigger glyph.* `SidebarTrigger` now advertises the action it performs instead of a fixed "sidebar" glyph: `IconLayoutSidebarLeft/RightCollapse` when the panel is visible, `…Expand` when it is hidden, with the pair chosen by the sidebar `side` (a right-hand sidebar must not borrow the left-hand pair) and the accessible name left stable as "Toggle Sidebar". Two unit tests pin the state/side mapping. |
 | 2026-09-24 | **Two `@user` review fixes.** (1) *Workspace avatar letter vanished on dropdown hover.* `DropdownMenuItem` forces every **descendant** to `accent-foreground` while highlighted (`focus:**:text-accent-foreground`), which repainted the initial in the accent colour on the `primary` circle — invisible. `WorkspaceMark` now sets its foreground with the important modifier (`text-primary-foreground!`), because a filled chip's foreground is paired with its own background, not the row's. Verified in the built CSS: `!important` beats the non-important descendant rule. (2) *Skip link.* Kept — it is a required a11y affordance (ui-qa-checklist §1.7), and appearing on Tab is its whole purpose, not a bug. It gained `focus:shadow-lg` so it reads as a transient overlay rather than a collision with the sidebar header it covers, and its comment now records the real cascade dependency: `focus:not-sr-only` resets `position` to `static`, and `focus:fixed` only wins because Tailwind emits it later (checked in the built CSS). Losing that would turn the link into a flex item and shove the sidebar sideways. |
 | 2026-09-23 | **Two follow-ups after `@user` review of the sidebar-07 shell.** (1) `SidebarTrigger` no longer draws a fixed `IconLayoutSidebar`: it now picks the Tabler collapse/expand pair from the live `state` (and `side`), so the glyph advertises what the click will do; on mobile it always shows "expand", since the sidebar there is a closed sheet. Accessible name stays "Toggle Sidebar". (2) The top-bar `Separator` was pinned to the top instead of centred: the primitive's vertical default is `self-stretch`, and `align-self: stretch` with a definite height behaves as `flex-start`. Fixed at the call site with `data-vertical:h-5 data-vertical:self-auto` (same variant as the primitive, so it wins under `twMerge`) plus `me-1.5` to optically match the trigger-side gap. The primitive itself still matches upstream `base-nova` verbatim — no local fork. |
+| 2026-09-24 | **F-03 identity wiring landed.** Session identity is a server-side port (`apps/web/app/lib/identity/`) over `POST/GET/DELETE /api/v1/session` + `GET /api/v1/workspaces`, typed by `@omnidoc/contracts`. No client auth library; the browser never talks to the API, so no CORS, and Next relays `JSESSIONID` (httpOnly) + `XSRF-TOKEN`. |
+| 2026-09-24 | **Signed-in entry has three states, not two** — a correctness rule, not a look: authenticated → shell; rejected session → sign-in (with the requested path remembered); identity service unreachable → an honest "can't confirm" screen. Collapsing the third into "signed out" would show a sign-in form that cannot work. |
+| 2026-09-24 | **The account menu shows the contract `actorId`.** `Principal` carries no name or email, and adding one is a contract change — so the F-02 placeholder name was deleted rather than kept alongside it. |
+| 2026-09-24 | **A stale workspace preference falls back to the first server-resolved workspace** instead of dead-ending on the generic denial. That denial stays reserved for a selector the *server* refuses (`system-ux.md` §2); no F-03 surface triggers it yet. |
+| 2026-09-24 | **Next 16 file convention:** `middleware.ts` → `proxy.ts` (`export function proxy`), per the framework deprecation. `proxy.ts` was added to `tsconfig.app.json` so the fast typecheck target covers it too. |
+| 2026-09-24 | **Gap — sample vs mine (`F-09` + contract):** `Workspace` carries `id`/`tenantId`/`name` only, so the switcher cannot separate a sample corpus without inventing data. `system-ux.md` §1/§2 still require sample-vs-mine as real data. |
+| 2026-09-24 | **Gap — unreviewed screen:** the identity-unavailable entry screen is built from the stock `Empty` primitive with plain copy; no reference covers it, so it is flagged for `@user` rather than presented as designed. |
+| 2026-09-24 | **Sign-in block built from `@user`'s reference.** The pending choice was resolved by a supplied shadcn-style login card, so the block was built rather than guessed. `/sign-in` now exists as a real route. |
+| 2026-09-24 | **Unbacked controls render disabled, with a note — `@user`'s explicit choice over omitting them.** Social sign-in, "Remember this device", password recovery and account creation have no endpoint in `docs/api/openapi.yaml`, so they are `disabled` and each group says so in one short line. Enabling any of them is a contract change, not a frontend tweak. |
+| 2026-09-24 | **No third-party assets in the sign-in block.** The reference loaded its logo and provider icons from `images.shadcnspace.com`; those became a Tabler mark and Tabler brand icons, because a runtime request to a host we do not control is the same problem the self-hosted fonts avoid. |
+| 2026-09-24 | **The sign-in card title is the page `h1`.** `CardTitle` gained an optional `level` (default `3`, so existing cards are untouched) instead of shipping an `h1`→`h3` outline gap or a duplicate hidden heading. |
+| 2026-09-24 | **Reference-exact utilities substituted where they are equal:** `min-h-dvh` for `min-h-screen` (mobile toolbars), `left-full` for `left-1/1` (both compile to `left:100%` — verified in the built CSS). |
+| 2026-09-24 | **Two shadcn-registry defects fixed on copy-in (Checkbox).** The registry imports `cn` from an npm package and adds it as a dependency (removed — this project owns its `cn`); and its `disabled:` utilities can never match, because Base UI renders the control as `<span role="checkbox">` where `:disabled` does not apply, so the styling uses the `data-disabled` variant Base UI actually emits. |
+| 2026-09-24 | **The sign-in checkbox is named with `aria-labelledby`, not `htmlFor` alone.** Base UI applies the consumer's `id` to its hidden native input, so an `htmlFor`-only label points at an `aria-hidden` element and leaves the visible control anonymous. |
+| 2026-09-24 | **`bg-white/10` kept as a literal on the sign-in arcs.** The surface above is deliberately inverted (dark in both themes), so a light tint is needed in both; a token like `bg-foreground/10` would vanish into the surface it sits on. Same reasoning recorded in the block's comment. |
+| 2026-09-24 | **F-03 closed.** Sign-in, sign-out, three-state session entry and selector semantics are all landed and green. Gaps handed on are recorded in the handoff archive (no sample marker on `Workspace`; the forbidden denial has no reachable trigger; no real-API sign-in smoke test; visual confirmation is `@user`'s). |

@@ -25,6 +25,8 @@ Per-role custom agents for Copilot's agent picker live in
   ADR-0003, ADR-0004, ADR-0005). Treat only **`accepted`** ADRs as closed
   choices; do not invent ADRs
 - `docs/planning/implementation-tracks.md` — Phase 1+ program of record
+- `docs/planning/feature-backlog.md` — unscheduled candidates (`BL-*`,
+  not task codes); promote via Commander after `@user` triage
 - `docs/research/technical/` and `docs/research/ux/` — evidence inputs
 - `docs/frontend/README.md` — frontend contributor entry
 - `quality/ui-qa-checklist.md` — UI QA starting point
@@ -91,15 +93,15 @@ Copilot does not register `.cursor/agents/` as slash agents. Emulate one
 role per turn by reading the matching contract and stating the role.
 Prefer `.github/agents/*.agent.md` when using Copilot's agent picker.
 
-| Role | Contract file | Invoke as |
-|------|---------------|-----------|
-| Commander | `.cursor/agents/commander.md` | `/commander` |
-| Architect | `.cursor/agents/architect.md` | `/architect` |
-| Researcher | `.cursor/agents/researcher.md` | `/researcher` |
+| Role          | Contract file                           | Invoke as        |
+| ------------- | --------------------------------------- | ---------------- |
+| Commander     | `.cursor/agents/commander.md`           | `/commander`     |
+| Architect     | `.cursor/agents/architect.md`           | `/architect`     |
+| Researcher    | `.cursor/agents/researcher.md`          | `/researcher`    |
 | UX Researcher | `.cursor/agents/ux_researcher.agent.md` | `/ux_researcher` |
-| Designer | `.cursor/agents/designer.agent.md` | `/designer` |
-| Implementer | `.cursor/agents/implementer.md` | `/implementer` |
-| Phase Check | `.cursor/agents/phase-check.md` | `/phase-check` |
+| Designer      | `.cursor/agents/designer.agent.md`      | `/designer`      |
+| Implementer   | `.cursor/agents/implementer.md`         | `/implementer`   |
+| Phase Check   | `.cursor/agents/phase-check.md`         | `/phase-check`   |
 
 Canonical prose label for UX Researcher is `/ux-researcher`; executable
 id is `ux_researcher`.

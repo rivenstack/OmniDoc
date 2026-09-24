@@ -17,6 +17,7 @@ export { IconButton, type IconButtonProps } from "./icon-button";
 export { Input } from "./input";
 export { Textarea } from "./textarea";
 export { Label } from "./label";
+export { Checkbox } from "./checkbox";
 export { Badge, badgeVariants, type BadgeProps } from "./badge";
 export {
   Card,

@@ -8,7 +8,7 @@ truth for live status or architecture.
 
 | Layer | Where | When to edit |
 |-------|-------|--------------|
-| Canonical SoT | `context.md`, `architecture.md`, `docs/adr/`, `docs/handoffs/`, `docs/planning/implementation-tracks.md`, role memory | After every real decision or phase change |
+| Canonical SoT | `context.md`, `architecture.md`, `docs/adr/`, `docs/handoffs/`, `docs/planning/implementation-tracks.md`, `docs/planning/feature-backlog.md`, role memory | After every real decision or phase change |
 | Shared bootstrap | `.agent/*` (this folder) | Rarely — identity, principles, load order, stable conventions |
 | Host adapters | `AGENTS.md`, `.cursor/`, `.github/copilot-instructions.md`, `.codex/`, `.opencode/` | Only when host quirks or invocation change |
 | Attach snapshot | `GEMINI_CONTEXT.md` | Regenerate before attaching to Gemini after material SoT changes |

@@ -112,26 +112,66 @@ Notes that matter day to day:
   `npx shadcn@latest add <name>` and keep them on logical CSS
   (`ps-*`/`pe-*`/`ms-*`/`me-*`). Forms compose `FieldGroup` + `Field`; do
   not lay out raw `Label` + `Input` pairs.
+- **The `shadcn add` output always needs a pass before it is committed.**
+  Run it from `packages/ui`. The registry now emits
+  `import { cn } from "cn"` and adds a `cn` dependency — rewrite the import to
+  `../lib/utils` and remove the dependency (`pnpm remove cn`). Its focus/error
+  rings are half-opacity and fail the 3:1 bar, so they are raised to full
+  opacity, and `rounded-[4px]` becomes the token step `rounded-xs`. Check
+  whether a new component also pulls color variables into `tokens.css` — that
+  happened with the sidebar, and `tokens.css` is not edited by feature work.
+- **Base UI state attributes, not native pseudo-classes.** Base UI renders
+  controls like `Checkbox` as a `<span role="checkbox">`, so `disabled:` can
+  never match; style the `data-*` state the component actually emits
+  (`data-disabled`, `data-checked`, `data-open`) — the custom variants are
+  already defined in `tokens.css`. Related trap: Base UI puts the consumer's
+  `id` on its hidden native input, so a `htmlFor`-only label points at an
+  `aria-hidden` element. Name the visible control with `aria-labelledby`.
+- **Session identity is a server-side port** (F-03).
+  `apps/web/app/lib/identity/` holds the whole contract: `identity-api.ts` is a
+  typed adapter over `docs/api/openapi.yaml` (`POST`/`GET`/`DELETE`
+  `/api/v1/session`, `GET /api/v1/workspaces`) consuming `@omnidoc/contracts`
+  types only; `cookies.ts` relays `JSESSIONID` (httpOnly) and `XSRF-TOKEN`
+  between the browser and the API; `session.ts` binds `next/headers`;
+  `actions.ts` holds the sign-in / sign-out / workspace-selection server
+  actions; `proxy.ts` (Next 16's renamed `middleware`) performs the cheap
+  "no cookie → sign-in" redirect and forwards the requested path as a header.
+  Point the app at the API with `OMNIDOC_API_ORIGIN` (default
+  `http://localhost:8080`) — server-side only, so there is no `NEXT_PUBLIC_*`
+  variant and the browser needs no CORS. Never add a client auth library, and
+  never resolve membership in the browser. Signed-in entry has **three**
+  states, not two: authenticated, rejected session, and identity service
+  unreachable — the third must never be shown as "signed out".
+- **The sign-in surface** is `apps/web/app/sign-in/page.tsx` (outside the
+  `(app)` group, so it renders without the shell) plus the `LoginForm` block in
+  `packages/ui/src/shell/login.tsx`. The block takes the server action as a prop
+  and uses `useActionState`, so it submits as a plain form post before
+  hydration and the UI package stays free of app imports. `next` is re-validated
+  with `safeNextPath` in the page *and* again in the action — a URL-supplied
+  destination is attacker-controlled, and without that check sign-in is an open
+  redirect. Unbacked controls (social sign-in, remember-device, password
+  recovery, account creation) render **disabled with a one-line note** by
+  `@user`'s decision; enabling them is a contract change, not a frontend tweak.
 - **Shell blocks live in `packages/ui/src/shell`** (F-02): `SkipLink`,
   `WorkspaceSwitcher`, `MobileTabBar`, `CommandPalette` +
   `useCommandPalette`, `ContentRegion`, `PageHeader`. App wiring is
   `apps/web/app/(app)` — `shell.tsx` is the client boundary and the server
-  `layout.tsx` passes workspace data as **props** (no fetching). Keep
-  `@source "../shell"` registered in `globals.css`. The copied-in
-  `sidebar.tsx` was adapted to OmniDoc semantic tokens (this project has no
-  `--sidebar*` variables); workspace data is a render placeholder until the
-  MSW / identity wiring slice.
-- **The sidebar block is the shadcn `sidebar-09` composition, kept on the
+  `layout.tsx` resolves the session and passes it as **props** (F-03; see the
+  identity bullet above). Keep `@source "../shell"` registered in
+  `globals.css`. The copied-in `sidebar.tsx` was adapted to OmniDoc semantic
+  tokens (this project has no `--sidebar*` variables).
+- **The sidebar block is the shadcn `sidebar-07` composition, kept on the
   base-nova primitives** (composition-only migration; the new-york-v4 Radix
   tier was deliberately **not** installed). Block files mirror the upstream
-  layout under `apps/web/app/(app)`: `app-sidebar.tsx` (double sidebar:
-  always-narrow icon rail + contextual panel) and `nav-user.tsx`
-  (`NavUser` account dropdown footer — theme toggle inside; Sign out item
-  renders only when `onSignOut` is wired by F-03). `ShellUser` in
-  `nav-user.tsx` is a render placeholder until F-03 consumes the
-  contract `Principal`; do not extend it into a second identity authority.
-  No app-level tests exist for these composition files — component tests
-  live at the `packages/ui` tier (F-03 adds app-level form/session tests).
+  layout under `apps/web/app/(app)`: `app-sidebar.tsx` (one
+  `Sidebar collapsible="icon"` with header, grouped nav, footer and rail),
+  `nav-main.tsx`, and `nav-user.tsx` (`NavUser` account dropdown footer —
+  theme toggle inside; the Sign out item renders only when an `onSignOut`
+  handler is passed, which F-03 wires to the session action). `NavUser`
+  consumes the contract `Principal` (`actorId`) and renders that identifier in
+  a `bdi` — there is no local identity shape to extend. Component tests live at
+  the `packages/ui` tier; app-level tests cover the identity port, cookie
+  relay, and selector logic under `app/lib/identity/*.test.ts`.
 
 ### Still pending / open
 
@@ -179,6 +219,9 @@ pnpm install
 pnpm typecheck && pnpm lint && pnpm test
 ```
 
+To run the full local stack (Postgres + API + web app), see
+[`docs/running-locally.md`](../running-locally.md).
+
 ### Clone
 
 Default branch: **`main`**.
@@ -222,7 +265,7 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired; **F-02 shell landed** (2026-09-23) in `app/(app)`. F-03 auth UI is next. Live UI plan: [`docs/design/now.md`](../design/now.md) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired; **F-02 shell** (2026-09-23) in `app/(app)`; **F-03 session identity + sign-in** (2026-09-24) in `app/lib/identity` and `app/sign-in`. **F-04 capture is next.** Live UI plan: [`docs/design/now.md`](../design/now.md) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
 | `packages/ui/` | UI package: shadcn v4 `base-nova` primitives on Base UI, Mintlify token layer (2026-09-23). Plan: [`docs/design/now.md`](../design/now.md) |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
@@ -472,7 +515,7 @@ Concrete work that needs **no further decisions**:
 4. **Draft an accessibility checklist** for the four journeys (capture,
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
-5. **Do not extend D-01 as a spec** — F-03 (and later F-*) run from the
+5. **Do not extend D-01 as a spec** — F-04 (and later F-*) run from the
    new rules: structure from
    [`docs/design/system-ux.md`](../design/system-ux.md), visible plan in
    [`docs/design/now.md`](../design/now.md), and a `@user` reference
