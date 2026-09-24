@@ -28,6 +28,8 @@ import {
   InputGroupInput,
   Label,
   Separator,
+  SidebarProvider,
+  SidebarTrigger,
   Skeleton,
   Spinner,
   Textarea,
@@ -117,8 +119,14 @@ describe("IconButton", () => {
   });
 
   it("keeps the accessible-name requirement at the type level", () => {
-    // @ts-expect-error — IconButton without `label` must not compile.
-    const unnamed = <IconButton><span aria-hidden="true">x</span></IconButton>;
+    const unnamed = (
+      // @ts-expect-error — IconButton without `label` must not compile.
+      // Keep this comment directly above the element: a formatter that wraps
+      // the JSX moves the error off the directive's line otherwise.
+      <IconButton>
+        <span aria-hidden="true">x</span>
+      </IconButton>
+    );
     expect(unnamed).toBeTruthy();
   });
 });
@@ -173,7 +181,9 @@ describe("Field family", () => {
       <Field data-invalid>
         <FieldLabel htmlFor="slug">Slug</FieldLabel>
         <Input id="slug" aria-invalid />
-        <FieldError errors={[{ message: "Required" }, { message: "Required" }]} />
+        <FieldError
+          errors={[{ message: "Required" }, { message: "Required" }]}
+        />
       </Field>,
     );
     expect(screen.getByRole("alert").textContent).toBe("Required");
@@ -238,6 +248,47 @@ describe("Separator", () => {
   it("exposes separator semantics to assistive tech", () => {
     render(<Separator />);
     expect(screen.getByRole("separator")).toBeTruthy();
+  });
+});
+
+/** The Tabler glyph identity, read off the class the icon factory adds. */
+function triggerGlyph(trigger: HTMLElement): string | undefined {
+  return Array.from(trigger.querySelector("svg")?.classList ?? []).find(
+    (name) => name.startsWith("tabler-icon-"),
+  );
+}
+
+describe("SidebarTrigger", () => {
+  it("advertises the action it performs, tracking the sidebar state", () => {
+    render(
+      <SidebarProvider defaultOpen>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
+    expect(triggerGlyph(trigger)).toBe(
+      "tabler-icon-layout-sidebar-left-collapse",
+    );
+
+    fireEvent.click(trigger);
+    expect(triggerGlyph(trigger)).toBe(
+      "tabler-icon-layout-sidebar-left-expand",
+    );
+
+    // The accessible name is stable across states: assistive tech hears one
+    // control, not two different ones.
+    expect(screen.getByRole("button", { name: "Toggle Sidebar" })).toBeTruthy();
+  });
+
+  it("uses the glyph pair matching the sidebar side", () => {
+    render(
+      <SidebarProvider defaultOpen>
+        <SidebarTrigger side="right" />
+      </SidebarProvider>,
+    );
+    expect(
+      triggerGlyph(screen.getByRole("button", { name: "Toggle Sidebar" })),
+    ).toBe("tabler-icon-layout-sidebar-right-collapse");
   });
 });
 

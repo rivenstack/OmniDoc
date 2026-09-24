@@ -12,6 +12,7 @@
    ========================================================================== */
 
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "./tokens.css";
 
 /* Tailwind's automatic source detection roots at the consuming project and
@@ -21,6 +22,7 @@
 @source "../components";
 @source "../providers";
 @source "../lib";
+@source "../shell";
 
 /* Test files are scanned for classes only if they are real render targets;
    excluding them keeps audit strings in assertions from generating dead
@@ -29,6 +31,30 @@
 @source not "../components/**/*.test.ts";
 @source not "../lib/**/*.test.ts";
 @source not "../providers/**/*.test.tsx";
+@source not "../shell/**/*.test.tsx";
+@source not "../shell/**/*.test.ts";
 
 /* The app tree that renders these components. */
 @source "../../../../apps/web/app";
+
+/* Theme change feels intentional rather than a hard cut. Scoped to shell
+   surfaces and overlay surfaces so it never animates arbitrary content. The
+   global reduced-motion rule in `tokens.css` collapses these durations.
+   (Base layer lives in `tokens.css`; this is the one addition kept in the
+   Tailwind entry to avoid touching the token authority.) */
+@layer base {
+  :where(
+    body,
+    [data-slot="sidebar"],
+    [data-slot="top-bar"],
+    [data-slot="mobile-tab-bar"],
+    [data-slot="card"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dialog-content"]
+  ) {
+    transition:
+      background-color var(--od-duration-base) var(--od-ease-standard),
+      border-color var(--od-duration-base) var(--od-ease-standard),
+      color var(--od-duration-base) var(--od-ease-standard);
+  }
+}

@@ -249,3 +249,68 @@
   focus order, what looks off) — the user has the real rendering and their
   feedback is faster and safer than more AI inference. Never write
   "visually verified" without a browser or a human.
+- **2026-09-23 (F-02):** `shadcn add` pulls `registryDependencies` and
+  **overwrites** already-customized primitives (`button`, `input`,
+  `separator`, `skeleton`, `textarea`, `input-group`). Back them up (or
+  `git checkout` after) before adding. It also installs its own `cn` npm
+  package and writes `from "cn"` — remove that dependency and rewrite the
+  imports to the project's `../lib/utils`.
+- **2026-09-23 (F-02):** the base-nova `sidebar` needs `--sidebar*` color
+  tokens this project does not carry, and `bg-sidebar` would not even
+  generate without an `@theme` alias. Since copied-in components are
+  project-owned, adapt its classes to existing semantic roles
+  (`bg-background`/`text-foreground`/`border-border`/`bg-muted`/`ring-ring`)
+  and set the width via the existing layout tokens — do **not** edit
+  `tokens.css`.
+- **2026-09-23 (F-02):** upstream v4 components use physical utilities
+  (`pl-`/`pr-`/`ml-`/`mr-`, `text-left`), which fails F-01's source-scan
+  RTL-readiness test. Normalize the whole copied-in tier to logical
+  (`ps/pe/ms/me`, `text-start/end`) as part of the copy-in.
+- **2026-09-23 (F-02):** `@nx/enforce-module-boundaries` rejects
+  `@omnidoc/ui/...` self-imports inside `packages/ui`; use relative imports
+  (`./dialog`, `../hooks/use-mobile`) even though the package alias resolves.
+- **2026-09-23 (F-02):** jsdom needs more than `matchMedia` to render
+  Base UI overlays: add inert `ResizeObserver` and
+  `Element.prototype.scrollIntoView` stubs. `cmdk` (Command) throws without
+  them. Empty class methods trip `@typescript-eslint/no-empty-function` —
+  put a comment or `return` in the body.
+- **2026-09-23 (F-02):** a `SidebarMenuButton` with `tooltip` returns a
+  Base UI `Tooltip` wrapper, not the button. Never pass it as another
+  trigger's `render` target (`CollapsibleTrigger render={...}`) — the merged
+  trigger props land on `Tooltip`, not the button. Use the plain
+  (no-`tooltip`) menu button in that position.
+- **2026-09-23 (F-02):** the root `pnpm test` also runs `api:test`, which
+  needs a running Postgres (Flyway connects at context load). Verify the FE
+  lane with `npx nx run-many -t typecheck lint test -p ui web`; an
+  `api:test` connection failure is the backend lane / environment, not your
+  change.
+- **2026-09-23 (F-02 revision):** shadcn v4 overlay motion classes
+  (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`) are **no-ops**
+  until `tw-animate-css` is imported in the Tailwind entry
+  (`packages/ui/src/styles/globals.css`). The base-nova components already
+  ship those classes; the dependency was the missing piece.
+- **2026-09-23 (F-02 revision):** Base UI `Button`/`IconButton` default to
+  `nativeButton: true`; passing `render={<Link/>}` warns and strips button
+  semantics unless you also pass `nativeButton={false}`. This is separate
+  from `useRender` (SidebarMenuButton), which does not warn.
+- **2026-09-23 (F-02 revision):** `sidebar-09` is a **double sidebar** — an
+  outer `Sidebar collapsible="icon"` with `*:data-[sidebar=sidebar]:flex-row`
+  wrapping an always-narrow rail (`w-[calc(var(--sidebar-width-icon)+1px)]!`)
+  plus a secondary panel (`flex flex-1`). Collapsing the outer clips the
+  panel via `overflow-hidden`; the rail stays. Reproduce the geometry rather
+  than hand-rolling a single sidebar.
+- **2026-09-23 (F-02 revision):** a compact workspace trigger that hides its
+  text with `hidden` also removes the accessible name (the mark is
+  `aria-hidden`). Add an explicit `aria-label` in compact mode.
+- **2026-09-23 (F-02 revision):** no browser in the session — the user
+  reviewed the shell and reported the Base UI warning plus visual issues
+  (motion, spacing, collapsed switcher, mobile New note, palette position).
+  Treat a user visual review as the verification loop; log each fix.
+- **2026-09-23 (sidebar-09 migration):** `@tabler/icons-react` has no
+  `IconChevronsUpDown`/`IconChevronsDownUp` at 3.48 — use `IconSelector`
+  for the "expand me" affordance (matches the workspace switcher).
+- **2026-09-23 (sidebar-09 migration):** a `SidebarInput` used as a palette
+  **launcher** must not reopen on focus return: make it `readOnly`, open on
+  `onMouseDown` with `preventDefault()` (no focus stolen, no
+  close→focus→reopen loop), plus Enter/Space in `onKeyDown`. Do **not** wire
+  `onFocus` — dialog focus restoration re-fires it.

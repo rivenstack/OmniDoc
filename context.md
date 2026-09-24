@@ -82,12 +82,23 @@ Program of record:
   options on real choices. **F-02 (shell) reopened as the next step**;
   the D-01-era F-02 archive stays historical. Design language = swappable
   token layer
-- **2026-09-23:** **F-01 remake** (branch `F01-ui-remake`, not merged):
+- **2026-09-23:** **F-01 remake** (branch `F01-ui-remake`, merged):
   **Mintlify** design language chosen and landed as token values; F-01
   primitives rebuilt on shadcn v4 `base-nova` (Base UI) sources with
   **Tabler** icons; new v4 form/empty family (Field, InputGroup, Empty);
   `/kit` remade; FE checks green (lint/typecheck/test/build). F-02 stays
   the next step; ADR-0003's icon-library row needs an Architect amendment
+- **2026-09-23:** **F-02 shell landed** — nested collapsible sidebar
+  (workspace switcher, nav, Collections submenu), slim utility top bar
+  (search entry, New note, theme toggle, inert F-08 mode slot), centered
+  content region, mobile tab bar, skip link + route-change focus, and a
+  `Cmd/Ctrl+K` command palette. Shell blocks in `packages/ui/src/shell`;
+  app wiring in `apps/web/app/(app)`; workspace data is a server-layout
+  placeholder passed as **props** (no fetch). FE checks green (ui 189
+  tests; web typecheck/lint/test/build). Frontend lane advances to
+  **F-03 (auth UI)** — identity fixtures ready. (Local `api:test` fails
+  only because Postgres is not running — pre-existing/environmental,
+  backend lane; not touched.)
 - **2026-09-20:** Backend B-02→B-04 completed and archived; Commander
   B-04c eval **GO**; B-04c Implementer closeout **completed** and
   archived. **S-03** mock corpus **completed** (Commander-validated
@@ -129,7 +140,8 @@ Program of record:
 | S-01a FE Nx + boundary CI | shared | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01A-commander-implementer.md` |
 | S-01b Java API scaffold | backend | Implementer | **completed** | `docs/handoffs/archive/H-2026-09-15-P1-S01B-commander-implementer.md` |
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
-| F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **ready** — next in sequence; reopened 2026-09-23 under new design rules (structure from `system-ux.md`; references from `@user`) | `docs/handoffs/active/lane-frontend.md` |
+| F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
+| F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **ready** — next in sequence; identity fixtures (S-03/B-03) ready; sign-in look open until `@user` reference | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -195,7 +207,8 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-02, `lane: frontend`, human: front-end programmer)
+  `/implementer` (F-03 auth UI, `lane: frontend`, human: front-end
+  programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (B-05 ingestion/chunking + progress, `lane: backend`,
   human: back-end programmer)
