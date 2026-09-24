@@ -112,6 +112,26 @@ Notes that matter day to day:
   `npx shadcn@latest add <name>` and keep them on logical CSS
   (`ps-*`/`pe-*`/`ms-*`/`me-*`). Forms compose `FieldGroup` + `Field`; do
   not lay out raw `Label` + `Input` pairs.
+- **Shell blocks live in `packages/ui/src/shell`** (F-02): `SkipLink`,
+  `WorkspaceSwitcher`, `MobileTabBar`, `CommandPalette` +
+  `useCommandPalette`, `ContentRegion`, `PageHeader`. App wiring is
+  `apps/web/app/(app)` — `shell.tsx` is the client boundary and the server
+  `layout.tsx` passes workspace data as **props** (no fetching). Keep
+  `@source "../shell"` registered in `globals.css`. The copied-in
+  `sidebar.tsx` was adapted to OmniDoc semantic tokens (this project has no
+  `--sidebar*` variables); workspace data is a render placeholder until the
+  MSW / identity wiring slice.
+- **The sidebar block is the shadcn `sidebar-09` composition, kept on the
+  base-nova primitives** (composition-only migration; the new-york-v4 Radix
+  tier was deliberately **not** installed). Block files mirror the upstream
+  layout under `apps/web/app/(app)`: `app-sidebar.tsx` (double sidebar:
+  always-narrow icon rail + contextual panel) and `nav-user.tsx`
+  (`NavUser` account dropdown footer — theme toggle inside; Sign out item
+  renders only when `onSignOut` is wired by F-03). `ShellUser` in
+  `nav-user.tsx` is a render placeholder until F-03 consumes the
+  contract `Principal`; do not extend it into a second identity authority.
+  No app-level tests exist for these composition files — component tests
+  live at the `packages/ui` tier (F-03 adds app-level form/session tests).
 
 ### Still pending / open
 
@@ -202,7 +222,7 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired. F-02 shell is the live task (reopened 2026-09-23, structure from `system-ux.md`). Live UI plan: [`docs/design/now.md`](../design/now.md) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired; **F-02 shell landed** (2026-09-23) in `app/(app)`. F-03 auth UI is next. Live UI plan: [`docs/design/now.md`](../design/now.md) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
 | `packages/ui/` | UI package: shadcn v4 `base-nova` primitives on Base UI, Mintlify token layer (2026-09-23). Plan: [`docs/design/now.md`](../design/now.md) |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |
@@ -452,12 +472,13 @@ Concrete work that needs **no further decisions**:
 4. **Draft an accessibility checklist** for the four journeys (capture,
    organize, retrieve, ask) covering keyboard, focus, labels, reduced
    motion, and contrast.
-5. **Do not extend D-01 as a spec** — F-02 runs from the new rules:
-   structure from [`docs/design/system-ux.md`](../design/system-ux.md),
-   visible plan in [`docs/design/now.md`](../design/now.md), and a
-   `@user` reference (link / pasted code / prompt) per visual block
-   before you build it. The look is the Mintlify token layer (chosen
-   2026-09-23); the component inventory is not a whitelist.
+5. **Do not extend D-01 as a spec** — F-03 (and later F-*) run from the
+   new rules: structure from
+   [`docs/design/system-ux.md`](../design/system-ux.md), visible plan in
+   [`docs/design/now.md`](../design/now.md), and a `@user` reference
+   (link / pasted code / prompt) per visual block before you build it.
+   The look is the Mintlify token layer (chosen 2026-09-23); the
+   component inventory is not a whitelist.
 6. **Enumerate UI states per journey** — matrix of route/screen ×
    empty/loading/success/error/refusal/partial-citation states so Design
    and Implementer inherit a shared inventory.

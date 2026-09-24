@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
-import { DirectionProvider, ThemeProvider } from "@omnidoc/ui";
+import { DirectionProvider, ThemeProvider, TooltipProvider } from "@omnidoc/ui";
 import { locale } from "./locale";
 import "./globals.css";
 
@@ -46,7 +46,9 @@ export default function RootLayout({
     >
       <body>
         <DirectionProvider direction={locale.dir}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
         </DirectionProvider>
       </body>
     </html>

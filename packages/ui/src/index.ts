@@ -10,5 +10,7 @@
  * SDK, Spring/Java types, or `packages/mocks` production paths (inventory §13).
  */
 export * from "./components";
+export * from "./hooks";
 export * from "./lib";
 export * from "./providers";
+export * from "./shell";

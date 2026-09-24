@@ -28,3 +28,37 @@ function createMediaQueryList(query: string): MediaQueryList {
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   window.matchMedia = (query: string) => createMediaQueryList(query);
 }
+
+/**
+ * jsdom has no `ResizeObserver`. `cmdk` (the Command palette primitive) and
+ * Base UI positioning observe element size, so render would throw without it.
+ * The stub is inert: layout measurement is meaningless in jsdom.
+ */
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverStub {
+    observe(): void {
+      /* inert: layout measurement is meaningless in jsdom */
+    }
+    unobserve(): void {
+      /* inert */
+    }
+    disconnect(): void {
+      /* inert */
+    }
+  }
+  globalThis.ResizeObserver =
+    ResizeObserverStub as unknown as typeof ResizeObserver;
+}
+
+/**
+ * jsdom implements neither `scrollIntoView` nor `Element.scrollTo`. `cmdk`
+ * scrolls the active item into view when the command list mounts.
+ */
+if (typeof Element !== "undefined") {
+  if (typeof Element.prototype.scrollIntoView !== "function") {
+    Element.prototype.scrollIntoView = () => undefined;
+  }
+  if (typeof Element.prototype.scrollTo !== "function") {
+    Element.prototype.scrollTo = () => undefined;
+  }
+}
