@@ -54,9 +54,29 @@ export function CardHeader({ className, ...props }: ComponentProps<"div">) {
   );
 }
 
-export function CardTitle({ className, ...props }: ComponentProps<"h3">) {
+export type CardTitleProps = ComponentProps<"h2"> & {
+  /**
+   * Heading level. Defaults to `h3`, which is right when the card sits inside a
+   * page that already has a heading. A card that *is* the page — the sign-in
+   * card — passes `1`, so the document outline starts at the visible title
+   * instead of skipping from an `h1` down to an `h3`.
+   */
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+};
+
+const CARD_TITLE_HEADINGS = {
+  1: "h1",
+  2: "h2",
+  3: "h3",
+  4: "h4",
+  5: "h5",
+  6: "h6",
+} as const;
+
+export function CardTitle({ className, level = 3, ...props }: CardTitleProps) {
+  const Heading = CARD_TITLE_HEADINGS[level];
   return (
-    <h3
+    <Heading
       data-slot="card-title"
       className={cn(
         "font-heading text-base leading-snug font-semibold group-data-[size=sm]/card:text-sm",
@@ -67,7 +87,10 @@ export function CardTitle({ className, ...props }: ComponentProps<"h3">) {
   );
 }
 
-export function CardDescription({ className, ...props }: ComponentProps<"div">) {
+export function CardDescription({
+  className,
+  ...props
+}: ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"

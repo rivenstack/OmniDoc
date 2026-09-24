@@ -1,100 +1,97 @@
 ---
-handoff_id: H-2026-09-23-P1-F03-user-implementer
+handoff_id: H-2026-09-24-P1-F04-implementer-implementer
 affinity: implementation
 track: parallel
 status: ready
 phase: "1"
-task: "F-03"
+task: "F-04"
 lane: frontend
 human_owner: front-end-programmer
-from: user
+from: implementer
 to: implementer
-created: 2026-09-23
-updated: 2026-09-23
+created: 2026-09-24
+updated: 2026-09-24
 ---
 
-# F-03 — Auth / session UI
+# F-04 — Capture (TipTap)
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-frontend.md and execute F-03 exactly. Build sign-in / sign-out and session-aware shell entry per docs/design/system-ux.md (structure only). For every visual block, ask @user for a reference (link, pasted code, or a prompt — image welcome) before building it. UI details stay open; do not follow D-01 layouts or inventory. Do not open F-04. Do not touch apps/api, packages/mocks, packages/contracts authorship, docs/handoffs/current.md, or lane-backend.md.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute F-04 exactly. Build note capture (title + rich body, autosave, save states) against the notes HTTP contract from S-02, with structure from docs/design/system-ux.md §2. For every visual block, ask @user for a reference (link, pasted code, or a prompt — image welcome) before building it. UI details stay open; do not follow D-01 layouts or inventory. Do not open F-05. Do not touch apps/api, packages/mocks, packages/contracts authorship, docs/handoffs/current.md, or lane-backend.md.
 ```
 
 ## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end
-programmer. **allowed_task_classes:** `F-03` only.
+programmer. **allowed_task_classes:** `F-04` only.
 
-Make the shell session-aware: a sign-in experience, sign-out, and an
-authenticated vs unauthenticated entry into the F-02 shell. The workspace
-switcher stays a **pure selector**. Structure and behavior come from
-`docs/design/system-ux.md` and `architecture.md` §2/§5; **UI details stay
-open** and each visual block needs a `@user` reference (or an offered choice
-logged in `docs/design/now.md`).
+Make capture real: **New note lands directly in the editor**, a note is
+created with a title and body only, edits autosave, and the save state is
+honest (idle / saving / saved / conflict). Structure and behaviour come from
+`docs/design/system-ux.md` §2 and `architecture.md` §3; **UI details stay open**
+and each visual block needs a `@user` reference.
 
 ## Required Reading
 
-1. `docs/design/system-ux.md` — workspaces as a selector; generic forbidden
-   denial; honest at n≈1
+1. `docs/design/system-ux.md` §2 (capture and notes) — the binding behaviours
 2. `docs/design/now.md` — the visible plan; log reference choices
 3. This file
 4. `context.md` (read-only)
-5. F-02 shell blocks and primitives in `packages/ui` (`shell/**`,
-   `components/**`) — use them; do not extend tokens
-6. `docs/api/openapi.yaml` + `packages/contracts` generated types
-   (`Principal`, `WorkspaceList`) — consume only
-7. ADR-0001 §6 and ADR-0005 — identity is the **port**; implementation is
-   Spring Security HTTP-only session cookies in the Java API. **No client
-   auth library** (the Better Auth *library* is superseded)
-8. `architecture.md` §2 (tenancy / selector semantics)
-9. `quality/ui-qa-checklist.md` (a11y release gate)
-10. F-03 history/context: S-03 identity fixtures and B-03 live identity
+5. ADR-0001 §2 — TipTap 3.31.3; **ProseMirror JSON is the source of truth**;
+   markdown exists only as a projection through one canonical serializer
+6. ADR-0003 — Zustand 5.0.15 for editor/UI state; RSC + Server Actions first
+7. `docs/api/openapi.yaml` + `packages/contracts` — notes CRUD + version
+   concurrency (`Note`, `CreateNoteRequest`, `UpdateNoteRequest`, `ErrorBody`)
+8. `docs/research/version-ledger.md` — the TipTap / Zustand pins
+9. `packages/ui/**` — existing primitives and shell blocks; reuse them
+10. `quality/ui-qa-checklist.md` §1.4, §2.4, §3.3, §5, §6 (a11y release gate)
 
 ## Inputs / Evidence
 
-- F-02 shell landed 2026-09-23 (`packages/ui/src/shell`,
-  `apps/web/app/(app)`) — archive:
-  `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md`
-- B-03 (Java identity sessions + membership binder) **completed**;
-  S-03 canonical HTTP/OpenAPI/SSE contracts **completed**
-- S-03 mock corpus **completed** (identity fixtures available to the FE)
-- Canonical contracts: `docs/api/openapi.yaml`, `packages/contracts`
-- Note: the FE still needs a narrowly scoped `web → mocks` import
-  exception before in-app MSW wiring (see Blockers in `context.md`)
+- F-03 completed 2026-09-24 (session entry, sign-in, sign-out). Archive:
+  `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md`
+- S-02 canonical contracts **completed**; B-04 notes CRUD + version
+  concurrency **completed** and live
+- S-03 deterministic mock corpus **completed** (note fixtures available)
+- **TipTap and Zustand are pinned but not installed** — no `@tiptap/*`,
+  `zustand` or `codemirror` entry exists in any `package.json` yet. Installing
+  them at the ledger versions is part of this task.
+- Note: the FE still needs the narrowly scoped `web → mocks` import exception
+  before in-app MSW wiring (see Blockers in `context.md`)
 
 ## Task details
 
 | Concern | This task |
 | --- | --- |
-| API connections | Identity **port** only — the Java session API (ADR-0005). Consume `@omnidoc/contracts` types (`Principal`, `WorkspaceList`). MSW identity fixtures (S-03) for mocks **once the `web → mocks` import exception exists**; B-03 live identity is available for a live path. **No** client auth library, no provider SDK. If the exception is still unauthorized, build props-first + a thin typed adapter and soft-stop the MSW wiring sub-slice |
-| State management | Form state local; server-side redirects for session entry; never trust client-only ACL. Zustand only if shared client state is real |
-| Routing / IA | Sign-in route outside the authenticated shell; the shell entry becomes session-aware (unauthenticated → sign-in; authenticated → shell). Sign-out returns to the unauthenticated entry. Routes may be stubs where later slices own the body |
-| Workspace switcher | Remains a **pure selector**; membership is server-resolved. A forbidden selector is a generic denial ("You don't have access to that workspace."). Honest at n≈1; sample workspace separated and labelled |
-| Locale / direction | Single `lang`/`dir` source stays `apps/web/app/locale.ts` → `layout.tsx`; `DirectionProvider` is the only direction source; logical CSS; `bdi` around identifiers/UGC |
-| Accessibility | Labels on every field; errors announced (`role="alert"`), not color-only; visible focus; submit keyboard-operable; no focus loss on submit/redirect; skip link + landmarks from F-02 preserved |
-| Mobile | Sign-in usable at ~390px; no gesture-only controls; touch targets meet minimums |
-| Look | References `@user` supplies per block (sign-in card, form fields, session-aware shell entry, sign-out control). No palette invention; token values change only through the token layer |
+| API connections | Notes **port** over S-02 HTTP: create, read, update, soft-delete. Consume `@omnidoc/contracts` types only. Send the workspace selector header from the current selection; never treat it as authority. MSW note fixtures (S-03) for mocks **once the `web → mocks` exception exists**; otherwise build props-first + a thin typed adapter and soft-stop the MSW wiring sub-slice |
+| Editor | TipTap **3.31.3** exactly (ledger pin; do not bump). Body durable SoT is **ProseMirror JSON** — never make markdown or HTML the stored form. CodeMirror 6 for fenced code blocks (ADR-0001 §2) |
+| State management | Zustand **5.0.15** for editor/UI state only (dirty tracking, toolbar state, save status). Local form state for the title. No client cache library |
+| Save states | `idle` / `saving` / `saved` / `conflict`, per `system-ux.md` §2. A conflict is **visible** and the client does **not** pick a winning version. Saving/status announcements go to a polite live region **once per state change** (ui-qa-checklist §2.3) |
+| Import / paste | Paste and file import are first-class. Each imported file carries **its own** indexing status: pending, indexing, ready, partial, failed. Indexing in progress must be visible, and Search/Ask must not imply a complete index while one is indexing |
+| Routing / IA | `New note` (top bar and mobile) lands **directly in the editor** — title + body only, no folder or tag required first. Existing note routes resolve through the notes port |
+| Workspace scope | Notes are workspace-scoped. Re-resolve membership from the server; a rejected workspace renders the **generic** denial and never reveals whether it exists |
+| Locale / direction | Single `lang`/`dir` source stays `apps/web/app/locale.ts`. Logical CSS; `bdi` around identifiers/UGC. TipTap's `textDirection` controls **content**, not layout flipping — it is not an RTL locale claim |
+| Accessibility | The editor surface needs a real name/role beyond "edit text" (§2.4); keyboard-only create, format and exit with no focus trap (§1.4); reduced motion respected for progress affordances (§3.3); long unbroken strings and code blocks stay reachable (§6.1, §6.3, §6.5) |
+| Look | References `@user` supplies per block (editor chrome, toolbar, save indicator, import affordance). No palette invention; token values change only through the token layer |
 
 ## Reference protocol (per visual block)
 
-Blocks in scope: sign-in card/layout, form fields (email/password),
-submit/busy/error states, session-aware shell entry state, sign-out control.
+Blocks in scope: editor shell/chrome, formatting toolbar, title field, save
+state indicator, import/paste affordance, conflict surface.
 
 1. Before building a block's UI, ask `@user`: *do you have a reference —
    a link, pasted code, or a prompt (image welcome) — for this?*
-2. No reference → offer 2–3 options (e.g. stock shadcn `Card` + `Field`
-   family; a thin custom card on Base UI; reuse an existing block) and wait.
+2. No reference → offer 2–3 options and wait.
 3. Log each choice in `docs/design/now.md` (Decisions log).
-4. Focus management, labels, error announcement and the generic forbidden
-   copy are **not** visual choices — they are gate/security requirements;
-   build them without asking.
+4. Save-state semantics, conflict visibility, focus order, the editor's
+   accessible name, and the generic forbidden copy are **not** visual choices —
+   they are gate/security requirements; build them without asking.
 
 ## Allowed Write Paths
 
-- `packages/ui/**` (auth/shell blocks as copy-in blocks; no token edits)
-- `apps/web/**` (sign-in route, session entry, identity port client,
-  fixtures wiring **only** if the import exception is authorized)
+- `packages/ui/**` (capture/editor blocks as copy-in blocks; no token edits)
+- `apps/web/**` (capture route, editor client boundary, notes port client)
 - `docs/frontend/README.md` (landed conventions only)
 - `docs/handoffs/active/lane-frontend.md` (status, Outcome)
 - `docs/design/now.md` (Decisions log + Current slice lines)
@@ -109,80 +106,97 @@ exception), `packages/ui/src/styles/tokens.css`.
 
 ## Out of scope
 
-- Journeys: capture (F-04), organize (F-05), retrieve (F-06), ask (F-07),
-  dual-mode chrome (F-08), sample path (F-09)
-- Year-1 enterprise SSO (not required)
+- Organize (F-05), retrieve (F-06), ask (F-07), dual-mode chrome (F-08),
+  sample path (F-09), a11y sweep (F-10), Playwright (F-11)
+- Collaborative editing / Yjs (an open gate; `@tiptap/y-tiptap` stays unused)
 - Production AI; RTL locale; AWS / DevOps I-*
 - Token values, palettes, motion systems (references first)
 - Contracts / OpenAPI / Java authorship; fixtures authorship
 
 ## Deliverables
 
-1. Sign-in experience: form (email + password), inline validation, busy
-   state, and a distinguishable failure state — all via the identity port.
-2. Sign-out control wired into the shell.
-3. Session-aware shell entry: unauthenticated → sign-in; authenticated →
-   F-02 shell; no client-only ACL decisions.
-4. Workspace switcher confirmed as a pure selector; generic forbidden
-   denial; honest at n≈1; sample separated/labelled.
-5. Contract-typed identity consumption (generated types); no local shape
-   forks. Fixtures wiring **only** under the authorized exception, else a
-   logged bounded gap.
-6. Tests (Vitest) for the form states, error announcement, focus, and the
-   selector semantics; `packages/ui` + `apps/web` checks green.
-7. Outcome here; decision log rows in `now.md`; status in `context.md`.
+1. A capture surface: title + rich body, created with those two fields only.
+2. TipTap editor on the ADR-0001 §2 pin, storing **ProseMirror JSON**.
+3. Autosave with honest `idle` / `saving` / `saved` / `conflict` states; a
+   conflict is visible and is never auto-resolved by the client.
+4. Paste and file-import affordances, each imported file showing its own
+   pending / indexing / ready / partial / failed status.
+5. `New note` (top bar + mobile tab bar) landing directly in the editor.
+6. Versions: conflict handling proven against the S-02 contract.
+7. Tests (Vitest): save-state transitions, conflict visibility, status
+   announcement once per change, editor accessible name, keyboard-only create
+   and exit, long-content safety.
+8. Outcome here; decision log rows in `now.md`; status in `context.md`.
 
 ## Constraints / Prohibited Decisions
 
-- Do not add a client auth library (ADR-0001 §6 library superseded)
+- Do not make markdown or HTML the stored body; JSON is the SoT
+- Do not bump the TipTap / Zustand pins, and do not add a client cache library
 - Do not invent visual details no reference covers
 - Do not reproduce D-01 layouts
 - Do not add tokens or edit `tokens.css`
 - Do not author fixtures, OpenAPI, or Java code
 - Do not import provider SDKs into `apps/web` / `packages/ui`
-- Do not reveal whether a forbidden workspace exists (generic copy only)
-- Do not claim RTL locale support; do not activate production AI
-- Do not fake enterprise scale (org charts, seats, SSO chrome)
+- Do not reveal whether a forbidden workspace exists
+- Do not claim RTL locale support; TipTap `textDirection` is not a locale claim
+- Do not activate production AI
+- Do not write an AI answer into the corpus (F-07 owns that)
+- Do not imply a complete index while an import is still indexing
 
 ## Acceptance Criteria
 
-- Unauthenticated entry reaches sign-in; authenticated entry reaches the
-  shell; sign-out returns to the unauthenticated entry
-- Every field is labelled; errors are announced and not color-only; submit
-  is keyboard-operable; visible focus everywhere; no focus loss
-- Identity is consumed through the **port** only; no client auth library
-- Workspace id is a selector only; forbidden copy is the generic sentence
+- A note can be created with a title and body only, and New note lands in the
+  editor without choosing a folder or tag first
+- The stored body is ProseMirror JSON; no second durable representation
+- Save states are distinguishable; a conflict is visible and unresolved by the
+  client
+- Each imported file shows its own indexing status; an incomplete index is not
+  presented as complete
+- Editor has a real accessible name/role; create, format and exit work by
+  keyboard with no focus trap; status changes are announced once
+- Long unbroken strings, code blocks and tables do not break layout or become
+  unreachable (~390px included)
 - Single `lang`/`dir` source; logical CSS; `bdi` on identifiers/UGC
 - Each built block has a logged `@user` reference or logged choice
 - Contracts consumed as generated types; no local shape forks
-- `packages/ui` + `apps/web` typecheck, tests, build green
+- `packages/ui` + `apps/web` typecheck, lint, tests, build green
 - `current.md`, backend lane, contracts, mocks authorship untouched
 
 ## Stop / escalate conditions
 
-- **Soft-stop:** the `web → mocks` import exception is not authorized →
-  build the UI props-first against the identity port, log the wiring gap in
-  `now.md`, and stop the MSW sub-slice (not the task)
-- **Soft-stop:** a block has no reference and `@user` is unavailable → stop
-  that block, log the open choice
-- **Hard-stop:** client auth library pressure; write-path collision with
-  backend; ADR reopen; production AI activation; claiming RTL shipped
+- **Soft-stop:** the `web → mocks` import exception is not authorized → build
+  against the notes port, log the wiring gap in `now.md`, stop the MSW sub-slice
+  (not the task)
+- **Soft-stop:** a block has no reference and `@user` is unavailable → stop that
+  block, log the open choice
+- **Soft-stop:** the S-02 notes contract cannot express autosave/conflict
+  without a contract change → log it and escalate to Commander rather than
+  inventing a client-side shape
+- **Hard-stop:** markdown/HTML becoming the stored body; a pin bump; collab/Yjs
+  wiring; client auth or provider SDKs; ADR reopen; production AI activation;
+  claiming RTL shipped
 
 ## Dependencies / Risks
 
-- Depends on: F-02 (completed), and B-03 (completed) **or** S-03 identity
-  fixtures (completed)
-- Blocks: F-04+ (capture next)
-- Parallel: backend lane — no mutual dependency
-- Risk: identity fixtures wiring needs the `web → mocks` exception; do not
-  fork a second fixture authority or author fixtures on the FE
-- Risk: treating a client-supplied workspace/tenant id as authority —
-  forbidden; membership stays server-resolved
+- Depends on: F-02 (completed), S-02 notes contract (completed), S-03 fixtures
+  (completed) and/or B-04 live notes
+- Blocks: F-05 (organize), then F-06+
+- Parallel: backend lane (B-05 ingestion) — no mutual dependency
+- Risk: **TipTap is not installed.** Adding it must not surprise the graph —
+  check whether any new package needs a `pnpm-workspace.yaml` `allowBuilds`
+  entry (pnpm 12 fails `--frozen-lockfile` on unlisted build scripts)
+- Risk: fixtures wiring needs the `web → mocks` exception; do not fork a second
+  fixture authority
+- Risk: treating a client-side "last write wins" as conflict handling —
+  forbidden; the client does not pick the winner
+- Risk: rich-text output being serialized to markdown for storage "for
+  convenience" — that breaks ADR-0001 §2
 
 ## Gates
 
 - Production AI activation remains gated
 - RTL locale remains deferred (readiness discipline applies)
+- Collaborative editing stays an open gate
 - UT-* remain unrun
 - Design language: **Mintlify** (2026-09-23); per-block layout references
   still required
@@ -192,13 +206,11 @@ exception), `packages/ui/src/styles/tokens.css`.
 1. Complete deliverables inside Allowed Write Paths.
 2. Append Outcome; set `status: completed`.
 3. Archive to
-   `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md`
+   `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md`
    (immutable).
 4. **Same-lane sequence rule:** on completion, rewrite this path to
-   **F-04 (capture / TipTap)** using the same format (structure from
-   `system-ux.md`, references from `@user`, integration details in the Task
-   details table). If a cross-lane dep is unmet (e.g. notes fixtures), log
-   the soft-stop instead.
+   **F-05 (organize)** using the same format. If a cross-lane dep is unmet,
+   log the soft-stop instead.
 5. Durable lessons only in `docs/memory/implementer.md`.
 6. Do not overwrite `current.md` or `lane-backend.md`; update `context.md`
    status lines only.

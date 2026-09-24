@@ -12,18 +12,34 @@ import {
   type CommandPaletteGroup,
   IconButton,
   MobileTabBar,
+  type Principal,
   Separator,
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
   SkipLink,
   useCommandPalette,
+  type Workspace,
 } from "@omnidoc/ui";
 import { allDestinations, mobileTabDestinations, newNoteHref } from "./nav";
-import { AppSidebar, type AppSidebarProps } from "./app-sidebar";
+import { AppSidebar } from "./app-sidebar";
 import { RouteFocus } from "./route-focus";
 
-export type AppShellProps = AppSidebarProps & {
+export type AppShellProps = {
+  /** Contract-typed session principal — the only identity the shell renders. */
+  principal: Principal;
+  /** Server-resolved memberships. The client never derives this list. */
+  workspaces: Workspace[];
+  /** The session is valid but membership could not be read. */
+  workspacesUnavailable?: boolean;
+  /** Ids the server marks as the public sample corpus. */
+  sampleWorkspaceIds?: string[];
+  /** Selected workspace: a preference over the server list, never a grant. */
+  currentWorkspaceId: string;
+  /** Server action. Ends the session and its relayed cookies. */
+  onSignOut: () => Promise<void>;
+  /** Server action. Verifies membership server-side before remembering a pick. */
+  onSelectWorkspace: (workspaceId: string) => Promise<void>;
   children: React.ReactNode;
 };
 
@@ -33,18 +49,25 @@ export type AppShellProps = AppSidebarProps & {
  * The sidebar block is the shadcn `sidebar-07` composition (`./app-sidebar`,
  * `./nav-main`, `./nav-user`): one sidebar that collapses to icons, with a
  * rail, a grouped nav, and an account footer, adapted to the Mintlify token
- * layer and OmniDoc content. Workspace data arrives from the server layout as
- * props; no fetching happens here (MSW wiring is a later slice).
+ * layer and OmniDoc content.
+ *
+ * Session state (principal, memberships, selection) arrives from the server
+ * layout as props — no identity is fetched or decided in the browser. The two
+ * callbacks are server actions, so signing out and switching workspace both
+ * happen where the cookies and the session actually live.
  *
  * The sidebar carries no search field of its own — `system-ux.md` §1 asks for
  * a way to *start* Search, and the top bar's search entry (which opens the
  * command palette) is it.
  */
 export function AppShell({
+  principal,
   workspaces,
+  workspacesUnavailable,
   sampleWorkspaceIds,
-  user,
+  currentWorkspaceId,
   onSignOut,
+  onSelectWorkspace,
   children,
 }: AppShellProps) {
   const palette = useCommandPalette();
@@ -54,10 +77,19 @@ export function AppShell({
       <SkipLink />
       <RouteFocus />
       <AppSidebar
+        principal={principal}
         workspaces={workspaces}
+        workspacesUnavailable={workspacesUnavailable}
         sampleWorkspaceIds={sampleWorkspaceIds}
-        user={user}
-        onSignOut={onSignOut}
+        currentWorkspaceId={currentWorkspaceId}
+        // The dropdown hands its own event to `onSelect`; the actions take no
+        // arguments, so they are invoked explicitly rather than passed through.
+        onSignOut={() => {
+          void onSignOut();
+        }}
+        onSelectWorkspace={(workspaceId) => {
+          void onSelectWorkspace(workspaceId);
+        }}
       />
       <SidebarInset id="content" tabIndex={-1} className="min-w-0 outline-none">
         <AppTopBar onOpenSearch={palette.openPalette} />

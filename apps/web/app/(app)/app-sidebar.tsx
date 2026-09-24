@@ -1,5 +1,6 @@
 "use client";
 
+import { IconAlertTriangle } from "@tabler/icons-react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,22 +10,49 @@ import {
   SidebarMenuItem,
   SidebarRail,
   WorkspaceSwitcher,
+  type Principal,
   type Workspace,
 } from "@omnidoc/ui";
 import { allDestinations, newNoteDestination } from "./nav";
 import { NavMain } from "./nav-main";
-import { NavUser, type ShellUser } from "./nav-user";
+import { NavUser } from "./nav-user";
 
 export type AppSidebarProps = {
-  /** Server-resolved workspaces. This slice passes props — no fetching. */
+  /** Contract-typed session principal. */
+  principal: Principal;
+  /** Server-resolved memberships. The client never derives this list. */
   workspaces: Workspace[];
+  /** True when the session is valid but membership could not be read. */
+  workspacesUnavailable?: boolean;
   /** Ids the server marks as the public sample corpus. */
   sampleWorkspaceIds?: string[];
-  /** Render-placeholder identity until F-03 wires the session principal. */
-  user: ShellUser;
-  /** Wired by the F-03 session slice; omit until a session can act. */
-  onSignOut?: () => void;
+  /** Selected workspace id (a selector, never authority). */
+  currentWorkspaceId: string;
+  /** Server action. Signs out and returns to the unauthenticated entry. */
+  onSignOut: () => void;
+  /** Server action. Remembered only after the server re-checks membership. */
+  onSelectWorkspace: (workspaceId: string) => void;
 };
+
+/**
+ * Sidebar header — membership could not be read.
+ *
+ * Mirrors the switcher block's own muted status row rather than inventing a new
+ * pattern, and deliberately offers no chooser: there is nothing truthful to
+ * list. The session itself is fine, so the shell stays usable.
+ */
+function WorkspaceUnavailable() {
+  return (
+    <div
+      data-slot="workspace-switcher-unavailable"
+      role="status"
+      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-start text-xs text-muted-foreground"
+    >
+      <IconAlertTriangle aria-hidden="true" className="size-4 shrink-0" />
+      <span className="truncate">Workspaces unavailable</span>
+    </div>
+  );
+}
 
 /**
  * Shell block — `AppSidebar` (shadcn `sidebar-07` composition).
@@ -51,12 +79,14 @@ export type AppSidebarProps = {
  *   `ContentRegion` (`docs/design/now.md`, F-02 references).
  */
 export function AppSidebar({
+  principal,
   workspaces,
+  workspacesUnavailable = false,
   sampleWorkspaceIds = [],
-  user,
+  currentWorkspaceId,
   onSignOut,
+  onSelectWorkspace,
 }: AppSidebarProps) {
-  const currentWorkspaceId = workspaces[0]?.id ?? "";
   const items = [newNoteDestination, ...allDestinations];
 
   return (
@@ -64,11 +94,16 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <WorkspaceSwitcher
-              workspaces={workspaces}
-              currentWorkspaceId={currentWorkspaceId}
-              sampleWorkspaceIds={sampleWorkspaceIds}
-            />
+            {workspacesUnavailable ? (
+              <WorkspaceUnavailable />
+            ) : (
+              <WorkspaceSwitcher
+                workspaces={workspaces}
+                currentWorkspaceId={currentWorkspaceId}
+                sampleWorkspaceIds={sampleWorkspaceIds}
+                onSelect={onSelectWorkspace}
+              />
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -76,7 +111,7 @@ export function AppSidebar({
         <NavMain label="Workspace" items={items} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} onSignOut={onSignOut} />
+        <NavUser principal={principal} onSignOut={onSignOut} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
