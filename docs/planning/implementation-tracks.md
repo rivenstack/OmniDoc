@@ -21,6 +21,11 @@ Live status: root [`context.md`](../../context.md). Commander index:
 and
 [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md).
 
+**Not in this file:** unscheduled candidates — capabilities, gaps, and
+defects nobody has sequenced — live in
+[`feature-backlog.md`](./feature-backlog.md). `BL-*` ids are **not** task
+codes. Promotion into this file is Commander's act after `@user` triage.
+
 ---
 
 ## How to use this file
