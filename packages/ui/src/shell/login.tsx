@@ -106,19 +106,19 @@ export function LoginForm({
       )}
     >
       {/*
-        Decorative arcs. `aria-hidden` because they carry no meaning, and
-        `pointer-events-none` so they never swallow a click on the card.
-        `bg-white/10` is a literal on purpose: the surface above is inverted
-        (dark in both themes), so the ring needs a light tint in both. A token
-        like `bg-foreground/10` would vanish into the surface it sits on.
+        Decorative grid texture from `../styles/patterns.css` (`.grid-pattern`).
+        Same contract as the arcs below: `aria-hidden` because it carries no
+        meaning, `pointer-events-none` so it never swallows a click on the
+        card. The asset is effectively opaque, so it renders full-strength like
+        the reference: in light mode `patterns.css` filters it to its negative
+        (dark paper, light grid lines); in dark mode the original light-toned
+        asset shows as-is. The card sits on the opposite polarity of the
+        texture in either theme, so its contrast holds (ui-qa-checklist §2).
       */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block"
-      >
-        <div className="absolute top-0 left-full h-650 w-650 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10" />
-        <div className="absolute top-0 left-full h-175 w-175 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground dark:bg-background" />
-      </div>
+        className="grid-pattern pointer-events-none absolute inset-0 mix-blend-screen"
+      />
 
       <div className="relative mx-auto w-full max-w-lg px-4 py-10 sm:px-0 md:py-20">
         <Card className="max-w-lg gap-6 px-6 py-8 sm:p-12">
@@ -165,13 +165,6 @@ export function LoginForm({
                     Sign in with Github
                   </Button>
                 </Field>
-                {/*
-                  The buttons above are inert, so this has to be said out loud.
-                  Without it the row is unexplained dead UI.
-                */}
-                <FieldDescription className="text-center text-xs">
-                  Social sign-in isn&rsquo;t available yet.
-                </FieldDescription>
                 <FieldSeparator className="bg-transparent text-sm text-muted-foreground *:data-[slot=field-separator-content]:bg-card">
                   <span className="px-4">or sign in with</span>
                 </FieldSeparator>
