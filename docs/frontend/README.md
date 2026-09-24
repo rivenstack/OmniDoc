@@ -219,6 +219,9 @@ pnpm install
 pnpm typecheck && pnpm lint && pnpm test
 ```
 
+To run the full local stack (Postgres + API + web app), see
+[`docs/running-locally.md`](../running-locally.md).
+
 ### Clone
 
 Default branch: **`main`**.
