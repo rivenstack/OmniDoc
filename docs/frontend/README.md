@@ -127,6 +127,15 @@ Notes that matter day to day:
   already defined in `tokens.css`. Related trap: Base UI puts the consumer's
   `id` on its hidden native input, so a `htmlFor`-only label points at an
   `aria-hidden` element. Name the visible control with `aria-labelledby`.
+- **Base UI changes the event prop names, not just the attribute names.**
+  `DropdownMenuItem` here is Base UI's `Menu.Item`, whose handler is
+  **`onClick`**. Radix's `onSelect` still type-checks (it is a valid DOM prop),
+  so it compiles, renders a `<div>` with a native `select` listener, and then
+  never fires on click — a silently dead control. Use `onClick`, and wrap the
+  call (`onClick={() => action(arg)}`) when the handler is a server action:
+  passing it through would hand React's click event to the action as an
+  argument it cannot serialise. `cmdk`'s `CommandItem` *does* use `onSelect`,
+  so the two coexist in the same codebase.
 - **Session identity is a server-side port** (F-03).
   `apps/web/app/lib/identity/` holds the whole contract: `identity-api.ts` is a
   typed adapter over `docs/api/openapi.yaml` (`POST`/`GET`/`DELETE`

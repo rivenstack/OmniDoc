@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SidebarProvider } from "../components/sidebar";
 import {
   CommandPalette,
@@ -109,6 +109,33 @@ describe("WorkspaceSwitcher", () => {
     // Group label ("Sample") and the item badge ("Sample") both render.
     expect(screen.getAllByText("Sample").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Public demo notes")).toBeTruthy();
+  });
+
+  it("reports the picked workspace id when an item is clicked", () => {
+    // Regression: the items were wired with `onSelect`, which is a Radix prop.
+    // On Base UI `Menu.Item` the handler is `onClick`, so the dead `onSelect`
+    // silently swallowed every pick and the switcher never changed anything.
+    const onSelect = vi.fn();
+    renderSwitcher({ onSelect });
+
+    fireEvent.click(screen.getByRole("button"));
+    const items = screen.getAllByRole("menuitem");
+    expect(items).toHaveLength(2);
+
+    fireEvent.click(items[1]);
+    expect(onSelect).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens beside the sidebar, not below the trigger", () => {
+    // The trigger sits in the sidebar header, so a bottom-aligned popup opens
+    // over the nav and clips against the sidebar edge. It mirrors `NavUser`:
+    // `side="right"`, `align="end"` on desktop.
+    renderSwitcher();
+    fireEvent.click(screen.getByRole("button"));
+
+    const popup = document.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(popup?.getAttribute("data-side")).toBe("right");
+    expect(popup?.getAttribute("data-align")).toBe("end");
   });
 });
 

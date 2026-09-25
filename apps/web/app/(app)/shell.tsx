@@ -82,8 +82,9 @@ export function AppShell({
         workspacesUnavailable={workspacesUnavailable}
         sampleWorkspaceIds={sampleWorkspaceIds}
         currentWorkspaceId={currentWorkspaceId}
-        // The dropdown hands its own event to `onSelect`; the actions take no
-        // arguments, so they are invoked explicitly rather than passed through.
+        // The actions take no arguments, so they are invoked explicitly rather
+        // than passed through — a menu item's click event is not serialisable,
+        // and a server action would choke on it.
         onSignOut={() => {
           void onSignOut();
         }}

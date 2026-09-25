@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../components/dropdown-menu";
-import { SidebarMenuButton } from "../components/sidebar";
+import { SidebarMenuButton, useSidebar } from "../components/sidebar";
 import { cn } from "../lib/utils";
 
 /** Security contract copy — see `docs/design/system-ux.md` §2 (Tenancy). */
@@ -75,6 +75,9 @@ function WorkspaceMark({ name }: { name: string }) {
  * separated and labelled; a forbidden selector renders the generic denial from
  * `system-ux.md` §2. Data arrives via props — this slice does no fetching and
  * authors no fixtures.
+ *
+ * Like `NavUser`, this is a sidebar block: it reads `useSidebar` and must sit
+ * inside a `SidebarProvider`.
  */
 export function WorkspaceSwitcher({
   workspaces,
@@ -85,6 +88,8 @@ export function WorkspaceSwitcher({
   onSelect,
   className,
 }: WorkspaceSwitcherProps) {
+  const { isMobile } = useSidebar();
+
   if (forbidden) {
     return (
       <div
@@ -153,7 +158,15 @@ export function WorkspaceSwitcher({
           />
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-56">
+      <DropdownMenuContent
+        // Mirrors `NavUser`: the trigger sits at the sidebar's inline-start
+        // edge, so the menu opens out of the sidebar rather than over the nav
+        // (mobile keeps the bottom sheet behaviour).
+        side={isMobile ? "bottom" : "right"}
+        align="end"
+        sideOffset={4}
+        className="min-w-56"
+      >
         <DropdownMenuGroup>
           <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
           {mine.map((workspace) => (
@@ -207,7 +220,9 @@ function WorkspaceItem({
   return (
     <DropdownMenuItem
       data-slot="workspace-switcher-item"
-      onSelect={() => onSelect?.(workspace.id)}
+      // Base UI `Menu.Item` fires `onClick`; Radix's `onSelect` is not a prop it
+      // honours, so using it here silently dropped every pick.
+      onClick={() => onSelect?.(workspace.id)}
     >
       <WorkspaceMark name={workspace.name} />
       <WorkspaceName name={workspace.name} />

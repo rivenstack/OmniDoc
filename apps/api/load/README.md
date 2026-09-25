@@ -5,11 +5,18 @@ Bounded local check for identity + notes against a running API. Not CI.
 ## Prerequisites
 
 1. Compose Postgres up (see `docs/api/local-postgres.md`).
-2. Optional fixture seed (dev-only actor / workspace):
+2. Optional fixture seed (dev-only actors / workspaces). Prefer the
+   two-dev seed for local sign-in + isolation checks; use the Ada-only
+   fixture for Postman / load smoke. See `docs/running-locally.md`.
 
 ```bash
-docker compose -f apps/api/compose.yaml --env-file .env.example exec -T postgres \
-  psql -U omnidoc_migrator -d omnidoc -f - < apps/api/load/seed-local-fixture.sql
+# Two coworkers + Ada (separate tenants) — recommended for UI sign-in
+docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
+  < apps/api/load/seed-local-two-devs.sql
+
+# Or Ada-only (Postman / b04c-notes-smoke)
+docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
+  < apps/api/load/seed-local-fixture.sql
 ```
 
 If the migrator role is not the compose superuser login, apply the SQL
