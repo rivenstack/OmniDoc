@@ -59,30 +59,83 @@ If `docker compose version` fails with `unknown command: docker compose`
 or `unknown shorthand flag: 'f'`, the Compose plugin is missing — see
 [`docs/api/local-postgres.md`](api/local-postgres.md) for install options.
 
-## Quick start
+## First run vs later runs
 
-From the repository root, in two terminals:
+| | **First run** (clone / new machine / wiped DB) | **Later runs** (restart after sleep / reboot) |
+|--|-----------------------------------------------|-----------------------------------------------|
+| `pnpm install` | Required once (and after lockfile changes) | Skip unless deps changed |
+| Postgres `up -d` | Required — creates volume + roles | Required if container stopped; safe if already up |
+| API `bootRun` | Required — first boot runs Flyway | Required — schema already migrated; boot is fast |
+| Seed SQL | Required **after** first healthy API boot if you want sign-in | Skip unless you wiped the volume or need fresh fixtures |
+| Web `pnpm dev` | Required | Required |
 
-```bash
-# Terminal A — one-time + database
-pnpm install
-docker compose -f apps/api/compose.yaml --env-file .env.example up -d
-
-# Terminal A — the API (leave running)
-cd apps/api && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
-```
-
-```bash
-# Terminal B — the web app (leave running)
-cd apps/web && pnpm dev
-```
-
-Then open **http://localhost:3311**.
+Seeds are idempotent (`ON CONFLICT`), so re-applying them is safe but
+unnecessary on a normal restart.
 
 > **Host port 5432 already in use?** If another Postgres owns 5432, the API
 > step fails with `password authentication failed for user
 > "omnidoc_migrator"`. That is a port misroute, not a credentials problem —
 > see **Troubleshooting → Flyway fails** below.
+
+### First run (full stack + sign-in)
+
+From the repository root, use two terminals.
+
+```bash
+# Terminal A — deps + database
+pnpm install
+docker compose -f apps/api/compose.yaml --env-file .env.example up -d
+
+# Terminal A — API (leave running)
+# First Gradle download can take several minutes; wait for health below.
+cd apps/api && OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
+  SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+```
+
+In a third shell (or after health is green), seed, then start the web app:
+
+```bash
+# After: curl -s localhost:8080/actuator/health → status UP
+docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
+  < apps/api/load/seed-local-two-devs.sql
+```
+
+```bash
+# Terminal B — web (leave running)
+cd apps/web && pnpm dev
+```
+
+Open **http://localhost:3311/sign-in**.
+
+`OMNIDOC_CORS_ORIGINS` is recommended for local browser work on port
+**3311** (Compose / `.env.example` still mention 3000). The Next.js
+identity port talks to the API **server-side** by default
+(`OMNIDOC_API_ORIGIN`, fallback `http://localhost:8080`), so sign-in
+works without a browser CORS path — the env is still the right default
+for any browser-originated API calls.
+
+### Later runs (restart)
+
+Skip `pnpm install` and skip seeding unless the DB volume was wiped.
+
+```bash
+# Terminal A
+docker compose -f apps/api/compose.yaml --env-file .env.example up -d
+cd apps/api && OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
+  SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+```
+
+```bash
+# Terminal B
+cd apps/web && pnpm dev
+```
+
+Confirm:
+
+```bash
+curl -s localhost:8080/actuator/health
+# open http://localhost:3311/sign-in
+```
 
 ## Step by step
 
@@ -113,7 +166,8 @@ docker compose -f apps/api/compose.yaml exec postgres \
 ### 3. Start the API
 
 ```bash
-cd apps/api && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+cd apps/api && OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
+  SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 ```
 
 The `local` profile is what wires the datasource, and it is **not** the
@@ -150,30 +204,50 @@ The dev server runs on **3311**, not 3000 (see `apps/web/package.json`).
 Web-side configuration is optional for local work: copy `.env.example` to
 `.env.local` for `NEXT_PUBLIC_*` values. Note that **Spring does not read
 `.env.local`** — the API takes its configuration from environment variables
-on the `bootRun` command line or from `application.yml` defaults.
+on the `bootRun` command line or from `application.yml` defaults. Identity
+calls use server-side `OMNIDOC_API_ORIGIN` (default `http://localhost:8080`).
 
-### 5. (Optional) Seed a dev workspace and sign in
+### 5. Seed actors and sign in
 
-Seeding is optional but required if you want to sign in, because identity is
-profile-gated on `local` and needs real rows.
+Seeding is optional but **required for sign-in**: identity is profile-gated
+on `local` and needs real `actors` / membership rows. There is **no** public
+sign-up endpoint.
 
-**Order matters:** the tables must exist before the seed runs, and they are
-created by Flyway — so boot the API once (step 3) **before** seeding.
+**Order matters:** tables come from Flyway on API boot — seed **after**
+`/actuator/health` is `UP`.
+
+Apply as the **migrator** (`BYPASSRLS` table owner), not `omnidoc_app`.
+
+**Recommended (two coworkers + Ada, separate tenants for isolation checks):**
+
+```bash
+docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
+  < apps/api/load/seed-local-two-devs.sql
+```
+
+| Email | Password | Actor | Workspace / tenant |
+|-------|----------|-------|--------------------|
+| `kenzo@example.com` | `correct horse battery staple` | `actor-kenzo` | `ws-kenzo` / `tenant-kenzo` |
+| `coworker@example.com` | `correct horse battery staple` | `actor-coworker` | `ws-coworker` / `tenant-coworker` |
+| `ada@example.com` | `correct horse battery staple` | `actor-a` | `ws-a` / `tenant-a` |
+
+**Minimal single-user fixture** (Postman / load smoke):
 
 ```bash
 docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
   < apps/api/load/seed-local-fixture.sql
 ```
 
-Apply it as the **migrator** (the `BYPASSRLS` table owner), not
-`omnidoc_app`. Then sign in at http://localhost:3311 with the fixture
-account:
+Then open http://localhost:3311/sign-in.
 
-| Field | Value |
-|-------|-------|
-| Email | `ada@example.com` |
-| Password | `correct horse battery staple` |
-| Scope | actor `actor-a`, workspace `ws-a`, role `owner` |
+Confirm rows:
+
+```bash
+docker exec omnidoc-postgres psql -U omnidoc_migrator -d omnidoc -c \
+  "SELECT actor_id, email FROM actors ORDER BY actor_id;"
+docker exec omnidoc-postgres psql -U omnidoc_migrator -d omnidoc -c \
+  "SELECT workspace_id, actor_id, tenant_id FROM workspace_memberships ORDER BY actor_id;"
+```
 
 ## Ports
 
@@ -192,11 +266,11 @@ account:
 | Single web target | `pnpm nx run web:typecheck` (also `lint`, `test`, `build`) |
 | Backend tests (Testcontainers) | `cd apps/api && ./gradlew test` — needs Docker running |
 | Backend build | `cd apps/api && ./gradlew build -x test` |
-| API via Nx | `pnpm nx run api:serve` — runs the same `bootRun`, but **does not** set the profile. Export `SPRING_PROFILES_ACTIVE=local` first. |
+| API via Nx | `pnpm nx run api:serve` — runs the same `bootRun`, but **does not** set the profile. Export `SPRING_PROFILES_ACTIVE=local` (and CORS if needed) first. |
 | Regenerate OpenAPI → TS | `pnpm nx run contracts:generate` (then `contracts:typecheck` / `test` / `lint`) |
 | DB logs | `docker compose -f apps/api/compose.yaml logs -f postgres` |
 | Stop the database | `docker compose -f apps/api/compose.yaml down` |
-| Wipe and re-init the database | `… down -v` then `… --env-file .env.example up -d` |
+| Wipe and re-init the database | `… down -v` then `… --env-file .env.example up -d`, boot API, **re-seed** |
 
 There is **no** `nx run web:dev` target — `apps/web/project.json` defines
 only `build`, `typecheck`, `lint`, and `test`. Use `pnpm dev` for the server.
@@ -242,6 +316,7 @@ POSTGRES_PORT=5433 docker compose -f apps/api/compose.yaml \
 
 cd apps/api && SPRING_PROFILES_ACTIVE=local \
   OMNIDOC_JDBC_URL=jdbc:postgresql://localhost:5433/omnidoc \
+  OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
   ./gradlew bootRun
 ```
 
@@ -261,6 +336,14 @@ excludes the DataSource and Flyway autoconfiguration, so the app starts and
 `/actuator/health` reports `UP` with no DB behind it. That is by design —
 health and ArchUnit stay green without a live database.
 
+### Sign-in fails / “can't confirm” session
+
+1. Confirm profile `local` and health: `curl -s localhost:8080/actuator/health`
+2. Confirm actors exist (seed after first Flyway boot)
+3. Use an exact seed email/password (no public register endpoint)
+4. Web defaults API origin to `http://localhost:8080`; override with
+   `OMNIDOC_API_ORIGIN` only if the API is not on that URL
+
 ### `bootRun` / `pnpm dev` appear hung at `80% EXECUTING`
 
 Both are long-running servers, so they never return a shell prompt. This is
@@ -275,21 +358,27 @@ window looks empty in the meantime. Run them unpiped.
 
 `omnidoc.cors.allowed-origins` defaults to `http://localhost:3000`, and
 `.env.example` sets `NEXT_PUBLIC_APP_URL=http://localhost:3000`, but the web
-dev server runs on **3311**. Today the identity port is server-side, so this
-does not bite; a *browser*-originated cross-origin fetch will need it
-widened:
+dev server runs on **3311**. Prefer:
 
 ```bash
 OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
   SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 ```
 
+F-03 sign-in goes through the Next.js server (cookie relay) to the JVM API,
+so missing CORS often does not block `/sign-in`. Widen origins anyway for
+any browser-originated cross-origin fetch during local debugging.
+
 ### Start over from a clean database
 
 ```bash
 docker compose -f apps/api/compose.yaml --env-file .env.example down -v
 docker compose -f apps/api/compose.yaml --env-file .env.example up -d
-cd apps/api && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun   # re-applies Flyway
+cd apps/api && OMNIDOC_CORS_ORIGINS=http://localhost:3311 \
+  SPRING_PROFILES_ACTIVE=local ./gradlew bootRun   # re-applies Flyway
+# after health UP — re-seed
+docker exec -i omnidoc-postgres psql -U omnidoc_migrator -d omnidoc \
+  < apps/api/load/seed-local-two-devs.sql
 ```
 
 Postgres 18 mounts data at `/var/lib/postgresql` (not the older
@@ -299,5 +388,6 @@ leave the container unhealthy — `down -v` once, then `up` again.
 ## No secrets
 
 `.env.example` holds placeholders only. Never commit real keys, BYOK
-material, or `.env.local` contents. Production AI/provider activation stays
-gated; live runtime modes return `mode_forbidden` until that gate closes.
+material, or `.env.local` contents. Seed passwords are **dev-only**.
+Production AI/provider activation stays gated; live runtime modes return
+`mode_forbidden` until that gate closes.
