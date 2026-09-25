@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-09-22
+updated: 2026-09-25
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -26,13 +26,13 @@ updated: 2026-09-22
 Owner: `/commander`. This file is the **integration board**, not an
 implementer work assignment.
 
-D-01, S-01a, S-01b, B-01, F-01, S-02, B-02, B-03, B-04, B-04c Commander
-eval, B-04c Implementer closeout, and **S-03** are **closed and
-archived**. Two humans own parallel lanes:
+D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
+B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, and
+**S-03** are **closed and archived**. Two humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-02 ready** (next in sequence; new design rules) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-05 ready** (organize; Collections sub-slice soft-stopped) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05** |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -40,10 +40,12 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → F-02 **ready**
-  (reopened 2026-09-23; next in the F-01→F-11 sequence). Structure from
-  `docs/design/system-ux.md`; UI details from `@user` references. Next
-  after F-02: F-03 (auth) — identity fixtures ready.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → F-05 **ready**
+  (organize: Inbox as the unfiled home + the Notes list over S-02
+  `listNotes`; opened 2026-09-25 after F-04 was accepted). Structure from
+  `docs/design/system-ux.md`; UI details from `@user` references. The
+  **Collections** folders/tags sub-slice is soft-stopped — S-02 has no
+  collections/tags surface.
 - Backend: `docs/handoffs/active/lane-backend.md` → B-05 ingestion /
   chunking jobs + progress (`ready`) — opened 2026-09-20 after S-03
   Commander-validated PASS
@@ -58,11 +60,18 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-04c** Commander eval | **GO** (archived 2026-09-20) | Unblocked Implementer closeout |
 | **B-04c** Implementer closeout | **completed** (archived 2026-09-20) | Unblocked S-03 |
 | **S-03** (mock corpus, BE) | **completed** (archived 2026-09-20) | Unblocks F-03+ / F-04+ fixtures; unblocked B-05. FE still needs a narrowly scoped `web → mocks` import exception before wiring MSW in-app |
-| **B-05** | **live** | Backend ingestion progress; does not block F-02 |
+| **B-05** | **live** | Backend ingestion progress; does not block F-05 |
+| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field; F-05's folders/tags sub-slice is soft-stopped. Needs an `@user`/Commander sequencing decision (contract change). |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- F-04 completed (Commander-validated PASS 2026-09-25):
+  `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md`
+- F-03 completed (2026-09-24):
+  `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md`
+- F-02 completed (2026-09-23):
+  `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md`
 - S-03 completed (Commander-validated PASS-with-notes):
   `docs/handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`
 - B-04c Implementer closeout completed:
@@ -90,22 +99,24 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. **F-02 is the live frontend ticket** — reopened 2026-09-23 under the
-   new design rules (structure from `system-ux.md`; per-block references
-   from `@user`; no D-01 layouts). Leave it to the frontend lane human /
-   `/implementer`. On completion the lane advances to **F-03** per the
-   same-lane sequence rule.
+1. **F-05 is the live frontend ticket** (opened 2026-09-25 after F-04 was
+   Commander-validated PASS and archived). Scope: Inbox as the unfiled home
+   plus the Notes list over S-02 `listNotes`. The **Collections**
+   (folders/tags) sub-slice is soft-stopped: no contract surface exists, and
+   forking a client shape is prohibited.
 2. Leave **B-05** to backend lane human / `/implementer` (opened
    2026-09-20 after S-03 archive).
-3. When B-05 completes, open **B-06** on the backend lane (or soft-stop
-   if a cross-lane/contract issue blocks).
-4. F-02a (visible kit) is completed and archived. F-02 now runs from the
-   new head; when it completes, rewrite `lane-frontend.md` to F-03 —
-   S-03 identity fixtures are ready; B-03 live identity also available.
-   Each F-* step: structure from `system-ux.md`, references from
-   `@user`, integration details per the tracks file.
-5. Update `context.md` when lane statuses change.
-6. Do not open Phase Check until Phase 1 Build exit criteria in
+3. When B-05 completes, open the next backend slice (B-06 pgvector, or a
+   collections contract amendment if `@user` sequences it first) — or
+   soft-stop if a cross-lane/contract issue blocks.
+4. **Open decision for `@user`:** whether to sequence a **Collections
+   contract change** (a new backend track or an S-02 extension) before
+   F-06+, since F-05's folders/tags work cannot be built against the frozen
+   contract.
+5. Each F-* step: structure from `system-ux.md`, references from `@user`,
+   integration details per the tracks file.
+6. Update `context.md` when lane statuses change.
+7. Do not open Phase Check until Phase 1 Build exit criteria in
    `docs/planning/implementation-tracks.md`.
 
 ## Allowed Write Paths (Commander only)
@@ -125,6 +136,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 - RTL locale remains deferred
 - UT-* remain unrun
 - DevOps I-* unassigned
+- **Collections contract** — open; F-05 folders/tags soft-stopped until
+  `@user`/Commander sequences the contract change
 
 ## Completion Instructions
 

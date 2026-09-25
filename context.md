@@ -126,6 +126,18 @@ Program of record:
   (missing `@source`), and `editorProps.attributes.class` was replacing TipTap's
   `ProseMirror` class. Gaps: CodeMirror for fenced code deferred; no table
   extension; MSW still unauthorized; import end-to-end depends on B-05
+- **2026-09-25:** **F-04 completed and archived — Commander-validated PASS.**
+  The implementer built and merged the capture slice (branch `F04-capture-tiptap`,
+  `develop` at `e0070b8`) but did not append an Outcome or archive the lane head,
+  so Commander re-ran the checks before accepting: `typecheck`/`lint` PASS (4
+  projects), `test` PASS (**ui 277, web 77** plus contracts/mocks/api), `build`
+  PASS (**12 routes**, incl. `notes/new`, `notes/[noteId]`, `collections`,
+  `inbox`). Gate-critical behaviour confirmed in source: `409` → `conflict` with
+  no retry/merge, `conflict` never auto-resolved, body stays ProseMirror JSON,
+  and `403`/`404` collapse to one generic denial. The fifth save state `error`
+  and the red `login.test.tsx` are both **closed** (`@user` 2026-09-25; fixed in
+  `3802d9b`). `nx` flagged `ui:test` flaky once; three uncached re-runs passed
+  277/277 — recorded, not a defect. Frontend lane advances to **F-05 (organize)**
 - **2026-09-25:** **Session redirect loop fixed** (`apps/web`, F-03 surface;
   found by `@user`). Two layers answered "is this browser signed in?" from
   different evidence: `proxy.ts` skipped `/sign-in` on cookie **presence**,
@@ -203,7 +215,8 @@ Program of record:
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
-| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **blocks built** 2026-09-25 — notes port, shared transport, save cycle, import-status committed; capture blocks + `/notes/new` + `/notes/[noteId]` in the working tree awaiting `@user` review | `docs/handoffs/active/lane-frontend.md` |
+| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
+| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **ready** 2026-09-25 — Inbox + Notes lists over `listNotes`; Collections sub-slice soft-stopped (no S-02 collections/tags surface) | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -224,17 +237,23 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - RTL locale support remains deferred, not closed
 - **F-03+** unblocked by **S-03** fixtures (and/or **B-03** live
   identity) — FE still needs a narrowly scoped `web → mocks`
-  development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-04 will hit it too**
+  development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-05 hits it too**
 - AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05
 - DevOps I-* have no human owner yet
 - Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain
   **uncommitted** — commit before merge/PR; does not block B-05
-- **`packages/ui` tests are not green on develop** (found 2026-09-25 while
-  starting F-04; reproduced on a clean `develop`). `login.test.tsx` asserts
-  `"Social sign-in isn't available yet."`, which `login.tsx` never renders,
-  though that file's doc comment claims each disabled group carries such a
-  note. F-03's surface — needs an ownership call, and it blocks F-04's own
-  "`packages/ui` tests green" criterion
+- **`packages/ui` suite is green again.** The `login.test.tsx` note assertion
+  was a deliberate change, not a regression: `@user` decided 2026-09-25 that the
+  disabled social sign-in buttons stay **unannotated** (the account-creation
+  group keeps its note). Fixed in `3802d9b`; verified 277/277 ui tests
+- **Collections has no contract surface** (found 2026-09-25 closing F-04).
+  `docs/api/openapi.yaml` has no `collections`/`tags` operation and `Note`
+  carries no collection/tag field, so F-05's folders/tags sub-slice is
+  **soft-stopped**. Adding it is a **contract change** (S-02 authorship,
+  backend lane) and needs an `@user`/Commander sequencing decision — a new
+  track (the program of record lists no backend collections item) or an S-02
+  extension. Until then Inbox (unfiled) and Notes (all) are the same set; the
+  UI must not fabricate a difference
 
 ## Open Gates
 
@@ -267,6 +286,10 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Production AI / provider activation** — open until CX-first mock
   validation
 - UT-1…UT-22 — unrun hypotheses (0.8b added UT-15…22)
+- **Collections (folders/tags) API contract** — missing from S-02; F-05's
+  folders/tags sub-slice is soft-stopped. Needs an `@user`/Commander
+  sequencing decision (contract change; a new backend track or an S-02
+  extension)
 - Exact AWS Free-plan service graph / credit-burn PoC — I-03 (unassigned)
 - DevOps I-* human split — later
 
@@ -275,7 +298,7 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-03 auth UI, `lane: frontend`, human: front-end
+  `/implementer` (F-05 organize, `lane: frontend`, human: front-end
   programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (B-05 ingestion/chunking + progress, `lane: backend`,
