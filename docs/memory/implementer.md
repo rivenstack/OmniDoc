@@ -395,3 +395,27 @@
   of the session (`command not found: node`, `curl`, `tail`). Recovery is
   `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"`
   — on this machine `node`, `npx`, `pnpm` and `curl` all live under `/usr/sbin`.
+- **2026-09-25 (F-04, foundation):** TipTap 3.31.3 renders under this repo's
+  jsdom/Vitest setup, but **only** with `immediatelyRender: false`. The default
+  throws on the server, so that flag is required for Next SSR too — set it on
+  every `useEditor` call rather than discovering it in the browser.
+- **2026-09-25 (F-04):** Zustand v5 keeps actions **inside** state. The store
+  handle exposes only `getState`/`setState`/`subscribe`, so `store.dispatch(...)`
+  is `undefined` at runtime — `store.getState().dispatch(...)` is the call. The
+  failure mode is a `TypeError` in tests, not a type error, when the test's
+  store handle is typed loosely.
+- **2026-09-25 (F-04):** do not hand-roll a second `fetch` wrapper for a new
+  port. `apps/web/app/lib/api/transport.ts` owns origin + cookie/CSRF relay +
+  timeout and returns `null` on transport failure; each port maps that onto its
+  own `unavailable`. The F-03 identity tests passed unchanged after the
+  extraction, which is the cheap proof the refactor was behaviour-preserving.
+- **2026-09-25 (F-04):** save status must be derived from revision counters, not
+  a boolean `dirty` flag. A save captures the revision it sends; if the user
+  types while it is in flight, the counter moves past `savedRevision` and the
+  badge stops claiming `saved`. A boolean cannot express that without a race,
+  and the race is exactly how an editor starts lying about persistence.
+- **2026-09-25 (environment):** `next build` rewrites
+  `apps/web/next-env.d.ts` to import from `.next/types/...`; `next dev` writes
+  the `.next/dev/types/...` form back. The repo tracks the **dev** variant, so
+  after running a build, `git checkout HEAD -- apps/web/next-env.d.ts` before
+  committing or the diff carries pure churn.

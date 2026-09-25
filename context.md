@@ -99,6 +99,18 @@ Program of record:
   **F-03 (auth UI)** — identity fixtures ready. (Local `api:test` fails
   only because Postgres is not running — pre-existing/environmental,
   backend lane; not touched.)
+- **2026-09-25:** **F-04 started** (branch `F04-capture-tiptap`, commit
+  `d7ed77b`). Behaviour-only half landed: shared server-side HTTP transport
+  (`apps/web/app/lib/api/transport.ts`), the notes port over the S-02 contract
+  (`apps/web/app/lib/notes/notes-api.ts`, 409 → `conflict` with no retry/merge),
+  and `packages/ui/src/capture/` (save cycle `state`/`store`, per-file
+  `import-status`). `@tiptap/*` 3.31.3 + `zustand` 5.0.15 installed in
+  `packages/ui`; frozen-lockfile install green. ui + web typecheck/lint green,
+  web build green (11 routes), 62 web + 33 capture tests pass. **No visual
+  block built** — every F-04 block still awaits a `@user` reference. Two items
+  need a call: a fifth save state `error` (see `docs/design/now.md`), and a
+  pre-existing red `packages/ui` test on develop (`login.test.tsx` asserts an
+  explanation note the sign-in block does not render)
 - **2026-09-24:** **F-03 completed and archived** (branch `F03-auth-ui`).
   The identity **port** landed in `apps/web/app/lib/identity/` (typed over
   `docs/api/openapi.yaml`; `JSESSIONID` + `XSRF-TOKEN` relayed by Next;
@@ -164,7 +176,7 @@ Program of record:
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
-| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **ready** — next in sequence; notes contract (S-02) and B-04 live; TipTap 3.31.3 + Zustand 5.0.15 are pinned but **not installed** | `docs/handoffs/active/lane-frontend.md` |
+| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **in progress** 2026-09-25 — notes port, shared transport, save cycle and import-status landed on branch `F04-capture-tiptap`; visual blocks await `@user` references | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -190,6 +202,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - DevOps I-* have no human owner yet
 - Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain
   **uncommitted** — commit before merge/PR; does not block B-05
+- **`packages/ui` tests are not green on develop** (found 2026-09-25 while
+  starting F-04; reproduced on a clean `develop`). `login.test.tsx` asserts
+  `"Social sign-in isn't available yet."`, which `login.tsx` never renders,
+  though that file's doc comment claims each disabled group carries such a
+  note. F-03's surface — needs an ownership call, and it blocks F-04's own
+  "`packages/ui` tests green" criterion
 
 ## Open Gates
 

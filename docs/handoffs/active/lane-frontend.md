@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-24-P1-F04-implementer-implementer
 affinity: implementation
 track: parallel
-status: ready
+status: in-progress
 phase: "1"
 task: "F-04"
 lane: frontend
@@ -10,7 +10,7 @@ human_owner: front-end-programmer
 from: implementer
 to: implementer
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # F-04 — Capture (TipTap)
@@ -200,6 +200,62 @@ exception), `packages/ui/src/styles/tokens.css`.
 - UT-* remain unrun
 - Design language: **Mintlify** (2026-09-23); per-block layout references
   still required
+
+## Progress — 2026-09-25 (branch `F04-capture-tiptap`, commit `d7ed77b`)
+
+Started. The behaviour-only half of F-04 is landed and verified; **no visual
+block has been built**, because none has a `@user` reference yet.
+
+Landed:
+
+1. `packages/ui` installs `@tiptap/core|react|pm|starter-kit` **3.31.3** and
+   `zustand` **5.0.15** (ledger pins, `--save-exact`). No `allowBuilds` entry
+   was needed; `pnpm install --frozen-lockfile` passes.
+2. `apps/web/app/lib/api/transport.ts` — the server-side HTTP transport
+   (origin, cookie/CSRF relay, timeout, total results), extracted from the
+   identity port so the notes port does not duplicate it. Re-verified: the
+   F-03 identity tests still pass unchanged.
+3. `apps/web/app/lib/notes/notes-api.ts` + tests — the notes port over the S-02
+   contract: create, read, update (`expectedVersion`), soft delete, list,
+   ingestion-job read. `409` → `conflict`, **one attempt, no retry, no merge**.
+4. `packages/ui/src/capture/save-state.ts` + `capture-store.ts` + tests — the
+   save cycle as a pure reducer over revision counters. `saved` cannot be
+   claimed while a newer local edit exists or while a save was in flight;
+   autosave will not start over an undecided conflict; an undecided conflict
+   keeps the rejected version token so a blind retry is refused rather than
+   clobbering the other version.
+5. `packages/ui/src/capture/import-status.ts` + tests — wire `running` → product
+   `indexing`; only `ready` counts as complete (not `partial`);
+   `indexIncompleteNotice()` is the single answer to "may Search/Ask imply a
+   complete index?".
+
+Feasibility confirmed: TipTap renders under this repo's jsdom setup, but only
+with `immediatelyRender: false` — which is also what Next SSR requires, so the
+editor block must set it.
+
+Checks: `ui` + `web` typecheck/lint green; `web:build` green (11 routes);
+frozen-lockfile install green; 62 web tests + 33 capture tests pass.
+
+Blocked / needs `@user`:
+
+- **Every visual block** (editor shell/chrome, formatting toolbar, title field,
+  save-state indicator, import/paste affordance, conflict surface) needs a
+  reference or a chosen option. Offered options are in the next message; the
+  build waits on the answer per the reference protocol.
+- **Save state `error`** — a fifth status beyond the four listed. See the note
+  in `docs/design/now.md`; needs an explicit yes/no.
+- **Pre-existing red test on `develop`, not from this change:**
+  `packages/ui/src/shell/login.test.tsx` › "says why those controls are
+  unavailable…" asserts `"Social sign-in isn't available yet."`, which
+  `packages/ui/src/shell/login.tsx` does not render, although that file's own
+  doc comment claims each disabled group carries such a note. Reproduced with
+  `git stash` on a clean `develop`. That is F-03's surface, so it was left
+  unfixed — but F-04's own acceptance says `packages/ui` tests green, so it
+  needs an ownership call.
+
+Not done yet: editor block, toolbar, title field, save indicator, import/paste
+UI, the `notes/new` + `notes/[noteId]` routes, New-note wiring, and the
+route-level tests named in the deliverables.
 
 ## Completion Instructions
 

@@ -32,6 +32,8 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
+**F-04 capture — foundation landed 2026-09-25 (branch `F04-capture-tiptap`); no visual block built yet.** The parts that are behaviour, not look, are in: `apps/web/app/lib/notes/notes-api.ts` (notes port over the S-02 contract; a `409` is reported as a conflict with no retry and no merge), `apps/web/app/lib/api/transport.ts` (server-side HTTP transport shared by the ports), and `packages/ui/src/capture/` (`save-state.ts` / `capture-store.ts` for the save cycle, `import-status.ts` for the per-file indexing vocabulary). Editor pins `@tiptap/*` 3.31.3 + `zustand` 5.0.15 are installed in `packages/ui`, and TipTap was verified to render under this repo's jsdom setup with `immediatelyRender: false`. **Every visual block below still needs a reference.**
+
 **F-03 session identity — done 2026-09-24 (branch `F03-auth-ui`).**
 The shell is session-aware and sign-in is real. `apps/web/app/lib/identity/` is
 the identity **port** (typed over `docs/api/openapi.yaml`); `proxy.ts` sends a
@@ -80,7 +82,7 @@ F-07 ask → F-08 dual-mode → F-09 sample → F-10 a11y → F-11 Playwright.
 The F-* IDs are labels for those steps; the D-01 specs behind them are
 not binding. Cross-lane gates (S-03, B-07, B-08, B-09) still apply.
 
-## Open choices
+**Open choices**
 
 **F-04 (capture / TipTap):** every visual block is open until `@user` supplies
 a reference or chooses among offered options — editor shell/chrome,
@@ -89,6 +91,14 @@ affordance, conflict surface. Bound and **not** choices: save-state semantics
 (`idle`/`saving`/`saved`/`conflict`), conflict visibility without a client-side
 winner, ProseMirror JSON as the stored body, per-file indexing status, the
 editor's accessible name, and the generic forbidden copy.
+
+**Needs `@user` confirmation (added 2026-09-25):** F-04 lists four save states.
+A **fifth**, `error`, was implemented for a failed save (transport failure,
+5xx, unreadable response). Without it a failed save would render as nothing — or
+worse, as `saved` — which is silent data loss, and it is kept distinct from
+`conflict` because "the server has a newer version" and "we could not reach the
+server" call for different user actions. This is an addition to the listed
+behaviour, so it needs an explicit yes/no rather than being assumed.
 
 **Closed 2026-09-24 (F-03):** the sign-in card and form-field look `@user`
 supplied are built. Three things F-03 could **not** decide remain open:
