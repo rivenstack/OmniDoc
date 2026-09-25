@@ -92,13 +92,9 @@ affordance, conflict surface. Bound and **not** choices: save-state semantics
 winner, ProseMirror JSON as the stored body, per-file indexing status, the
 editor's accessible name, and the generic forbidden copy.
 
-**Needs `@user` confirmation (added 2026-09-25):** F-04 lists four save states.
-A **fifth**, `error`, was implemented for a failed save (transport failure,
-5xx, unreadable response). Without it a failed save would render as nothing — or
-worse, as `saved` — which is silent data loss, and it is kept distinct from
-`conflict` because "the server has a newer version" and "we could not reach the
-server" call for different user actions. This is an addition to the listed
-behaviour, so it needs an explicit yes/no rather than being assumed.
+**Resolved 2026-09-25:** the fifth save status `error` is **accepted** (see the
+decisions log), and the capture blocks await per-block options from this file's
+owner.
 
 **Closed 2026-09-24 (F-03):** the sign-in card and form-field look `@user`
 supplied are built. Three things F-03 could **not** decide remain open:
@@ -128,6 +124,9 @@ reference, so it uses the stock `Empty` primitive and is open to review.
 | 2026-09-22 | This file is the visible plan. Not a second spec, and not the backend lane. |
 | 2026-09-22 | Search: as-you-type is the current preference. Not a locked contract. Can change later. |
 | 2026-09-22 | Next frontend slice: visible stock-shadcn kit. No shell. |
+| 2026-09-25 | Save status gains a fifth state, `error`, for a failed save. A failed save must not render as nothing or as `saved`; it stays distinct from `conflict` because the user's next action differs. |
+| 2026-09-25 | The disabled social sign-in buttons stay **unannotated**. The removed explanation note was intentional: they are placeholders for a later feature, and the button labels carry the message. The account-creation group keeps its note. |
+| 2026-09-25 | F-04: the visual blocks are built from options offered per block, not from a supplied reference. |
 | 2026-09-22 | Kit landed at `/kit` (page, not Storybook — Storybook 10 stays a later gap). |
 | 2026-09-22 | Design language clarified: a swappable token layer. New look = retune `tokens.css` values; components and screens stay. |
 | 2026-09-23 | Sequence confirmed: F-01→F-11 order is the plan of record. Task format = title + short description + integration details; UI details stay open. |
