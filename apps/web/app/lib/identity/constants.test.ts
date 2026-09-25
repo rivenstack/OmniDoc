@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { safeNextPath, signInHref } from "./constants";
+import { authenticatedDestination, safeNextPath, signInHref } from "./constants";
 
 describe("safeNextPath", () => {
   it("accepts a same-origin path with query and hash", () => {
@@ -40,5 +40,31 @@ describe("signInHref", () => {
     expect(signInHref("/search?q=hello world&corpus=mine")).toBe(
       `/sign-in?next=${encodeURIComponent("/search?q=hello world&corpus=mine")}`,
     );
+  });
+});
+
+describe("authenticatedDestination", () => {
+  it("keeps a safe requested page", () => {
+    expect(authenticatedDestination("/notes/new?from=inbox")).toBe(
+      "/notes/new?from=inbox",
+    );
+  });
+
+  it("falls back to the default landing page", () => {
+    expect(authenticatedDestination(undefined)).toBe("/inbox");
+    expect(authenticatedDestination("https://evil.example")).toBe("/inbox");
+  });
+
+  it("refuses a destination that is sign-in itself, which would bounce back", () => {
+    // Every spelling of the sign-in route: a bare path, a query, a hash, and
+    // the trailing-slash form Next redirects to it.
+    expect(authenticatedDestination("/sign-in")).toBe("/inbox");
+    expect(authenticatedDestination("/sign-in?next=/notes/new")).toBe("/inbox");
+    expect(authenticatedDestination("/sign-in#form")).toBe("/inbox");
+    expect(authenticatedDestination("/sign-in/")).toBe("/inbox");
+  });
+
+  it("keeps the root, which the shell itself forwards to the inbox", () => {
+    expect(authenticatedDestination("/")).toBe("/");
   });
 });

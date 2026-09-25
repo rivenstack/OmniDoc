@@ -13,6 +13,7 @@ import {
   REQUESTED_PATH_HEADER,
   SESSION_COOKIE_NAME,
   WORKSPACE_SELECTOR_COOKIE_NAME,
+  authenticatedDestination,
 } from "./constants";
 import {
   readSession,
@@ -97,4 +98,37 @@ export async function getShellSession(): Promise<ShellSession> {
     currentWorkspaceId: selection.currentWorkspaceId,
     sampleWorkspaceIds: sampleWorkspaceIds(),
   };
+}
+
+/** What the sign-in route should do for the session the browser is holding. */
+export type SignInGate =
+  | { status: "redirect"; destination: string }
+  | { status: "form" };
+
+/**
+ * Decide the sign-in route's job: let a genuinely authenticated visitor skip
+ * the form, and show the form to everyone else.
+ *
+ * Cookie *presence* is not evidence of a session. A `JSESSIONID` outlives the
+ * server-side session it names — Spring's default idle timeout, or an API
+ * restart with in-memory sessions — so a stale cookie is the normal state after
+ * any break, and the browser keeps sending it. Only the API can answer whether
+ * the session still exists, so only the API is asked.
+ *
+ * This is the *single* place that decides to skip sign-in. It must stay that
+ * way: when the proxy skipped it too, from cookie presence alone, a stale
+ * cookie produced an infinite loop (proxy → destination → layout rejects →
+ * sign-in → proxy → …) that the user could not escape without clearing
+ * cookies. A rejected or unreachable session therefore renders the form, which
+ * also makes a dead cookie self-healing: signing in replaces it.
+ */
+export async function resolveSignInGate(
+  requested?: string,
+): Promise<SignInGate> {
+  const jar = await readIdentityJar();
+  const session = await readSession(jar);
+  if (session.status !== "authenticated") {
+    return { status: "form" };
+  }
+  return { status: "redirect", destination: authenticatedDestination(requested) };
 }

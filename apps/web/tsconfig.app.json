@@ -10,6 +10,7 @@
     "next-env.d.ts",
     "next.config.mjs",
     "proxy.ts",
+    "proxy.test.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "vitest.config.ts"
