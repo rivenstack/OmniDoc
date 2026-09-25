@@ -21,11 +21,12 @@
 import type { components } from "@omnidoc/contracts";
 
 import {
-  CSRF_COOKIE_NAME,
-  CSRF_HEADER_NAME,
-  SESSION_COOKIE_NAME,
-  WORKSPACE_SELECTOR_HEADER,
-} from "./constants";
+  apiOrigin,
+  cookieHeader,
+  readJson,
+  sendApiRequest,
+  type ApiJar,
+} from "../api/transport";
 
 export type Principal = components["schemas"]["Principal"];
 export type Workspace = components["schemas"]["Workspace"];
@@ -34,14 +35,17 @@ export type CreateSessionRequest = components["schemas"]["CreateSessionRequest"]
 export const SESSION_ENDPOINT = "/api/v1/session";
 export const WORKSPACES_ENDPOINT = "/api/v1/workspaces";
 
-const DEFAULT_API_ORIGIN = "http://localhost:8080";
-const REQUEST_TIMEOUT_MS = 8_000;
+/**
+ * The cookies the port relays between the browser and the API.
+ *
+ * Alias of the shared `ApiJar` (`../api/transport`) so this port keeps its
+ * domain name and callers keep one import.
+ */
+export type IdentityJar = ApiJar;
 
-/** The cookies the port relays between the browser and the API. */
-export type IdentityJar = {
-  session?: string;
-  csrf?: string;
-};
+// Re-exported for callers that reach the origin/cookie helpers through the
+// identity port. The implementations live in the shared transport.
+export { apiOrigin, cookieHeader };
 
 export type SessionLookup =
   | { status: "authenticated"; principal: Principal }
@@ -71,75 +75,6 @@ export type SignInOutcome =
   | { status: "unavailable" };
 
 export type SignOutOutcome = "revoked" | "already_signed_out" | "failed";
-
-/**
- * Where the API lives. Server-side only (`OMNIDOC_API_ORIGIN`); the browser
- * never learns this value, which is also why no `NEXT_PUBLIC_*` variant exists.
- */
-export function apiOrigin(): string {
-  const configured = process.env.OMNIDOC_API_ORIGIN?.trim();
-  return configured ? configured.replace(/\/+$/, "") : DEFAULT_API_ORIGIN;
-}
-
-export function cookieHeader(jar: IdentityJar): string | undefined {
-  const parts: string[] = [];
-  if (jar.session) {
-    parts.push(`${SESSION_COOKIE_NAME}=${jar.session}`);
-  }
-  if (jar.csrf) {
-    parts.push(`${CSRF_COOKIE_NAME}=${jar.csrf}`);
-  }
-  return parts.length > 0 ? parts.join("; ") : undefined;
-}
-
-type SendOptions = {
-  method: "GET" | "POST" | "DELETE";
-  jar?: IdentityJar;
-  json?: unknown;
-  workspaceSelector?: string;
-};
-
-/** Returns `null` when the request never produced a response (transport). */
-async function send(path: string, options: SendOptions): Promise<Response | null> {
-  const headers = new Headers({ Accept: "application/json" });
-  const cookie = cookieHeader(options.jar ?? {});
-  if (cookie) {
-    headers.set("Cookie", cookie);
-  }
-  if (options.workspaceSelector) {
-    headers.set(WORKSPACE_SELECTOR_HEADER, options.workspaceSelector);
-  }
-  // Spring's `spa()` CSRF requires the cookie's token back in the header for
-  // state-changing calls. POST /session is exempt upstream (no session exists
-  // yet), so the header is only sent when a token is actually held.
-  if (options.method !== "GET" && options.jar?.csrf) {
-    headers.set(CSRF_HEADER_NAME, options.jar.csrf);
-  }
-  if (options.json !== undefined) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  try {
-    return await fetch(`${apiOrigin()}${path}`, {
-      method: options.method,
-      headers,
-      body: options.json === undefined ? undefined : JSON.stringify(options.json),
-      // Session state must never be served from a cache.
-      cache: "no-store",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-  } catch {
-    return null;
-  }
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Every `Set-Cookie` header on the response.
@@ -193,7 +128,7 @@ function asWorkspaces(body: unknown): Workspace[] | null {
 
 /** Current principal for the relayed session, if any. */
 export async function readSession(jar: IdentityJar = {}): Promise<SessionLookup> {
-  const response = await send(SESSION_ENDPOINT, { method: "GET", jar });
+  const response = await sendApiRequest(SESSION_ENDPOINT, { method: "GET", jar });
   if (!response) {
     return { status: "unavailable" };
   }
@@ -212,7 +147,7 @@ export async function readWorkspaces(
   jar: IdentityJar = {},
   workspaceSelector?: string,
 ): Promise<WorkspaceLookup> {
-  const response = await send(WORKSPACES_ENDPOINT, {
+  const response = await sendApiRequest(WORKSPACES_ENDPOINT, {
     method: "GET",
     jar,
     workspaceSelector,
@@ -232,7 +167,7 @@ export async function readWorkspaces(
 
 /** Authenticate and hand back the cookies the API wants the browser to hold. */
 export async function createSession(body: CreateSessionRequest): Promise<SignInOutcome> {
-  const response = await send(SESSION_ENDPOINT, { method: "POST", json: body });
+  const response = await sendApiRequest(SESSION_ENDPOINT, { method: "POST", json: body });
   if (!response) {
     return { status: "unavailable" };
   }
@@ -261,7 +196,7 @@ export async function createSession(body: CreateSessionRequest): Promise<SignInO
 
 /** End the server-side session. */
 export async function deleteSession(jar: IdentityJar): Promise<SignOutOutcome> {
-  const response = await send(SESSION_ENDPOINT, { method: "DELETE", jar });
+  const response = await sendApiRequest(SESSION_ENDPOINT, { method: "DELETE", jar });
   if (!response) {
     return "failed";
   }

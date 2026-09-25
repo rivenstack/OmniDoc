@@ -9,6 +9,7 @@
  * Components consume D-01 semantic tokens only. They never import a provider
  * SDK, Spring/Java types, or `packages/mocks` production paths (inventory §13).
  */
+export * from "./capture";
 export * from "./components";
 export * from "./hooks";
 export * from "./lib";
