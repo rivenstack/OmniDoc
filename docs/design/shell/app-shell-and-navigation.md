@@ -196,8 +196,10 @@ failed. Mock-first means the product remains demonstrable (REC-13).
 - Citation rail docks to `inline-end`.
 - `chevron-*` icons that communicate "expand/next" use start/end semantics
   (QA 7.4) — no `ArrowRight === next`.
-- Workspace switcher menu opens to `inline-start` alignment; Base UI
-  `Direction` supplies this.
+- Workspace switcher menu opens **out of the sidebar** toward
+  `inline-end` (`side="right"`, `align="end"`), mirroring the account
+  menu so the two anchor identically; Base UI `Direction` supplies the
+  logical mapping, and the popup keeps the bottom sheet on mobile.
 - No component sets its own `dir`; the single `lang`/`dir` source
   (layouts) governs (QA 7.1).
 

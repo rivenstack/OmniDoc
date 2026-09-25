@@ -139,7 +139,9 @@ export function NavUser({ principal, onSignOut, className }: NavUserProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onSelect={() => setTheme(isDark ? "light" : "dark")}
+                // Base UI `Menu.Item` fires `onClick`; Radix's `onSelect` is not
+                // a prop it honours, so the item was inert.
+                onClick={() => setTheme(isDark ? "light" : "dark")}
               >
                 {isDark ? (
                   <IconSun aria-hidden="true" />
@@ -153,7 +155,14 @@ export function NavUser({ principal, onSignOut, className }: NavUserProps) {
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={onSignOut}>
+                  {/*
+                    `onClick`, not `onSelect`: Base UI's `Menu.Item` only honours
+                    the former, so the item used to do nothing at all. The
+                    handler is wrapped rather than passed straight through, so
+                    the click event is never forwarded to the server action as
+                    an (unserialisable) argument.
+                  */}
+                  <DropdownMenuItem onClick={() => onSignOut()}>
                     <IconLogout aria-hidden="true" />
                     Sign out
                   </DropdownMenuItem>
