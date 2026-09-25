@@ -126,6 +126,18 @@ Program of record:
   (missing `@source`), and `editorProps.attributes.class` was replacing TipTap's
   `ProseMirror` class. Gaps: CodeMirror for fenced code deferred; no table
   extension; MSW still unauthorized; import end-to-end depends on B-05
+- **2026-09-25:** **Session redirect loop fixed** (`apps/web`, F-03 surface;
+  found by `@user`). Two layers answered "is this browser signed in?" from
+  different evidence: `proxy.ts` skipped `/sign-in` on cookie **presence**,
+  while `(app)/layout.tsx` and the API decided on session **validity**. A
+  `JSESSIONID` that outlived its session (Spring's 30-minute idle default, or
+  an API restart with in-memory sessions) therefore ping-ponged between
+  `/sign-in` and the shell **forever** — reproduced with curl, then fixed. Now
+  only `resolveSignInGate` (identity port) decides to skip sign-in and the
+  proxy leaves the route alone; `authenticatedDestination` also closes a second
+  instance of the same loop (`?next=/sign-in`). FE checks green (77 web tests,
+  typecheck, lint, build 11 routes); verified live for stale, absent, and valid
+  sessions. Not yet committed
 - **2026-09-24:** **F-03 completed and archived** (branch `F03-auth-ui`).
   The identity **port** landed in `apps/web/app/lib/identity/` (typed over
   `docs/api/openapi.yaml`; `JSESSIONID` + `XSRF-TOKEN` relayed by Next;

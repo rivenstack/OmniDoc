@@ -330,6 +330,21 @@
   in the URL) plus a request header carrying the path for the stale-session
   case. `safeNextPath` must reject `//host`, absolute URLs and backslashes —
   otherwise sign-in becomes an open redirect.
+- **2026-09-25 (F-03 regression, fixed):** `proxy.ts` must never read *cookie
+  presence* as "signed in". A `JSESSIONID` outlives the session it names
+  (Spring's 30-minute idle default; an API restart with in-memory sessions
+  wipes them all), so "present but rejected" is a normal state, not an edge
+  case. Skipping `/sign-in` on presence while `(app)/layout.tsx` bounced back
+  on the API's `401` produced an **infinite redirect loop** the user could only
+  escape by clearing cookies — and each hop re-ran a full server render.
+  Rule: exactly **one** layer decides to skip sign-in (`resolveSignInGate` in
+  `lib/identity/session.ts`, which asks the API); the proxy redirects only when
+  the cookie is **absent**. A destination is not safe merely because it is
+  same-origin: `?next=/sign-in` (also `/sign-in/`) points back at the route
+  making the decision, so destinations go through `authenticatedDestination`,
+  not bare `safeNextPath`. Reproduce the loop class cheaply with
+  `curl -b 'JSESSIONID=stale' -L --max-redirs 6 http://localhost:3311/notes/new`
+  — "Maximum (6) redirects followed" *is* the bug.
 - **2026-09-24 (F-03):** Spring Security details the FE must respect: the
   session cookie is `JSESSIONID` (httpOnly), CSRF is `spa()` (readable
   `XSRF-TOKEN` + `X-XSRF-TOKEN` header), **POST `/api/v1/session` is
