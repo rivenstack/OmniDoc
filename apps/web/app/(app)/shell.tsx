@@ -12,6 +12,7 @@ import {
   type CommandPaletteGroup,
   IconButton,
   MobileTabBar,
+  MOBILE_TAB_BAR_CLEARANCE_CLASS,
   type Principal,
   Separator,
   SidebarInset,
@@ -92,7 +93,18 @@ export function AppShell({
           void onSelectWorkspace(workspaceId);
         }}
       />
-      <SidebarInset id="content" tabIndex={-1} className="min-w-0 outline-none">
+      {/*
+        The bottom padding reserves room for the fixed `MobileTabBar`. Without
+        it the last element of every page scrolls underneath the bar on small
+        viewports — the tab bar is out of flow, so nothing accounts for it by
+        default. The value comes from the bar block itself so the two cannot
+        drift apart.
+      */}
+      <SidebarInset
+        id="content"
+        tabIndex={-1}
+        className={cn("min-w-0 outline-none", MOBILE_TAB_BAR_CLEARANCE_CLASS)}
+      >
         <AppTopBar onOpenSearch={palette.openPalette} />
         {children}
         <MobileTabBar

@@ -18,10 +18,11 @@ import {
 } from "../components/dropdown-menu";
 import { SidebarMenuButton, useSidebar } from "../components/sidebar";
 import { cn } from "../lib/utils";
+import { WORKSPACE_FORBIDDEN_MESSAGE } from "./denials";
 
-/** Security contract copy — see `docs/design/system-ux.md` §2 (Tenancy). */
-export const WORKSPACE_FORBIDDEN_MESSAGE =
-  "You don't have access to that workspace.";
+// Re-exported so existing importers of this module keep working; the single
+// definition lives in `./denials`.
+export { WORKSPACE_FORBIDDEN_MESSAGE };
 
 export type WorkspaceSwitcherProps = {
   /** Server-resolved memberships. The client never derives this list. */

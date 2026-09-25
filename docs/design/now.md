@@ -32,6 +32,57 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
+**F-04 capture — foundation landed 2026-09-25 (branch `F04-capture-tiptap`); no visual block built yet.** The parts that are behaviour, not look, are in: `apps/web/app/lib/notes/notes-api.ts` (notes port over the S-02 contract; a `409` is reported as a conflict with no retry and no merge), `apps/web/app/lib/api/transport.ts` (server-side HTTP transport shared by the ports), and `packages/ui/src/capture/` (`save-state.ts` / `capture-store.ts` for the save cycle, `import-status.ts` for the per-file indexing vocabulary). Editor pins `@tiptap/*` 3.31.3 + `zustand` 5.0.15 are installed in `packages/ui`, and TipTap was verified to render under this repo's jsdom setup with `immediatelyRender: false`. **Every visual block below still needs a reference.**
+
+**F-04 capture — blocks built 2026-09-25 (branch `F04-capture-tiptap`, uncommitted pending `@user` review).**
+Review pass 2026-09-25: the shell now reserves bottom clearance for the fixed
+`MobileTabBar` (`apps/web/app/(app)/shell.tsx`), which fixes the bottom of
+**every** page being covered on small viewports — a shell defect F-04 surfaced
+rather than caused. Toolbar separators are centred. See the lane head for the
+measurements.
+Review pass 2026-09-25 (second): the formatting row is **sticky** under the
+shell's `h-14` top bar (`sticky top-14 z-20`, opaque `bg-background` wrapper so
+the `bg-muted/30` panel keeps its look while covering what scrolls beneath it),
+per `@user`. The inline selection bubble now measures the toolbar's real bottom
+edge instead of assuming the top bar, so it drops below the selection rather
+than landing on the row it duplicates; the body's tab stops carry
+`scroll-margin` so focus never hides behind the sticky chrome (QA 1.2).
+`/notes/new` lands directly in the editor and `/notes/[noteId]` resolves through
+the notes port. Blocks live in `packages/ui/src/capture/`: `CaptureSurface`
+(document-first, no card), `NoteTitleField` (borderless), `FormattingToolbar`
+(static row) + `SelectionToolbar` (bubble), `SaveIndicator` (text only),
+`ImportDropzone` (drop zone + per-file rows), `SaveProblemBanner` (inline, above
+the editor). `New note` lands with a title and body only — nothing reaches the
+server until one of them has content.
+
+Verified live against the local Java API: a note is created from a blank
+draft; the stored body is **ProseMirror JSON** (bold mark and `codeBlock` node
+confirmed in Postgres, 5 versions recorded); a real `409` from a second tab
+produces the conflict banner with the local edits preserved and autosave
+stopped; "Keep my edits" re-saves on top of the server's version and resolves;
+code blocks carry `tabindex=0` with `overflow-x: auto`.
+
+Three things F-04 does **not** close, all recorded as gaps rather than
+silently dropped:
+
+- **CodeMirror 6 for fenced code** (ADR-0001 §2) is **not built**. StarterKit's
+  code block ships now; the CodeMirror node view is a follow-up slice. F-04's
+  acceptance asks only that code blocks render monospaced and stay
+  keyboard-scrollable, which they do.
+- **Tables have no editor extension.** `@tiptap/extension-table` is not one of
+  the pinned editor packages, so a table cannot be inserted or pasted as a
+  table. The overflow rules for tables are therefore unexercised, not proven.
+- **Import is blocked on the backend, and the UI says so.** `POST
+  /api/v1/ingestion-jobs` has **no controller** — `apps/api` currently has only
+  `IngestionPort` and the domain models — so every dropped file lands as
+  `Failed` with the honest reason ("Indexing failed. This file is not
+  searchable.") and the incomplete-index notice fires. Verified live, not
+  assumed: the route answers `403` (Spring security, i.e. no handler behind it)
+  rather than `404` only because the filter chain runs first. B-05 owns the
+  controller.
+- **MSW is still not wired** (`web → mocks` remains unauthorized). Tests inject
+  through the notes port instead, so no second fixture authority was created.
+
 **F-03 session identity — done 2026-09-24 (branch `F03-auth-ui`).**
 The shell is session-aware and sign-in is real. `apps/web/app/lib/identity/` is
 the identity **port** (typed over `docs/api/openapi.yaml`); `proxy.ts` sends a
@@ -80,15 +131,17 @@ F-07 ask → F-08 dual-mode → F-09 sample → F-10 a11y → F-11 Playwright.
 The F-* IDs are labels for those steps; the D-01 specs behind them are
 not binding. Cross-lane gates (S-03, B-07, B-08, B-09) still apply.
 
-## Open choices
+**Open choices**
 
-**F-04 (capture / TipTap):** every visual block is open until `@user` supplies
-a reference or chooses among offered options — editor shell/chrome,
-formatting toolbar, title field, save-state indicator, import/paste
-affordance, conflict surface. Bound and **not** choices: save-state semantics
-(`idle`/`saving`/`saved`/`conflict`), conflict visibility without a client-side
-winner, ProseMirror JSON as the stored body, per-file indexing status, the
-editor's accessible name, and the generic forbidden copy.
+**F-04 (capture / TipTap): closed 2026-09-25.** `@user` chose to build from
+per-block options rather than supplying a reference. Options chosen: document-
+first editor shell, static toolbar **plus** a selection bubble, borderless
+title, text-only save indicator, drop zone with per-file rows, inline conflict
+banner above the editor. CodeMirror for fenced code was deferred to a follow-up
+slice (see the gaps above). Bound and **not** choices, built without asking:
+save-state semantics, conflict visibility without a client-side winner,
+ProseMirror JSON as the stored body, per-file indexing status, the editor's
+accessible name, and the generic forbidden copy.
 
 **Closed 2026-09-24 (F-03):** the sign-in card and form-field look `@user`
 supplied are built. Three things F-03 could **not** decide remain open:
@@ -118,6 +171,12 @@ reference, so it uses the stock `Empty` primitive and is open to review.
 | 2026-09-22 | This file is the visible plan. Not a second spec, and not the backend lane. |
 | 2026-09-22 | Search: as-you-type is the current preference. Not a locked contract. Can change later. |
 | 2026-09-22 | Next frontend slice: visible stock-shadcn kit. No shell. |
+| 2026-09-25 | Save status gains a fifth state, `error`, for a failed save. A failed save must not render as nothing or as `saved`; it stays distinct from `conflict` because the user's next action differs. |
+| 2026-09-25 | The disabled social sign-in buttons stay **unannotated**. The removed explanation note was intentional: they are placeholders for a later feature, and the button labels carry the message. The account-creation group keeps its note. |
+| 2026-09-25 | F-04: the visual blocks are built from options offered per block, not from a supplied reference. |
+| 2026-09-25 | F-04 options chosen: document-first shell; static toolbar + selection bubble; borderless title; text-only save indicator; drop zone with per-file rows; inline conflict banner. |
+| 2026-09-25 | CodeMirror 6 for fenced code (ADR-0001 §2) deferred to a follow-up slice. StarterKit's code block ships in F-04. |
+| 2026-09-25 | The disabled social sign-in buttons stay **unannotated**, restated for the record: the note was removed deliberately, and the account-creation group keeps its note. |
 | 2026-09-22 | Kit landed at `/kit` (page, not Storybook — Storybook 10 stays a later gap). |
 | 2026-09-22 | Design language clarified: a swappable token layer. New look = retune `tokens.css` values; components and screens stay. |
 | 2026-09-23 | Sequence confirmed: F-01→F-11 order is the plan of record. Task format = title + short description + integration details; UI details stay open. |

@@ -14,6 +14,21 @@ export type MobileTabBarProps = {
   className?: string;
 };
 
+/** One tab row's minimum height. */
+export const MOBILE_TAB_BAR_ROW_HEIGHT_CLASS = "min-h-14";
+
+/**
+ * Bottom clearance content must reserve while the bar is fixed.
+ *
+ * The bar is `position: fixed`, so it is out of flow and the last element of any
+ * page slides underneath it without this. The value is derived from the row
+ * height above plus the `border-t` pixel plus the iOS home-indicator inset, and
+ * the two constants live together so a taller bar cannot silently start covering
+ * content again. Cleared at `md`, where the bar is not rendered.
+ */
+export const MOBILE_TAB_BAR_CLEARANCE_CLASS =
+  "pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))] md:pb-0";
+
 /**
  * Shell block — `MobileTabBar`.
  *
@@ -45,7 +60,8 @@ export function MobileTabBar({
               href={item.href}
               aria-current={item.active ? "page" : undefined}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.7rem] transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-1 py-2 text-[0.7rem] transition-colors",
+                MOBILE_TAB_BAR_ROW_HEIGHT_CLASS,
                 item.active
                   ? "font-medium text-foreground"
                   : "text-muted-foreground hover:text-foreground",

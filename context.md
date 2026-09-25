@@ -99,6 +99,45 @@ Program of record:
   **F-03 (auth UI)** — identity fixtures ready. (Local `api:test` fails
   only because Postgres is not running — pre-existing/environmental,
   backend lane; not touched.)
+- **2026-09-25:** **F-04 started** (branch `F04-capture-tiptap`, commit
+  `d7ed77b`). Behaviour-only half landed: shared server-side HTTP transport
+  (`apps/web/app/lib/api/transport.ts`), the notes port over the S-02 contract
+  (`apps/web/app/lib/notes/notes-api.ts`, 409 → `conflict` with no retry/merge),
+  and `packages/ui/src/capture/` (save cycle `state`/`store`, per-file
+  `import-status`). `@tiptap/*` 3.31.3 + `zustand` 5.0.15 installed in
+  `packages/ui`; frozen-lockfile install green. ui + web typecheck/lint green,
+  web build green (11 routes), 62 web + 33 capture tests pass. **No visual
+  block built** — every F-04 block still awaits a `@user` reference. Two items
+  need a call: a fifth save state `error` (see `docs/design/now.md`), and a
+  pre-existing red `packages/ui` test on develop (`login.test.tsx` asserts an
+  explanation note the sign-in block does not render)
+- **2026-09-25:** **F-04 blocks built**, uncommitted pending `@user` review.
+  `@user` chose per-block options (`docs/design/now.md` decisions log):
+  document-first shell, static toolbar + selection bubble, borderless title,
+  text-only save indicator, drop zone with per-file rows, inline conflict
+  banner. `/notes/new` lands directly in the editor and `/notes/[noteId]`
+  resolves through the notes port; `403`/`404` collapse to one generic denial.
+  Verified live against the local stack: blank draft creates nothing; stored
+  body is ProseMirror JSON (bold + codeBlock in Postgres, 5 versions); a real
+  `409` from a second tab shows the conflict banner with edits preserved and
+  autosave stopped; "Keep my edits" resolves on top of the server's version.
+  ui + web typecheck/lint/test green (276 ui, 62 web); build green (12 routes).
+  Fixed two silent defects: Tailwind never scanned `packages/ui/src/capture`
+  (missing `@source`), and `editorProps.attributes.class` was replacing TipTap's
+  `ProseMirror` class. Gaps: CodeMirror for fenced code deferred; no table
+  extension; MSW still unauthorized; import end-to-end depends on B-05
+- **2026-09-25:** **Session redirect loop fixed** (`apps/web`, F-03 surface;
+  found by `@user`). Two layers answered "is this browser signed in?" from
+  different evidence: `proxy.ts` skipped `/sign-in` on cookie **presence**,
+  while `(app)/layout.tsx` and the API decided on session **validity**. A
+  `JSESSIONID` that outlived its session (Spring's 30-minute idle default, or
+  an API restart with in-memory sessions) therefore ping-ponged between
+  `/sign-in` and the shell **forever** — reproduced with curl, then fixed. Now
+  only `resolveSignInGate` (identity port) decides to skip sign-in and the
+  proxy leaves the route alone; `authenticatedDestination` also closes a second
+  instance of the same loop (`?next=/sign-in`). FE checks green (77 web tests,
+  typecheck, lint, build 11 routes); verified live for stale, absent, and valid
+  sessions. Not yet committed
 - **2026-09-24:** **F-03 completed and archived** (branch `F03-auth-ui`).
   The identity **port** landed in `apps/web/app/lib/identity/` (typed over
   `docs/api/openapi.yaml`; `JSESSIONID` + `XSRF-TOKEN` relayed by Next;
@@ -164,7 +203,7 @@ Program of record:
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
-| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **ready** — next in sequence; notes contract (S-02) and B-04 live; TipTap 3.31.3 + Zustand 5.0.15 are pinned but **not installed** | `docs/handoffs/active/lane-frontend.md` |
+| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **blocks built** 2026-09-25 — notes port, shared transport, save cycle, import-status committed; capture blocks + `/notes/new` + `/notes/[noteId]` in the working tree awaiting `@user` review | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -190,6 +229,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - DevOps I-* have no human owner yet
 - Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain
   **uncommitted** — commit before merge/PR; does not block B-05
+- **`packages/ui` tests are not green on develop** (found 2026-09-25 while
+  starting F-04; reproduced on a clean `develop`). `login.test.tsx` asserts
+  `"Social sign-in isn't available yet."`, which `login.tsx` never renders,
+  though that file's doc comment claims each disabled group carries such a
+  note. F-03's surface — needs an ownership call, and it blocks F-04's own
+  "`packages/ui` tests green" criterion
 
 ## Open Gates
 

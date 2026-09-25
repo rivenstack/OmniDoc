@@ -71,3 +71,25 @@ export function safeNextPath(value: string | null | undefined): string | undefin
   }
   return value;
 }
+
+/**
+ * Where an already-authenticated visitor should land for a requested path.
+ *
+ * `safeNextPath` is not enough on its own here: sign-in is itself a safe
+ * same-origin path, so `?next=/sign-in` would send an authenticated visitor to
+ * sign-in, which would send them on again — an infinite bounce. A destination
+ * that resolves to the sign-in route (with or without a query, hash, or
+ * trailing slash) falls back to the default landing page instead.
+ */
+export function authenticatedDestination(
+  value: string | null | undefined,
+): string {
+  const safe = safeNextPath(value);
+  if (!safe) {
+    return DEFAULT_AUTHENTICATED_PATH;
+  }
+  const [pathname = ""] = safe.split(/[?#]/);
+  return pathname.replace(/\/+$/, "") === SIGN_IN_PATH
+    ? DEFAULT_AUTHENTICATED_PATH
+    : safe;
+}

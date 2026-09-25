@@ -2,7 +2,7 @@
 handoff_id: H-2026-09-24-P1-F04-implementer-implementer
 affinity: implementation
 track: parallel
-status: ready
+status: in-progress
 phase: "1"
 task: "F-04"
 lane: frontend
@@ -10,7 +10,7 @@ human_owner: front-end-programmer
 from: implementer
 to: implementer
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # F-04 — Capture (TipTap)
@@ -200,6 +200,148 @@ exception), `packages/ui/src/styles/tokens.css`.
 - UT-* remain unrun
 - Design language: **Mintlify** (2026-09-23); per-block layout references
   still required
+
+## Progress — 2026-09-25 (branch `F04-capture-tiptap`, **uncommitted pending `@user` review**)
+
+Started. Both halves are built: the behaviour-only half is committed
+(`d7ed77b`, `e324501`, `3802d9b`), and the visual half is in the working tree
+awaiting review.
+
+Blocks (`packages/ui/src/capture/`), built from the options `@user` chose on
+2026-09-25 rather than from a supplied reference:
+
+- `CaptureSurface` — document-first: title, toolbar and body sit on the page
+  background with no card around them.
+- `NoteTitleField` — borderless large field with a real (visually hidden) label.
+- `FormattingToolbar` (static row, keyboard-complete) + `SelectionToolbar`
+  (pointer bubble, positioned from the DOM selection — no new dependency).
+- `SaveIndicator` — text only, no spinner; badge is `aria-hidden` so the polite
+  status region is the single announcement.
+- `ImportDropzone` — drop zone plus one row per file, each with its own status,
+  and an "index is incomplete" notice.
+- `SaveProblemBanner` — inline above the editor; `conflict` offers both versions
+  as an explicit choice and nothing is auto-resolved.
+
+Routes: `apps/web/app/(app)/notes/new/page.tsx` (lands directly in the editor),
+`notes/[noteId]/page.tsx` (server-resolved through the notes port), with
+`lib/notes/actions.ts` (server actions) and `lib/notes/note-loader.ts`.
+`403` and `404` collapse to one generic denial
+(`packages/ui/src/shell/denials.ts`) so the route cannot be used as an existence
+oracle.
+
+Verified live against the local Java API (Postgres 5433 / API 8080 / web 3311):
+
+- a blank draft creates nothing until it has content, then lands on
+  `/notes/{id}`;
+- the stored body is ProseMirror JSON (bold mark + `codeBlock` node read back
+  from Postgres, 5 versions recorded);
+- a real `409` from a second session produces the conflict banner with local
+  edits preserved and autosave stopped; "Keep my edits" re-saves on top of the
+  server's version and resolves;
+- code blocks carry `tabindex=0` with `overflow-x: auto`;
+- toolbars apply commands and report `aria-pressed`.
+
+Defects found and fixed during that verification (both would have shipped
+silently):
+- **Tailwind never scanned `packages/ui/src/capture`.** `styles/globals.css`
+  registers each source directory explicitly; the missing `@source` meant every
+  capture-only utility compiled to nothing while typecheck, lint and unit tests
+  stayed green. Fixed in `globals.css`.
+- **`editorProps.attributes.class` replaced TipTap's `ProseMirror` class**, so
+  the editor's base styles and the `[&_.ProseMirror]` height rules never
+  matched. Now set as `"ProseMirror od-capture-body"`.
+
+Checks: `ui` + `web` typecheck/lint green; `web:build` green (12 routes);
+**276 ui tests + 62 web tests** pass.
+
+### Fixes from `@user` review — 2026-09-25 (second pass)
+
+1. **The bottom of every page was hidden behind the fixed `MobileTabBar`.** The
+   bar is `position: fixed`, so nothing reserved room for it and the last element
+   scrolled underneath. This is a **shell** defect (F-02's bar + `SidebarInset`),
+   not capture-specific — F-04 is simply the first page tall enough to show it.
+   Fixed in `apps/web/app/(app)/shell.tsx` by reserving bottom clearance on
+   `SidebarInset`, with the clearance value exported from
+   `packages/ui/src/shell/mobile-tab-bar.tsx` beside the row height it derives
+   from, so a taller bar cannot silently start covering content again.
+   Measured at 390px: bar 57px, reserve 57px, 24px clear gap above the bar.
+2. **Toolbar separators sat against the top of the toolbar, not centred.**
+   `Separator` renders `data-vertical:self-stretch`, which beats the row's
+   `items-center` for that child; with an explicit `h-5` the stretch cannot
+   apply, so the rule fell back to the cross-axis start. Fixed by dropping the
+   fixed height and using `my-0.5` so `stretch` resolves to "fill the row minus
+   the insets" — centred by construction instead of out-specifying a variant.
+   Measured: separator centre 25.5px, row centre 25.5px.
+3. Observed, **not** changed: the static toolbar wraps to two rows even at
+   1440px, so the inline-mark group starts a second row. `flex-wrap` is
+   deliberate for 390px, but the desktop split is a judgement call — say if you
+   want the groups rebalanced or the block set trimmed.
+
+Gaps, deliberately not closed here:
+
+- **CodeMirror 6 for fenced code** (ADR-0001 §2) is a follow-up slice, not built.
+  StarterKit's code block ships.
+- **No table extension** (`@tiptap/extension-table` is not a pinned package), so
+  the table overflow rules are unexercised rather than proven.
+- **MSW still not wired** (`web → mocks` unauthorized); tests inject through the
+  notes port, and no second fixture authority was created.
+- **Import end-to-end is unproven and blocked on the backend.**
+  `POST /api/v1/ingestion-jobs` has no controller yet (`apps/api` carries only
+  `IngestionPort` + domain models), so a dropped file lands as `Failed` with the
+  honest reason. Checked live rather than assumed. B-05 owns it.
+
+## Progress — 2026-09-25 (behaviour-only half, commit `d7ed77b`)
+
+Landed:
+
+1. `packages/ui` installs `@tiptap/core|react|pm|starter-kit` **3.31.3** and
+   `zustand` **5.0.15** (ledger pins, `--save-exact`). No `allowBuilds` entry
+   was needed; `pnpm install --frozen-lockfile` passes.
+2. `apps/web/app/lib/api/transport.ts` — the server-side HTTP transport
+   (origin, cookie/CSRF relay, timeout, total results), extracted from the
+   identity port so the notes port does not duplicate it. Re-verified: the
+   F-03 identity tests still pass unchanged.
+3. `apps/web/app/lib/notes/notes-api.ts` + tests — the notes port over the S-02
+   contract: create, read, update (`expectedVersion`), soft delete, list,
+   ingestion-job read. `409` → `conflict`, **one attempt, no retry, no merge**.
+4. `packages/ui/src/capture/save-state.ts` + `capture-store.ts` + tests — the
+   save cycle as a pure reducer over revision counters. `saved` cannot be
+   claimed while a newer local edit exists or while a save was in flight;
+   autosave will not start over an undecided conflict; an undecided conflict
+   keeps the rejected version token so a blind retry is refused rather than
+   clobbering the other version.
+5. `packages/ui/src/capture/import-status.ts` + tests — wire `running` → product
+   `indexing`; only `ready` counts as complete (not `partial`);
+   `indexIncompleteNotice()` is the single answer to "may Search/Ask imply a
+   complete index?".
+
+Feasibility confirmed: TipTap renders under this repo's jsdom setup, but only
+with `immediatelyRender: false` — which is also what Next SSR requires, so the
+editor block must set it.
+
+Checks: `ui` + `web` typecheck/lint green; `web:build` green (11 routes);
+frozen-lockfile install green; 62 web tests + 33 capture tests pass.
+
+Blocked / needs `@user`:
+
+- **Every visual block** (editor shell/chrome, formatting toolbar, title field,
+  save-state indicator, import/paste affordance, conflict surface) needs a
+  reference or a chosen option. Offered options are in the next message; the
+  build waits on the answer per the reference protocol.
+- **Save state `error`** — a fifth status beyond the four listed. See the note
+  in `docs/design/now.md`; needs an explicit yes/no.
+- **Pre-existing red test on `develop`, not from this change:**
+  `packages/ui/src/shell/login.test.tsx` › "says why those controls are
+  unavailable…" asserts `"Social sign-in isn't available yet."`, which
+  `packages/ui/src/shell/login.tsx` does not render, although that file's own
+  doc comment claims each disabled group carries such a note. Reproduced with
+  `git stash` on a clean `develop`. That is F-03's surface, so it was left
+  unfixed — but F-04's own acceptance says `packages/ui` tests green, so it
+  needs an ownership call.
+
+Not done yet: editor block, toolbar, title field, save indicator, import/paste
+UI, the `notes/new` + `notes/[noteId]` routes, New-note wiring, and the
+route-level tests named in the deliverables.
 
 ## Completion Instructions
 

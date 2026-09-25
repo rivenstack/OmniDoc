@@ -79,10 +79,11 @@ export type LoginFormProps = {
  * 2. **Unbacked controls are visible but disabled**, per `@user`. Social
  *    sign-in, "Remember this device", password recovery and account creation
  *    have no endpoint in `docs/api/openapi.yaml` (`CreateSessionRequest` is
- *    `email` + `password` only), so `disabled` is the honest rendering. Each
- *    group carries a short note saying so: a disabled control with no
- *    explanation is just a broken control. Enabling them is a contract change,
- *    not a frontend tweak.
+ *    `email` + `password` only), so `disabled` is the honest rendering. The
+ *    account-creation group carries a short note saying so; the social group
+ *    deliberately does **not** (`@user`, 2026-09-25) — those are placeholders
+ *    for a feature that will arrive later, and the button labels carry the
+ *    message. Enabling any of them is a contract change, not a frontend tweak.
  * 3. **The title is the page `h1`** (`CardTitle level={1}`) and the form has a
  *    real `role="alert"` error region, so the outline and the failure state are
  *    usable by assistive tech.

@@ -6,12 +6,17 @@ export type {
   WorkspaceList,
 } from "./types";
 export {
-  WorkspaceSwitcher,
+  NOTE_FORBIDDEN_MESSAGE,
   WORKSPACE_FORBIDDEN_MESSAGE,
+} from "./denials";
+export {
+  WorkspaceSwitcher,
   type WorkspaceSwitcherProps,
 } from "./workspace-switcher";
 export {
   MobileTabBar,
+  MOBILE_TAB_BAR_CLEARANCE_CLASS,
+  MOBILE_TAB_BAR_ROW_HEIGHT_CLASS,
   type MobileTabBarProps,
   type MobileTabItem,
 } from "./mobile-tab-bar";

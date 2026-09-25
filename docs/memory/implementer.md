@@ -330,6 +330,21 @@
   in the URL) plus a request header carrying the path for the stale-session
   case. `safeNextPath` must reject `//host`, absolute URLs and backslashes —
   otherwise sign-in becomes an open redirect.
+- **2026-09-25 (F-03 regression, fixed):** `proxy.ts` must never read *cookie
+  presence* as "signed in". A `JSESSIONID` outlives the session it names
+  (Spring's 30-minute idle default; an API restart with in-memory sessions
+  wipes them all), so "present but rejected" is a normal state, not an edge
+  case. Skipping `/sign-in` on presence while `(app)/layout.tsx` bounced back
+  on the API's `401` produced an **infinite redirect loop** the user could only
+  escape by clearing cookies — and each hop re-ran a full server render.
+  Rule: exactly **one** layer decides to skip sign-in (`resolveSignInGate` in
+  `lib/identity/session.ts`, which asks the API); the proxy redirects only when
+  the cookie is **absent**. A destination is not safe merely because it is
+  same-origin: `?next=/sign-in` (also `/sign-in/`) points back at the route
+  making the decision, so destinations go through `authenticatedDestination`,
+  not bare `safeNextPath`. Reproduce the loop class cheaply with
+  `curl -b 'JSESSIONID=stale' -L --max-redirs 6 http://localhost:3311/notes/new`
+  — "Maximum (6) redirects followed" *is* the bug.
 - **2026-09-24 (F-03):** Spring Security details the FE must respect: the
   session cookie is `JSESSIONID` (httpOnly), CSRF is `spa()` (readable
   `XSRF-TOKEN` + `X-XSRF-TOKEN` header), **POST `/api/v1/session` is
@@ -395,3 +410,73 @@
   of the session (`command not found: node`, `curl`, `tail`). Recovery is
   `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"`
   — on this machine `node`, `npx`, `pnpm` and `curl` all live under `/usr/sbin`.
+- **2026-09-25 (F-04, foundation):** TipTap 3.31.3 renders under this repo's
+  jsdom/Vitest setup, but **only** with `immediatelyRender: false`. The default
+  throws on the server, so that flag is required for Next SSR too — set it on
+  every `useEditor` call rather than discovering it in the browser.
+- **2026-09-25 (F-04):** Zustand v5 keeps actions **inside** state. The store
+  handle exposes only `getState`/`setState`/`subscribe`, so `store.dispatch(...)`
+  is `undefined` at runtime — `store.getState().dispatch(...)` is the call. The
+  failure mode is a `TypeError` in tests, not a type error, when the test's
+  store handle is typed loosely.
+- **2026-09-25 (F-04):** do not hand-roll a second `fetch` wrapper for a new
+  port. `apps/web/app/lib/api/transport.ts` owns origin + cookie/CSRF relay +
+  timeout and returns `null` on transport failure; each port maps that onto its
+  own `unavailable`. The F-03 identity tests passed unchanged after the
+  extraction, which is the cheap proof the refactor was behaviour-preserving.
+- **2026-09-25 (F-04):** save status must be derived from revision counters, not
+  a boolean `dirty` flag. A save captures the revision it sends; if the user
+  types while it is in flight, the counter moves past `savedRevision` and the
+  badge stops claiming `saved`. A boolean cannot express that without a race,
+  and the race is exactly how an editor starts lying about persistence.
+- **2026-09-25 (environment):** `next build` rewrites
+  `apps/web/next-env.d.ts` to import from `.next/types/...`; `next dev` writes
+  the `.next/dev/types/...` form back. The repo tracks the **dev** variant, so
+  after running a build, `git checkout HEAD -- apps/web/next-env.d.ts` before
+  committing or the diff carries pure churn.
+- **2026-09-25 (F-04, silent CSS failure — important):** Tailwind v4 source
+  detection roots at the consuming app and ignores `node_modules`, so
+  `packages/ui/src/styles/globals.css` registers every directory of component
+  source with `@source`. **A new directory under `packages/ui/src` produces no
+  CSS at all until it is registered.** Symptoms: utilities used only in the new
+  directory compile to nothing (`min-h-[50vh]` absent from the stylesheet,
+  computed `min-height: 0px`) while the component still renders and typechecks
+  and its unit tests still pass, because jsdom does not apply the app CSS.
+  Nothing fails until you look at the page. Adding `@source "../capture"` (plus
+  the matching `@source not` test exclusions) fixed it. Always check a new
+  `packages/ui/src/<dir>` against this file.
+- **2026-09-25 (F-04):** TipTap's `editorProps.attributes.class` **replaces**
+  the editor view's default class instead of adding to it. Setting
+  `class: "od-capture-body"` silently drops `ProseMirror`, which removes the
+  editor's base styles and breaks every `[&_.ProseMirror]:…` rule. Write
+  `class: "ProseMirror od-capture-body"`.
+- **2026-09-25 (F-04, a11y pattern):** a visible badge and a polite live region
+  carrying the same words ("Saving…") is read twice by AT. Make the visible one
+  `aria-hidden="true"` and let the status region own the exposed text. In tests,
+  `getByText` still matches both (it ignores `aria-hidden`), so assert on
+  `getByRole("status")` for the announcement and query the badge by DOM.
+- **2026-09-25 (F-04):** hiding a focusable `<input type="file">` behind a
+  styled `<label>` leaves keyboard focus invisible unless the input is a `peer`
+  and the label mirrors the ring
+  (`peer-focus-visible:ring-3 peer-focus-visible:ring-ring`). Keep the input in
+  the DOM with `sr-only peer` — never `display: none`.
+- **2026-09-25 (browser verification):** a Playwright click in a **backgrounded**
+  tab can time out with "waiting for element to be visible, enabled and stable"
+  even though the element resolved. Dispatch the click inside
+  `page.evaluate(el => el.click())` when driving a second tab for a
+  two-session test.
+- **2026-09-25 (shell layout):** `MobileTabBar` is `position: fixed`, so it is
+  out of flow and **nothing reserves room for it**. Any page whose content
+  reaches the viewport bottom on `< md` has its last element hidden underneath.
+  The reserve lives on `SidebarInset` in `apps/web/app/(app)/shell.tsx` and its
+  value comes from `MOBILE_TAB_BAR_CLEARANCE_CLASS` in
+  `packages/ui/src/shell/mobile-tab-bar.tsx`, beside the row height it derives
+  from (56px row + 1px `border-t` + `env(safe-area-inset-bottom)`), so the two
+  cannot drift. Symptom to recognise: "the last control on the page is cut off
+  on mobile" is never a page bug — check the shell first.
+- **2026-09-25 (Base UI / primitives):** `Separator orientation="vertical"` emits
+  `data-vertical:self-stretch`, and `align-self` **overrides the parent's
+  `items-center`** for that child. If you also set an explicit height, stretch
+  cannot apply and the rule drops to the cross-axis start — it looks glued to the
+  top. Do not fight it with `self-center` (equal specificity, order-dependent):
+  drop the height and use symmetric margin so `stretch` yields a centred rule.

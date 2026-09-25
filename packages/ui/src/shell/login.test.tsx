@@ -116,17 +116,24 @@ describe("LoginForm — unbacked controls", () => {
     );
   });
 
-  it("says why those controls are unavailable instead of leaving them unexplained", () => {
+  it("explains the account-creation group rather than leaving it unexplained", () => {
     renderLogin();
 
-    expect(
-      screen.getByText("Social sign-in isn’t available yet."),
-    ).toBeTruthy();
     expect(
       screen.getByText(
         "Account creation, password recovery and remembered devices aren’t available yet.",
       ),
     ).toBeTruthy();
+  });
+
+  it("leaves the disabled social buttons unannotated on purpose", () => {
+    renderLogin();
+
+    // `@user` removed the explanatory note for this group deliberately: these are
+    // disabled placeholders for a feature that will arrive later, and the button
+    // labels carry the whole message. Asserted so a future reader does not
+    // "restore" the note and re-break the intent.
+    expect(screen.queryByText(/Social sign-in isn.t available yet/)).toBeNull();
   });
 
   it("does not render password recovery or account creation as links with no destination", () => {

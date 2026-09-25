@@ -27,6 +27,7 @@
 @source "../providers";
 @source "../lib";
 @source "../shell";
+@source "../capture";
 
 /* Test files are scanned for classes only if they are real render targets;
    excluding them keeps audit strings in assertions from generating dead
@@ -37,6 +38,8 @@
 @source not "../providers/**/*.test.tsx";
 @source not "../shell/**/*.test.tsx";
 @source not "../shell/**/*.test.ts";
+@source not "../capture/**/*.test.tsx";
+@source not "../capture/**/*.test.ts";
 
 /* The app tree that renders these components. */
 @source "../../../../apps/web/app";

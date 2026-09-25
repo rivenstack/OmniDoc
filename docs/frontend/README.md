@@ -158,7 +158,13 @@ Notes that matter day to day:
   hydration and the UI package stays free of app imports. `next` is re-validated
   with `safeNextPath` in the page *and* again in the action — a URL-supplied
   destination is attacker-controlled, and without that check sign-in is an open
-  redirect. Unbacked controls (social sign-in, remember-device, password
+  redirect. **Only `resolveSignInGate` (`lib/identity/session.ts`) may skip the
+  form**, and it asks the API — never "is a `JSESSIONID` present?", which stays
+  true long after the session it names is gone (Spring's 30-minute idle
+  timeout, or an API restart with in-memory sessions). `proxy.ts` therefore
+  leaves `/sign-in` alone, because deciding it in both layers from different
+  evidence made a stale cookie an infinite bounce (fixed 2026-09-25).
+  Unbacked controls (social sign-in, remember-device, password
   recovery, account creation) render **disabled with a one-line note** by
   `@user`'s decision; enabling them is a contract change, not a frontend tweak.
 - **Shell blocks live in `packages/ui/src/shell`** (F-02): `SkipLink`,
