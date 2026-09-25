@@ -71,6 +71,7 @@ type SendOptions = {
   workspaceSelector?: string;
   /** Overrides `json` — used by the multipart import path. */
   body?: BodyInit;
+  /** Set only when the body is not self-describing (see the note below). */
   contentType?: string;
 };
 
@@ -97,7 +98,12 @@ export async function sendApiRequest(
     headers.set(CSRF_HEADER_NAME, options.jar.csrf);
   }
   if (options.body !== undefined) {
-    headers.set("Content-Type", options.contentType ?? "application/octet-stream");
+    // Only set a type when the caller names one. A `FormData` body must set its
+    // own `multipart/form-data; boundary=…`, and hardcoding a type here would
+    // strip the boundary and make the API unable to parse the request.
+    if (options.contentType) {
+      headers.set("Content-Type", options.contentType);
+    }
   } else if (options.json !== undefined) {
     headers.set("Content-Type", "application/json");
   }

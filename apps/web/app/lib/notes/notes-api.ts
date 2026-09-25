@@ -101,6 +101,15 @@ export type IngestionJobOutcome =
   | { status: "not_found" }
   | { status: "unavailable" };
 
+/** Outcome of enqueuing an import. */
+export type ImportEnqueueOutcome =
+  | { status: "queued"; job: IngestionJob }
+  | { status: "unauthorized" }
+  | { status: "forbidden" }
+  | { status: "unsupported_type" }
+  | { status: "too_large" }
+  | { status: "unavailable" };
+
 /**
  * Minimum shape check on a `Note` response.
  *
@@ -326,6 +335,52 @@ export async function listNotes(
   }
   const page = asNotePage(await readJson(response));
   return page ? { status: "listed", ...page } : { status: "unavailable" };
+}
+
+/**
+ * Enqueue one file for ingestion.
+ *
+ * Each call is one job, so each imported file keeps its own status — a batch
+ * endpoint would let one failure hide behind its siblings' success.
+ */
+export async function enqueueImport(
+  workspaceId: string,
+  file: File,
+  jar: ApiJar = {},
+): Promise<ImportEnqueueOutcome> {
+  const form = new FormData();
+  form.set("file", file);
+  form.set("fileName", file.name);
+  if (file.type) {
+    form.set("mediaType", file.type);
+  }
+
+  const response = await sendApiRequest(INGESTION_JOBS_PATH, {
+    method: "POST",
+    jar,
+    body: form,
+    workspaceSelector: workspaceId,
+  });
+  if (!response) {
+    return { status: "unavailable" };
+  }
+  if (response.status === 401) {
+    return { status: "unauthorized" };
+  }
+  if (response.status === 403) {
+    return { status: "forbidden" };
+  }
+  if (response.status === 415) {
+    return { status: "unsupported_type" };
+  }
+  if (response.status === 413) {
+    return { status: "too_large" };
+  }
+  if (!response.ok) {
+    return { status: "unavailable" };
+  }
+  const job = asIngestionJob(await readJson(response));
+  return job ? { status: "queued", job } : { status: "unavailable" };
 }
 
 /** Read one ingestion job's progress. */
