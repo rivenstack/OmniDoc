@@ -111,6 +111,21 @@ Program of record:
   need a call: a fifth save state `error` (see `docs/design/now.md`), and a
   pre-existing red `packages/ui` test on develop (`login.test.tsx` asserts an
   explanation note the sign-in block does not render)
+- **2026-09-25:** **F-04 blocks built**, uncommitted pending `@user` review.
+  `@user` chose per-block options (`docs/design/now.md` decisions log):
+  document-first shell, static toolbar + selection bubble, borderless title,
+  text-only save indicator, drop zone with per-file rows, inline conflict
+  banner. `/notes/new` lands directly in the editor and `/notes/[noteId]`
+  resolves through the notes port; `403`/`404` collapse to one generic denial.
+  Verified live against the local stack: blank draft creates nothing; stored
+  body is ProseMirror JSON (bold + codeBlock in Postgres, 5 versions); a real
+  `409` from a second tab shows the conflict banner with edits preserved and
+  autosave stopped; "Keep my edits" resolves on top of the server's version.
+  ui + web typecheck/lint/test green (276 ui, 62 web); build green (12 routes).
+  Fixed two silent defects: Tailwind never scanned `packages/ui/src/capture`
+  (missing `@source`), and `editorProps.attributes.class` was replacing TipTap's
+  `ProseMirror` class. Gaps: CodeMirror for fenced code deferred; no table
+  extension; MSW still unauthorized; import end-to-end depends on B-05
 - **2026-09-24:** **F-03 completed and archived** (branch `F03-auth-ui`).
   The identity **port** landed in `apps/web/app/lib/identity/` (typed over
   `docs/api/openapi.yaml`; `JSESSIONID` + `XSRF-TOKEN` relayed by Next;
@@ -176,7 +191,7 @@ Program of record:
 | F-01 Design tokens + shadcn | frontend | Implementer (front-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-16-P1-F01-commander-implementer.md` |
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
-| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **in progress** 2026-09-25 — notes port, shared transport, save cycle and import-status landed on branch `F04-capture-tiptap`; visual blocks await `@user` references | `docs/handoffs/active/lane-frontend.md` |
+| F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **blocks built** 2026-09-25 — notes port, shared transport, save cycle, import-status committed; capture blocks + `/notes/new` + `/notes/[noteId]` in the working tree awaiting `@user` review | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |

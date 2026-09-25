@@ -419,3 +419,49 @@
   the `.next/dev/types/...` form back. The repo tracks the **dev** variant, so
   after running a build, `git checkout HEAD -- apps/web/next-env.d.ts` before
   committing or the diff carries pure churn.
+- **2026-09-25 (F-04, silent CSS failure — important):** Tailwind v4 source
+  detection roots at the consuming app and ignores `node_modules`, so
+  `packages/ui/src/styles/globals.css` registers every directory of component
+  source with `@source`. **A new directory under `packages/ui/src` produces no
+  CSS at all until it is registered.** Symptoms: utilities used only in the new
+  directory compile to nothing (`min-h-[50vh]` absent from the stylesheet,
+  computed `min-height: 0px`) while the component still renders and typechecks
+  and its unit tests still pass, because jsdom does not apply the app CSS.
+  Nothing fails until you look at the page. Adding `@source "../capture"` (plus
+  the matching `@source not` test exclusions) fixed it. Always check a new
+  `packages/ui/src/<dir>` against this file.
+- **2026-09-25 (F-04):** TipTap's `editorProps.attributes.class` **replaces**
+  the editor view's default class instead of adding to it. Setting
+  `class: "od-capture-body"` silently drops `ProseMirror`, which removes the
+  editor's base styles and breaks every `[&_.ProseMirror]:…` rule. Write
+  `class: "ProseMirror od-capture-body"`.
+- **2026-09-25 (F-04, a11y pattern):** a visible badge and a polite live region
+  carrying the same words ("Saving…") is read twice by AT. Make the visible one
+  `aria-hidden="true"` and let the status region own the exposed text. In tests,
+  `getByText` still matches both (it ignores `aria-hidden`), so assert on
+  `getByRole("status")` for the announcement and query the badge by DOM.
+- **2026-09-25 (F-04):** hiding a focusable `<input type="file">` behind a
+  styled `<label>` leaves keyboard focus invisible unless the input is a `peer`
+  and the label mirrors the ring
+  (`peer-focus-visible:ring-3 peer-focus-visible:ring-ring`). Keep the input in
+  the DOM with `sr-only peer` — never `display: none`.
+- **2026-09-25 (browser verification):** a Playwright click in a **backgrounded**
+  tab can time out with "waiting for element to be visible, enabled and stable"
+  even though the element resolved. Dispatch the click inside
+  `page.evaluate(el => el.click())` when driving a second tab for a
+  two-session test.
+- **2026-09-25 (shell layout):** `MobileTabBar` is `position: fixed`, so it is
+  out of flow and **nothing reserves room for it**. Any page whose content
+  reaches the viewport bottom on `< md` has its last element hidden underneath.
+  The reserve lives on `SidebarInset` in `apps/web/app/(app)/shell.tsx` and its
+  value comes from `MOBILE_TAB_BAR_CLEARANCE_CLASS` in
+  `packages/ui/src/shell/mobile-tab-bar.tsx`, beside the row height it derives
+  from (56px row + 1px `border-t` + `env(safe-area-inset-bottom)`), so the two
+  cannot drift. Symptom to recognise: "the last control on the page is cut off
+  on mobile" is never a page bug — check the shell first.
+- **2026-09-25 (Base UI / primitives):** `Separator orientation="vertical"` emits
+  `data-vertical:self-stretch`, and `align-self` **overrides the parent's
+  `items-center`** for that child. If you also set an explicit height, stretch
+  cannot apply and the rule drops to the cross-axis start — it looks glued to the
+  top. Do not fight it with `self-center` (equal specificity, order-dependent):
+  drop the height and use symmetric margin so `stretch` yields a centred rule.
