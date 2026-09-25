@@ -283,6 +283,28 @@ describe("FormattingToolbar", () => {
     expect(holder.editor?.isActive("bold")).toBe(true);
   });
 
+  it("pins the row under the shell's sticky top bar", () => {
+    const { container } = render(
+      <EditorHarness>
+        {(editor) => <FormattingToolbar editor={editor} />}
+      </EditorHarness>,
+    );
+
+    const toolbar = screen.getByRole("toolbar", { name: "Formatting" });
+    const sticky = container.querySelector(
+      "[data-slot=formatting-toolbar-sticky]",
+    );
+
+    // jsdom has no layout, so stickiness itself cannot be observed here. What
+    // this holds is the contract it rests on: the row lives in a wrapper that
+    // pins it below the shell's `h-14` top bar and hides what scrolls under it,
+    // so the commands stay in reach of the caret.
+    expect(toolbar.parentElement).toBe(sticky);
+    expect(sticky?.className).toContain("sticky");
+    expect(sticky?.className).toContain("top-14");
+    expect(sticky?.className).toContain("bg-background");
+  });
+
   it("reports pressed state through aria-pressed", () => {
     const holder: { editor: Editor | null } = { editor: null };
     render(

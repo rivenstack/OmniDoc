@@ -43,11 +43,43 @@ import { cn } from "../lib/utils";
 const TOOLBAR_SEPARATOR_CLASS = "mx-1 my-0.5";
 
 /**
- * Capture block — formatting toolbar (option C: a static row for block-level
+ * The app shell's top bar is `h-14` and `sticky top-0`
+ * (`apps/web/app/(app)/shell.tsx`), so the toolbar parks directly under it.
+ */
+const TOOLBAR_STICKY_CLASS = "sticky top-14 z-20";
+
+/** The shell's top-bar height, used when no toolbar is on screen to measure. */
+const TOP_BAR_HEIGHT = 56;
+
+/** How far above the selection the inline bubble floats. */
+const BUBBLE_CLEARANCE = 44;
+
+/** The gap under the selection when the bubble has to drop below it. */
+const BUBBLE_DROP = 8;
+
+/**
+ * The bottom edge of the chrome above the body: the sticky formatting toolbar
+ * when one is on screen, otherwise the shell's top bar.
+ *
+ * Measured rather than assumed — the toolbar wraps onto a second row on narrow
+ * viewports, and the bubble has to clear whatever is actually there. A zero
+ * height means the toolbar is not laid out (jsdom, or detached), so the top bar
+ * stands in for it.
+ */
+function topChromeBottom(): number {
+  const sticky = document.querySelector(
+    '[data-slot="formatting-toolbar-sticky"]',
+  );
+  const rect = sticky?.getBoundingClientRect();
+  return rect && rect.height > 0 ? rect.bottom : TOP_BAR_HEIGHT;
+}
+
+/**
+ * Capture block — formatting toolbar (option C: a sticky row for block-level
  * commands, plus a selection toolbar for inline marks).
  *
  * Both surfaces issue the same commands, and every command ends with
- * `.focus()`, so focus returns to the document the user was editing. The static
+ * `.focus()`, so focus returns to the document the user was editing. The sticky
  * row is the **complete** set of controls and is keyboard-reachable; the
  * selection toolbar is a pointer convenience on top of it. That split is
  * deliberate: nothing becomes mouse-only because a bubble exists
@@ -91,135 +123,162 @@ export function FormattingToolbar({
 
   return (
     <TooltipProvider>
+      {/*
+        Sticky row. Scrolling up to reach a button and back down to the caret is
+        the one cost this block must not charge the user — `capture.md` §3 asks
+        for exactly this on mobile, and the desk is no different.
+
+        The **wrapper** carries the opaque `bg-background` surface, not the
+        toolbar itself: `bg-muted/30` on a sticky element would let the text it
+        is covering read through it, and swapping the panel for a solid slab
+        would change the look it has in flow. Stacked, the two surfaces
+        composite to the same tint in either position.
+
+        `className` stays on the toolbar, where callers already put it.
+      */}
       <div
-        data-slot="formatting-toolbar"
-        role="toolbar"
-        aria-label="Formatting"
-        aria-orientation="horizontal"
-        className={cn(
-          "flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/30 p-1",
-          className,
-        )}
+        data-slot="formatting-toolbar-sticky"
+        className={cn(TOOLBAR_STICKY_CLASS, "bg-background py-1")}
       >
-        <ToolbarButton
-          label="Undo"
-          disabled={!state.canUndo}
-          onRun={() => editor.chain().focus().undo().run()}
+        <div
+          data-slot="formatting-toolbar"
+          role="toolbar"
+          aria-label="Formatting"
+          aria-orientation="horizontal"
+          className={cn(
+            "flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/30 p-1",
+            className,
+          )}
         >
-          <IconArrowBackUp aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Redo"
-          disabled={!state.canRedo}
-          onRun={() => editor.chain().focus().redo().run()}
-        >
-          <IconArrowForwardUp aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-
-        <Separator orientation="vertical" className={TOOLBAR_SEPARATOR_CLASS} />
-
-        {(
-          [
-            {
-              label: "Heading 1",
-              icon: <IconH1 aria-hidden="true" className="size-4" />,
-              pressed: state.h1,
-              run: () =>
-                editor.chain().focus().toggleHeading({ level: 1 }).run(),
-            },
-            {
-              label: "Heading 2",
-              icon: <IconH2 aria-hidden="true" className="size-4" />,
-              pressed: state.h2,
-              run: () =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run(),
-            },
-            {
-              label: "Heading 3",
-              icon: <IconH3 aria-hidden="true" className="size-4" />,
-              pressed: state.h3,
-              run: () =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run(),
-            },
-          ] as const
-        ).map((item) => (
           <ToolbarButton
-            key={item.label}
-            label={item.label}
-            pressed={item.pressed}
-            onRun={item.run}
+            label="Undo"
+            disabled={!state.canUndo}
+            onRun={() => editor.chain().focus().undo().run()}
           >
-            {item.icon}
+            <IconArrowBackUp aria-hidden="true" className="size-4" />
           </ToolbarButton>
-        ))}
+          <ToolbarButton
+            label="Redo"
+            disabled={!state.canRedo}
+            onRun={() => editor.chain().focus().redo().run()}
+          >
+            <IconArrowForwardUp aria-hidden="true" className="size-4" />
+          </ToolbarButton>
 
-        <Separator orientation="vertical" className={TOOLBAR_SEPARATOR_CLASS} />
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
 
-        <ToolbarButton
-          label="Bullet list"
-          pressed={state.bulletList}
-          onRun={() => editor.chain().focus().toggleBulletList().run()}
-        >
-          <IconList aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Numbered list"
-          pressed={state.orderedList}
-          onRun={() => editor.chain().focus().toggleOrderedList().run()}
-        >
-          <IconListNumbers aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Quote"
-          pressed={state.blockquote}
-          onRun={() => editor.chain().focus().toggleBlockquote().run()}
-        >
-          <IconBlockquote aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Code block"
-          pressed={state.codeBlock}
-          onRun={() => editor.chain().focus().toggleCodeBlock().run()}
-        >
-          <IconCodeDots aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Divider"
-          onRun={() => editor.chain().focus().setHorizontalRule().run()}
-        >
-          <IconMinus aria-hidden="true" className="size-4" />
-        </ToolbarButton>
+          {(
+            [
+              {
+                label: "Heading 1",
+                icon: <IconH1 aria-hidden="true" className="size-4" />,
+                pressed: state.h1,
+                run: () =>
+                  editor.chain().focus().toggleHeading({ level: 1 }).run(),
+              },
+              {
+                label: "Heading 2",
+                icon: <IconH2 aria-hidden="true" className="size-4" />,
+                pressed: state.h2,
+                run: () =>
+                  editor.chain().focus().toggleHeading({ level: 2 }).run(),
+              },
+              {
+                label: "Heading 3",
+                icon: <IconH3 aria-hidden="true" className="size-4" />,
+                pressed: state.h3,
+                run: () =>
+                  editor.chain().focus().toggleHeading({ level: 3 }).run(),
+              },
+            ] as const
+          ).map((item) => (
+            <ToolbarButton
+              key={item.label}
+              label={item.label}
+              pressed={item.pressed}
+              onRun={item.run}
+            >
+              {item.icon}
+            </ToolbarButton>
+          ))}
 
-        <Separator orientation="vertical" className={TOOLBAR_SEPARATOR_CLASS} />
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
 
-        <ToolbarButton
-          label="Bold"
-          pressed={state.bold}
-          onRun={() => editor.chain().focus().toggleBold().run()}
-        >
-          <IconBold aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Italic"
-          pressed={state.italic}
-          onRun={() => editor.chain().focus().toggleItalic().run()}
-        >
-          <IconItalic aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Strikethrough"
-          pressed={state.strike}
-          onRun={() => editor.chain().focus().toggleStrike().run()}
-        >
-          <IconStrikethrough aria-hidden="true" className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Inline code"
-          pressed={state.code}
-          onRun={() => editor.chain().focus().toggleCode().run()}
-        >
-          <IconCode aria-hidden="true" className="size-4" />
-        </ToolbarButton>
+          <ToolbarButton
+            label="Bullet list"
+            pressed={state.bulletList}
+            onRun={() => editor.chain().focus().toggleBulletList().run()}
+          >
+            <IconList aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Numbered list"
+            pressed={state.orderedList}
+            onRun={() => editor.chain().focus().toggleOrderedList().run()}
+          >
+            <IconListNumbers aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Quote"
+            pressed={state.blockquote}
+            onRun={() => editor.chain().focus().toggleBlockquote().run()}
+          >
+            <IconBlockquote aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Code block"
+            pressed={state.codeBlock}
+            onRun={() => editor.chain().focus().toggleCodeBlock().run()}
+          >
+            <IconCodeDots aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Divider"
+            onRun={() => editor.chain().focus().setHorizontalRule().run()}
+          >
+            <IconMinus aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
+
+          <ToolbarButton
+            label="Bold"
+            pressed={state.bold}
+            onRun={() => editor.chain().focus().toggleBold().run()}
+          >
+            <IconBold aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Italic"
+            pressed={state.italic}
+            onRun={() => editor.chain().focus().toggleItalic().run()}
+          >
+            <IconItalic aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Strikethrough"
+            pressed={state.strike}
+            onRun={() => editor.chain().focus().toggleStrike().run()}
+          >
+            <IconStrikethrough aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Inline code"
+            pressed={state.code}
+            onRun={() => editor.chain().focus().toggleCode().run()}
+          >
+            <IconCode aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+        </div>
       </div>
     </TooltipProvider>
   );
@@ -279,8 +338,14 @@ export function SelectionToolbar({
         return;
       }
       setPosition({
-        // Flip below when the selection is near the top of the viewport.
-        top: rect.top > 56 ? rect.top - 44 : rect.bottom + 8,
+        // Flip below when there is no room above the selection. The ceiling is
+        // the chrome, not the top of the viewport: with the toolbar pinned
+        // there, `rect.top > 56` would park the bubble on the very row it is a
+        // duplicate of.
+        top:
+          rect.top - BUBBLE_CLEARANCE >= topChromeBottom()
+            ? rect.top - BUBBLE_CLEARANCE
+            : rect.bottom + BUBBLE_DROP,
         left: rect.left + rect.width / 2,
       });
     }

@@ -390,6 +390,14 @@ export function CaptureSurface({
             // (`ui-qa-checklist.md` §5.9).
             "min-w-0 break-words text-base text-foreground outline-none",
             "[&_.ProseMirror]:min-h-[40vh] [&_.ProseMirror]:outline-none",
+            // The toolbar is sticky, so the top of the viewport is chrome. A
+            // focused block that the browser scrolls into view must land below
+            // it — focus hidden behind a sticky bar fails
+            // (`ui-qa-checklist.md` §1.2). 9rem covers the 56px top bar plus a
+            // toolbar that has wrapped to two rows on a narrow viewport, and
+            // `scroll-margin` does not inherit, so each tab stop inside the body
+            // carries it.
+            "[&_.ProseMirror]:scroll-mt-36 [&_pre]:scroll-mt-36 [&_a]:scroll-mt-36",
             "[&_p]:my-3",
             "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
             "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",

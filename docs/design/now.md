@@ -40,6 +40,13 @@ Review pass 2026-09-25: the shell now reserves bottom clearance for the fixed
 **every** page being covered on small viewports — a shell defect F-04 surfaced
 rather than caused. Toolbar separators are centred. See the lane head for the
 measurements.
+Review pass 2026-09-25 (second): the formatting row is **sticky** under the
+shell's `h-14` top bar (`sticky top-14 z-20`, opaque `bg-background` wrapper so
+the `bg-muted/30` panel keeps its look while covering what scrolls beneath it),
+per `@user`. The inline selection bubble now measures the toolbar's real bottom
+edge instead of assuming the top bar, so it drops below the selection rather
+than landing on the row it duplicates; the body's tab stops carry
+`scroll-margin` so focus never hides behind the sticky chrome (QA 1.2).
 `/notes/new` lands directly in the editor and `/notes/[noteId]` resolves through
 the notes port. Blocks live in `packages/ui/src/capture/`: `CaptureSurface`
 (document-first, no card), `NoteTitleField` (borderless), `FormattingToolbar`
