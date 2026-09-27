@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
@@ -95,7 +95,7 @@ function topChromeBottom(): number {
  * editor packages. This positions from the DOM selection instead and adds no
  * dependency. The tradeoff is accepted and recorded in `docs/design/now.md`.
  */
-export function FormattingToolbar({
+function FormattingToolbarView({
   editor,
   className,
 }: {
@@ -285,6 +285,15 @@ export function FormattingToolbar({
 }
 
 /**
+ * Memoised: the only props are the editor (stable for the life of a surface)
+ * and a class name, and the component subscribes to the editor's own state for
+ * everything that changes. Without this, every keystroke *anywhere* on the
+ * surface — including in the title field — re-rendered this whole row of
+ * tooltips for an editor state that had not moved.
+ */
+export const FormattingToolbar = memo(FormattingToolbarView);
+
+/**
  * Inline marks for a live text selection.
  *
  * Rendered only while a non-empty selection sits inside the editor surface, so
@@ -296,7 +305,7 @@ export function FormattingToolbar({
  * on the same midpoint under either direction, so it needs no logical
  * equivalent (`architecture.md` §8 is about start/end alignment, not centring).
  */
-export function SelectionToolbar({
+function SelectionToolbarView({
   editor,
   className,
 }: {
@@ -407,6 +416,12 @@ export function SelectionToolbar({
     </TooltipProvider>
   );
 }
+
+/**
+ * Memoised for the same reason as `FormattingToolbar`: it re-renders from the
+ * editor's selection state, not from unrelated changes on the surface.
+ */
+export const SelectionToolbar = memo(SelectionToolbarView);
 
 type ToolbarButtonProps = {
   label: string;

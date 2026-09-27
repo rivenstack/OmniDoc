@@ -6,7 +6,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,7 @@ import { SaveProblemBanner } from "./save-problem-banner";
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 /** A mounted editor plus whatever block is under test. */
@@ -408,6 +409,30 @@ describe("CaptureSurface", () => {
 
     expect(screen.getByRole("textbox", { name: "Note body" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Note title" })).toBeTruthy();
+  });
+
+  it("does not rebuild the editor view when the title changes", async () => {
+    // The surface re-renders on every keystroke (title state, plus the save
+    // store dispatch). TipTap diffs the options it was handed against the live
+    // editor after each of those commits and calls `editor.setOptions(...)` — a
+    // full `view.setProps` + `view.updateState` — whenever any option differs by
+    // *identity*. Building `extensions`/`editorProps` inline made that true of
+    // every render, which is the lag felt while typing a title on a new note.
+    const setOptions = vi.spyOn(Editor.prototype, "setOptions");
+    renderDraft(async (): Promise<SaveResult> => saved());
+
+    // Let the editor mount and TipTap's deferred 1ms `scheduleDestroy` check
+    // settle, so the count below starts from a mounted editor.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    const afterMount = setOptions.mock.calls.length;
+
+    const title = screen.getByRole("textbox", { name: "Note title" });
+    fireEvent.change(title, { target: { value: "E" } });
+    fireEvent.change(title, { target: { value: "Er" } });
+
+    expect(setOptions.mock.calls.length).toBe(afterMount);
   });
 
   it("does not invent a note from an untouched editor", async () => {
