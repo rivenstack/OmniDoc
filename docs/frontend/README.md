@@ -83,7 +83,11 @@ pin below was registry-verified on 2026-09-14).
 Notes that matter day to day:
 
 - **Sanitization is mandatory** on the note/markdown render path — note
-  content is untrusted UGC (`architecture.md` §6).
+  content is untrusted UGC (`architecture.md` §6) — and it is **landed**:
+  `packages/ui/src/markdown/` is the single sanitized render path
+  (`Markdown` + `markdownSanitizeSchema`, on the ADR-0003 §4 pins). Consume
+  that block; do not add a second markdown pipeline, and do not widen the
+  schema to make a feature render.
 - **No client cache library, no i18n runtime, no second component base**
   may be added without reopening ADR-0003.
 - **Server Actions may only call project-owned ports / route handlers.**

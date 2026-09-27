@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-09-25
+updated: 2026-09-27
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -32,7 +32,7 @@ B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, and
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-05 ready** (organize; Collections sub-slice soft-stopped) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-12 ready** (sanitized markdown render pipeline; F-05 superseded before execution) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05** |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -40,12 +40,13 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → F-05 **ready**
-  (organize: Inbox as the unfiled home + the Notes list over S-02
-  `listNotes`; opened 2026-09-25 after F-04 was accepted). Structure from
-  `docs/design/system-ux.md`; UI details from `@user` references. The
-  **Collections** folders/tags sub-slice is soft-stopped — S-02 has no
-  collections/tags surface.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-12 ready**
+  (sanitized markdown render pipeline: `react-markdown` + `remark-gfm` behind
+  `rehype-sanitize`, plus the ADR-0003 §Verification hostile-payload test;
+  opened 2026-09-27 after `@user` triaged backlog `BL-19`). Behaviour-only by
+  `@user` decision — no look work in this slice. **F-05 was superseded before
+  execution** (its branch had no commits) and returns to `listed`, still
+  blocked on the Collections gap.
 - Backend: `docs/handoffs/active/lane-backend.md` → B-05 ingestion /
   chunking jobs + progress (`ready`) — opened 2026-09-20 after S-03
   Commander-validated PASS
@@ -61,11 +62,15 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-04c** Implementer closeout | **completed** (archived 2026-09-20) | Unblocked S-03 |
 | **S-03** (mock corpus, BE) | **completed** (archived 2026-09-20) | Unblocks F-03+ / F-04+ fixtures; unblocked B-05. FE still needs a narrowly scoped `web → mocks` import exception before wiring MSW in-app |
 | **B-05** | **live** | Backend ingestion progress; does not block F-05 |
-| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field; F-05's folders/tags sub-slice is soft-stopped. Needs an `@user`/Commander sequencing decision (contract change). |
+| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05's folders/tags sub-slice stays soft-stopped, and F-05 is now back to `listed` — the remediation is unchanged: an `@user`/Commander sequencing decision (contract change). |
+| **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- F-05 **superseded before execution** (`status: blocked`, 2026-09-27 — F-12
+  took the lane head; no F-05 work existed):
+  `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`
 - F-04 completed (Commander-validated PASS 2026-09-25):
   `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md`
 - F-03 completed (2026-09-24):

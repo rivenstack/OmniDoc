@@ -13,5 +13,6 @@ export * from "./capture";
 export * from "./components";
 export * from "./hooks";
 export * from "./lib";
+export * from "./markdown";
 export * from "./providers";
 export * from "./shell";

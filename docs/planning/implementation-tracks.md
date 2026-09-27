@@ -25,6 +25,8 @@ and
 defects nobody has sequenced — live in
 [`feature-backlog.md`](./feature-backlog.md). `BL-*` ids are **not** task
 codes. Promotion into this file is Commander's act after `@user` triage.
+**Promoted 2026-09-27 (`@user`):** `BL-19` → **F-12** (sanitized markdown
+render pipeline). `BL-20`…`BL-23` stay in the backlog.
 
 ---
 
@@ -71,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-05 live (FE, opened 2026-09-25); B-05 live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-12 live (FE, opened 2026-09-27); B-05 live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -371,7 +373,7 @@ Depends: F-02, S-02 notes, and S-03 fixtures for data.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (opened 2026-09-25; Collections sub-slice soft-stopped pending an S-02 contract change) |
+| **Status** | **listed** — **superseded before execution** 2026-09-27 (F-12 took the lane head; no F-05 work was written — the branch was empty). Collections sub-slice stays soft-stopped pending an S-02 contract change |
 
 **Short description:** inbox as the unfiled home; light optional
 folders/tags; no structure required to capture.
@@ -467,6 +469,37 @@ mocks; feeds the Phase 2 CX gate.
 graph (ADR-0003).
 
 Depends: F-04–F-09. Feeds Phase 2 CX gate.
+
+### F-12 — Sanitized markdown render pipeline
+
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (opened 2026-09-27; promoted from backlog `BL-19`) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-01 (tokens + primitives, completed); **ADR-0003 §4 pins — already accepted**, ledger rows exist (`version-ledger.md:127–130`), so this task installs pins and does **not** make a new pin decision |
+| **Blocks** | F-07 (answer prose); note / citation previews on F-06+ and F-09 |
+| **Write path** | `packages/ui/**` (new `src/markdown/`); `packages/ui/package.json` dependency rows |
+
+**Short description:** the one sanitized markdown render path. The
+markdown projection of the note SoT (ADR-0001 §2) renders through
+`react-markdown` 10.1.0 + `remark-gfm` 4.0.1 behind **`rehype-sanitize`
+6.0.0**, with the hostile-payload test ADR-0003 §Verification item 5
+requires.
+
+**Integrations:** none — a pure render surface taking a markdown
+**string**. It does **not** parse markdown back into the store (ADR-0001
+§2), does not read ProseMirror JSON, and does not fetch. Citation identity
+and answer states stay with F-07 and the server.
+
+**Behaviour contracts:** sanitization is a mandatory architecture control
+(`architecture.md` §6) because note content is untrusted UGC; dangerous
+schemes are blocked; `bdi`-equivalent isolation for identifiers, code
+tokens and URLs (`architecture.md` §directionality); keyboard-reachable
+code and table overflow (`quality/ui-qa-checklist.md` §6).
+
+**Look:** **none in this slice** — `@user` chose behaviour-only with stock
+tokens (2026-09-27). Answer-prose typography belongs to the F-07 answer
+card and still needs a reference.
 
 ---
 
@@ -678,7 +711,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-02 | **ready** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (reopened 2026-09-23); history: [`../handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md`](../handoffs/archive/H-2026-09-19-P1-F02-commander-implementer.md) |
+| F-12 | **ready** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-09-27) |
+| F-05 | **superseded before execution** (2026-09-27) — archived [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |

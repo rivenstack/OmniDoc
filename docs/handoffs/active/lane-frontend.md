@@ -1,103 +1,97 @@
 ---
-handoff_id: H-2026-09-25-P1-F05
+handoff_id: H-2026-09-27-P1-F12
 affinity: implementation
 track: parallel
-status: ready
+status: completed
 phase: "1"
-task: "F-05"
+task: "F-12"
 lane: frontend
 human_owner: front-end-programmer
 from: commander
 to: implementer
-created: 2026-09-25
+created: 2026-09-27
+updated: 2026-09-27
 ---
 
-# F-05 — Organize (inbox, notes list, collections)
+# F-12 — Sanitized markdown render pipeline
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-frontend.md and execute F-05 exactly. Build organize on the frontend lane: Inbox as the unfiled home and the Notes list, over the S-02 listNotes contract, with structure from docs/design/system-ux.md §1–§2. Every visual block needs a @user reference (link, pasted code, or a prompt — image welcome) before building; offer options otherwise. Soft-stop the Collections assignment sub-slice: S-02 has no collections/tags endpoint and Note carries no collection/tag field — do not fork a client-side shape. Do not open F-06. Do not touch apps/api, packages/mocks, packages/contracts authorship, docs/api/**, docs/handoffs/current.md, or lane-backend.md.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute F-12 exactly. Build the one sanitized markdown render path in packages/ui: react-markdown 10.1.0 + remark-gfm 4.0.1 behind rehype-sanitize 6.0.0 (ADR-0003 §4, already accepted), plus the hostile-payload test ADR-0003 §Verification item 5 requires. Behaviour only — @user chose stock tokens with no typography work (2026-09-27). Do not add @tiptap/extension-table or codemirror: both need a new Architect pin (backlog BL-20/BL-21). Do not parse markdown into the store, do not read ProseMirror JSON, do not fetch data, and do not build the F-07 answer card. Do not touch apps/api, packages/mocks, packages/contracts authorship, docs/adr/**, docs/handoffs/current.md, or lane-backend.md.
 ```
 
 ## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end
-programmer. **allowed_task_classes:** `F-05` only.
+programmer. **allowed_task_classes:** `F-12` only.
 
-Make organize real: **Inbox** is the unfiled home, **Notes** lists all notes
-in the workspace, rows open the capture surface, and both lists are
-server-first with honest empty / loading / error / indexing states.
-Collections (optional light folders or tags) is a **contract-blocked
-sub-slice** — record the soft-stop and stay honest; do not invent it.
+Make the markdown projection of the note SoT **renderable safely**. Note
+content is untrusted UGC (`architecture.md` §6), so sanitization is a
+mandatory architecture control — and it must be *proven* to hold against a
+hostile payload, not asserted. This slice ships the pipeline only; the
+answer surface that consumes it (F-07) is later work.
 
 ## Required Reading
 
-1. `docs/design/system-ux.md` §1 (Inbox / Notes / Collections contract) and
-   §2 (capture and notes; indexing visibility; tenancy)
-2. `docs/design/now.md` — the visible plan; log reference choices
-3. This file
-4. `context.md` (read-only)
-5. ADR-0003 — RSC + Server Actions first; Zustand only if shared state is real
-6. `docs/api/openapi.yaml` — `listNotes`
-   (`/api/v1/workspaces/{workspaceId}/notes`), `NotePage`, `PageLimit`,
-   `PageCursor`, and `Note` (**no** collection/tag field) + `packages/contracts`
-7. F-04 archive
-   `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` — the
-   notes port, save cycle and generic denials to reuse
-8. `packages/ui/**` — capture blocks, shell blocks, `denials.ts`; reuse them
-9. `quality/ui-qa-checklist.md` §1.4, §2.x, §5, §6 (a11y release gate)
+1. `architecture.md` §6 — "Markdown / XSS: sanitize render pipeline; block
+   dangerous schemes"; and its directionality row — isolation for
+   identifiers, code tokens, URLs, UGC fragments
+2. ADR-0003 §4 (the three pins) and §Verification item 5 (the sanitization
+   test this task must satisfy)
+3. ADR-0001 §2 — markdown is a projection; **never** parse it back into the
+   store
+4. `docs/research/version-ledger.md:127–130` — pinned versions and rationale
+5. `docs/design/components/inventory.md` — `AnswerProse`, `MarkdownTable`,
+   `CodeBlock` contracts (names + states only; **not** layout authority)
+6. `docs/design/now.md` — the living plan; log non-obvious choices
+7. This file, and `context.md` (read-only)
+8. `quality/ui-qa-checklist.md` §4, §5, §6 (contrast, keyboard, long-token /
+   table overflow)
+9. `packages/ui/**` — `src/lib/utils.ts` (`cn`) and the existing block
+   conventions (`src/capture/index.ts` shows the barrel style)
 
 ## Inputs / Evidence
 
-- F-04 **completed** 2026-09-25 (capture; notes port; `/notes/new` +
-  `/notes/[noteId]`). Archive:
-  `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md`
-- S-02 canonical contracts **completed** — `listNotes` with `PageLimit` /
-  `PageCursor`; `NotePage` = `{ items: Note[], nextCursor }`
-- B-04 notes CRUD **live**; S-03 fixtures **completed** (still need the
-  `web → mocks` exception for in-app MSW)
-- **Existing stubs to replace** (each says "arrives with F-05"):
-  `apps/web/app/(app)/inbox/page.tsx`, `notes/page.tsx`, `collections/page.tsx`
-- **Collections gap:** `docs/api/openapi.yaml` has **no** `collections`/`tags`
-  operation and `Note` carries **no** collection/tag field. `system-ux.md` §1
-  makes Collections a system contract, so adding it is a **contract change** —
-  not this lane's to author
+- F-01 completed — tokens + primitives; `cn` lives at
+  `packages/ui/src/lib/utils.ts`
+- ADR-0003 §4 pins **accepted** 2026-09-14; ledger rows already exist
+  (`version-ledger.md:127–130`). **No new pin decision is required for this
+  task** — installing the accepted pins is execution, not a stack choice
+- Verified 2026-09-27: `react-markdown`, `remark-gfm`, `rehype-sanitize`,
+  `shiki` and `codemirror` appear in **no** `package.json`, and no source file
+  under `apps/web/app/**` or `packages/ui/src/**` imports them
+- Promoted from backlog `BL-19`; `BL-20`…`BL-23` remain unscheduled
+- `packages/ui` has no Storybook stories in `src/**` — do not add one
 
 ## Task details
 
 | Concern | This task |
 | --- | --- |
-| API connections | Notes **port** over S-02: extend `apps/web/app/lib/notes/notes-api.ts` with `listNotes` (workspace-scoped, `limit`/`cursor`). Consume `@omnidoc/contracts` types only; no shape forks. Send the workspace selector header — the server re-binds membership. MSW fixtures **once the `web → mocks` exception exists**; otherwise adapter-first and soft-stop the MSW sub-slice |
-| IA | Inbox = unfiled home; Notes = all notes, distinct from Inbox. `New note` still lands straight in the editor |
-| State | Server-first lists (RSC / server actions). Selection/hover state local. No client cache library |
-| Indexing | Rows reflect indexing state where the contract returns it; an incomplete index is **never** presented as complete (`system-ux.md` §2) |
-| Workspace scope | Re-resolve membership server-side; a rejected workspace renders the **generic** denial and never reveals existence |
-| Locale / direction | `lang`/`dir` from `apps/web/app/locale.ts` only; logical CSS (`ps/pe/ms/me`, `text-start/end`); `bdi` around identifiers/UGC (titles, snippets) |
-| Accessibility | Keyboard-operable rows/links, real list semantics, focus order, skip link intact, no focus trap; empty/loading states announced appropriately; reduced motion respected |
-| Look | References `@user` supplies per block (list row, inbox empty state, collection tree). No palette invention; token values change only through the token layer |
+| API connections | **None.** The block takes a markdown **string** prop. No fetching, no ports, no contracts consumption |
+| Data boundary | Renders the markdown *projection* only. It must not parse markdown back into a document model (ADR-0001 §2) and must not read ProseMirror JSON |
+| Sanitization | `rehype-sanitize` runs on every render with an explicit, reviewed schema. No raw HTML pass-through, no `style`, no event handlers, and dangerous URL schemes (`javascript:`, `vbscript:`, and `data:` outside safe image types) are inert |
+| Isolation | Identifiers, code tokens and URLs are `bdi`-isolated (or equivalent) so a BiDi payload cannot reorder surrounding text (`architecture.md` §directionality) |
+| Overflow | Fenced code and GFM tables stay keyboard-reachable with internal horizontal scroll; never clipped columns (`ui-qa-checklist` §6.1 / §6.3 / §6.4) |
+| Locale / direction | No direction logic in JS. Logical CSS only (`ps/pe/ms/me`, `text-start/end`); direction continues to come from the existing `DirectionProvider` |
+| Accessibility | Real table semantics from GFM (header cells and scopes), code exposed as text, no keyboard trap, contrast from tokens (§4.4) |
+| Look | **Stock tokens only.** Do not invent typography, spacing, or a prose scale — `@user` chose behaviour-only on 2026-09-27. Answer-prose typography is F-07 work and needs a reference first |
+| Tests | Vitest + RTL. The hostile-payload suite **is** the point of the task |
 
-## Reference protocol (per visual block)
+## Reference protocol
 
-Blocks in scope: list row, inbox/notes list container + its states, empty
-state, pagination / "load more" affordance, collection tree (blocked).
-
-1. Before building a block's UI, ask `@user`: *do you have a reference — a
-   link, pasted code, or a prompt (image welcome) — for this?*
-2. No reference → offer 2–3 options and wait.
-3. Log each choice in `docs/design/now.md` (Decisions log).
-4. **Not** visual choices, build without asking: list semantics, the generic
-   forbidden copy, indexing-completeness honesty, focus order, and the
-   RTL-readiness discipline.
+This slice has **no visual block**. `@user` chose behaviour-only with stock
+tokens on 2026-09-27, so there is no reference to request and no options to
+offer. If you find yourself about to choose a type scale, a colour, or
+spacing values, **stop** — that is the F-07 answer card, not F-12.
 
 ## Allowed Write Paths
 
-- `packages/ui/**` (organize/list blocks as copy-in blocks; no token edits)
-- `apps/web/**` (inbox / notes / collections routes, list access over the
-  notes port)
+- `packages/ui/**` (new `src/markdown/`; `package.json` dependency rows;
+  `src/index.ts` export line)
 - `docs/frontend/README.md` (landed conventions only)
 - `docs/handoffs/active/lane-frontend.md` (status, Outcome)
-- `docs/design/now.md` (Decisions log + Current slice lines)
+- `docs/design/now.md` (Current slice + Decisions log)
 - `context.md` (status lines only)
 - `docs/memory/implementer.md` (durable lessons only)
 
@@ -109,113 +103,181 @@ exception), `packages/ui/src/styles/tokens.css`.
 
 ## Out of scope
 
-- Retrieve (F-06), ask (F-07), dual-mode chrome (F-08), sample path (F-09),
-  a11y sweep (F-10), Playwright (F-11)
-- Search/Ask surfaces; any index-status invention beyond what the contract
-  returns
-- Collections/tags **API or schema authorship** — that is a contract change
-  (escalate)
-- Production AI; RTL locale; AWS / DevOps I-*
-- Token values, palettes, motion systems (references first)
+- `@tiptap/extension-table` and CodeMirror 6 — backlog `BL-20` / `BL-21`;
+  both need a **new pin** from Architect
+- The canonical JSON→markdown serializer — backlog `BL-22`, backend /
+  cross-lane (it *produces* the string this block consumes)
+- Markdown import (`.md` → note body) — backlog `BL-23`, an
+  architecture/product decision
+- The F-07 answer card: citations, unsupported spans, answer states
+- Note / citation preview **screens** — F-06 and F-09 own the surfaces
+- Shiki syntax highlighting (pin exists; no consumer in this slice)
+- Production AI; RTL locale; AWS / DevOps `I-*`
 
 ## Deliverables
 
-1. **Inbox** route: the unfiled home, listing notes via `listNotes`, with
-   empty / loading / error / indexing states.
-2. **Notes** route: all notes in the workspace, distinct from Inbox, paginated
-   via `nextCursor`.
-3. **List rows**: keyboard-operable, contract-typed, opening the note through
-   the capture route; `bdi`-isolated titles; long/unbroken titles do not break
-   layout (~390px included).
-4. A **Collections** route that is honest: no folders/tags can be created or
-   assigned yet, and the UI says so rather than faking a model.
-5. Tests (Vitest): list rendering (empty / loading / error), pagination,
-   generic denial on a rejected workspace, row keyboard activation,
-   indexing-not-complete honesty, logical-CSS/`bdi` expectations where
-   feasible.
-6. Outcome here; decision log rows in `now.md`; status in `context.md`.
+1. Pinned installs in `packages/ui`: `react-markdown@10.1.0`,
+   `remark-gfm@4.0.1`, `rehype-sanitize@6.0.0` (exact ledger versions).
+2. A sanitize-schema module whose documentation states what it **refuses**,
+   not just what it allows.
+3. A markdown render block under `packages/ui/src/markdown/` that consumes
+   the schema, isolates identifiers/URLs, and keeps overflow keyboard-reachable.
+4. A `src/markdown/index.ts` barrel in the `capture/index.ts` style, exported
+   from `packages/ui/src/index.ts`.
+5. Tests: hostile payload blocked; dangerous schemes inert; raw HTML and
+   event handlers do not survive; GFM tables render with real semantics;
+   code/table overflow reachable; `bdi` isolation present.
+6. Outcome here; rows in `now.md`; status lines in `context.md`.
 
 ## Constraints / Prohibited Decisions
 
-- Do not fork OpenAPI or `@omnidoc/contracts`; escalate mismatches
-- Do not invent a client-side collections/folders/tags model
-- Do not present an incomplete index as complete
-- Do not reveal whether a forbidden workspace exists
-- Do not add tokens or edit `tokens.css`
-- Do not author fixtures, OpenAPI, or Java code
-- Do not import provider SDKs into `apps/web` / `packages/ui`
-- Do not claim RTL locale support
-- Do not activate production AI
-- Do not reproduce D-01 layouts
+- Do not bump any pin; install the ledger versions **exactly**
+- Do not make markdown the stored body; do not parse markdown into a
+  document model
+- Do not add `rehype-raw`, raw-HTML mode, or `dangerouslySetInnerHTML`
+- Do not add token values or edit `tokens.css`
+- Do not invent typography, palettes, or prose scales (no visual block here)
+- Do not add dependencies beyond the three pinned packages
+- Do not import provider SDKs, Java/Spring types, or `packages/mocks`
+  production paths
+- Do not claim RTL locale support; do not activate production AI
 
 ## Acceptance Criteria
 
-- Inbox and Notes are reachable, server-backed lists over `listNotes`; rows
-  open the note
-- A note can still be captured without choosing a folder or tag first (F-04
-  behaviour intact)
-- Empty / loading / error states are present and honest; a rejected workspace
-  shows the generic denial only
-- No client-side collections shape exists; the Collections route states the
-  gap instead
-- Keyboard-only list operation with no focus trap; real list semantics; focus
-  visible
-- Single `lang`/`dir` source; logical CSS; `bdi` on titles/UGC
-- Each built block has a logged `@user` reference or logged choice
-- Contracts consumed as generated types; no local shape forks
-- `packages/ui` + `apps/web` typecheck, lint, tests, build green
-- `current.md`, backend lane, contracts, mocks authorship untouched
+- A hostile markdown payload cannot execute through the render path,
+  **proven by an automated test** (ADR-0003 §Verification item 5)
+- Dangerous URL schemes are inert; raw HTML and inline event handlers do not
+  survive sanitization
+- GFM tables and fenced code render, with keyboard-reachable internal scroll
+  and no clipped columns at ~390px
+- Identifiers / code tokens / URLs are BiDi-isolated; CSS is logical; no
+  direction logic in JS
+- No typography, colour, or spacing decisions beyond stock tokens
+- `packages/ui` typecheck, lint, tests and build green; `apps/web` unaffected
+- `tokens.css`, `docs/adr/**`, `packages/contracts/**` authorship,
+  `packages/mocks/**` authorship, `current.md` and `lane-backend.md` untouched
 
 ## Stop / escalate conditions
 
-- **Soft-stop:** Collections has no S-02 contract (no endpoint, no `Note`
-  field) → build the honest Collections placeholder, log the gap in `now.md`,
-  and escalate the **contract change** to Commander; do not fork a shape
-- **Soft-stop:** the `web → mocks` import exception is not authorized → build
-  against the notes port, log the wiring gap, stop the MSW sub-slice (not the
-  task)
-- **Soft-stop:** a block has no reference and `@user` is unavailable → stop
-  that block, log the open choice
-- **Soft-stop:** `listNotes` cannot express the Inbox/Notes split or
-  pagination without a contract change → log it and escalate to Commander
-  rather than inventing a client-side shape
-- **Hard-stop:** markdown/HTML becoming the stored body; a pin bump; client
-  auth or provider SDKs; ADR reopen; production AI activation; claiming RTL
-  shipped
+- **Hard-stop:** a needed capability requires a **new pin** (a table
+  extension, CodeMirror, a highlighter) → stop and escalate; that is
+  `BL-20`/`BL-21` work with an Architect decision, not a lane-local install
+- **Hard-stop:** the sanitizer cannot block a payload class without dropping
+  a GFM feature the design contracts promise → escalate to Commander +
+  Architect rather than loosening the schema silently
+- **Hard-stop:** ADR reopen pressure; production AI activation; claiming RTL
+  locale shipped; markdown/HTML becoming the stored body
+- **Soft-stop:** a tidy-up would require touching `tokens.css` → leave it and
+  log the gap instead
 
 ## Dependencies / Risks
 
-- Depends on: F-04 (completed), S-02 `listNotes` (completed), B-04 live notes
-- Blocks: F-06 (retrieve), then F-07+
-- Parallel: backend lane (B-05 ingestion) — no mutual dependency
-- Risk: **with no collections, Inbox (unfiled) and Notes (all) are the same
-  set.** Do not fabricate a difference — be honest, and treat the Collections
-  contract as the fix
-- Risk: pagination cursors must come from the server; do not synthesize a
-  cursor client-side
-- Risk: reinstating a client-side "collection" from the shell's existing
-  Collections submenu would fork a second model
+- Depends on: F-01 (completed); ADR-0003 §4 pins (accepted)
+- Blocks: F-07 answer prose (partially); note / citation previews
+- Parallel: backend `B-05` — no mutual dependency
+- Risk: **a permissive schema is the failure mode that looks like success.**
+  `rehype-sanitize` defaults to an allowlist; do not "fix" a blocked feature
+  by widening it without evidence
+- Risk: a broad `className`/`style` pass-through re-opens XSS-adjacent
+  surface — keep the prop surface narrow
+- Risk: a second markdown authority appearing. Previews must call this block
+  rather than adding their own pipeline
+- Note: the markdown *source* is the server's canonical serializer
+  (`BL-22`, unscheduled), so this slice ships the **consumer**, not the
+  producer — do not implement a serializer here
 
 ## Gates
 
 - Production AI activation remains gated
 - RTL locale remains deferred (readiness discipline applies)
-- Collaborative editing stays an open gate
-- UT-* remain unrun
-- Design language: **Mintlify**; per-block references still required
-- **Collections contract** — open; needs an `@user` / Commander sequencing
-  decision (new track or an S-02 extension) before folders/tags can be built
+- Phase Check runs at Phase 1 Build exit, not for this ticket
+- Design language: **Mintlify** tokens; no visual reference required for this
+  slice by `@user` decision (2026-09-27)
 
 ## Completion Instructions
 
-1. Complete deliverables inside Allowed Write Paths.
+1. Complete deliverables inside Allowed Write Paths, then run the frontend
+   gate: `nx run-many -t typecheck lint test build --projects=ui,web,contracts,mocks`.
+   Do **not** include `api` — it needs a Java 21 toolchain and is another
+   lane's concern.
 2. Append Outcome; set `status: completed`.
 3. Archive to
-   `docs/handoffs/archive/H-2026-09-25-P1-F05-implementer-implementer.md`
+   `docs/handoffs/archive/H-2026-09-27-P1-F12-implementer-implementer.md`
    (immutable).
-4. **Same-lane sequence rule:** on completion, rewrite this path to
-   **F-06 (retrieve)** using the same format. If a cross-lane dep is unmet,
-   log the soft-stop instead.
+4. **Same-lane sequence rule:** on completion, raise the next candidate with
+   Commander rather than rewriting this path unilaterally. **F-05 (organize)**
+   is the standing candidate but is still blocked on the S-02 collections
+   gap; do not open it, and do not open F-06 without Commander's go-ahead.
 5. Durable lessons only in `docs/memory/implementer.md`.
 6. Do not overwrite `current.md` or `lane-backend.md`; update `context.md`
    status lines only.
+
+---
+
+## Outcome
+
+**Completed 2026-09-27.** Branch `F12-markdown-render`, uncommitted at time of
+writing. Behaviour-only slice, exactly as scoped.
+
+### Delivered
+
+| Deliverable | Where |
+| --- | --- |
+| Accepted pins installed **exactly** (no pin bumps) | `packages/ui/package.json` |
+| The sanitize control, written as explicit refusals | `packages/ui/src/markdown/sanitize-schema.ts` |
+| The single render block (`Markdown`) | `packages/ui/src/markdown/markdown.tsx` |
+| Barrel + package export | `packages/ui/src/markdown/index.ts`, `packages/ui/src/index.ts` |
+| ADR-0003 §Verification item 5 | `packages/ui/src/markdown/markdown.test.tsx` — 17 hostile payloads × 3 channel checks + a "does not execute" assertion |
+| Schema regression lock | `packages/ui/src/markdown/sanitize-schema.test.ts` |
+
+### Verified
+
+- `nx run-many -t typecheck lint test build --projects=ui,web,contracts,mocks`
+  → **14/14 green** (`--skip-nx-cache`). `ui:test` **350/350**, 13 files
+  (277 at F-04 close).
+- The sanitize control was written against the **installed**
+  `hast-util-sanitize` 5.0.2 default schema, read from `node_modules/.pnpm/…`
+  first — the narrowings are evidence-based, not recollection.
+- Nothing renders `Markdown` yet (F-07 owns the first surface), so there is
+  **no visual check to run** and none is claimed.
+
+### Findings worth keeping
+
+1. **Raw HTML never reaches the DOM.** Without `rehype-raw`, React-Markdown
+   **drops** authored HTML entirely (a `<script>` payload yields
+   `textContent === ""`, not inert text and not an element). The schema is
+   therefore **defence in depth**, and a markdown-only fixture can never
+   distinguish our narrowed schema from the library default — every channel we
+   narrowed is raw-HTML-only. That is why the refusals are **also** locked by
+   schema-level tests rather than only by rendering tests.
+2. An earlier draft of the hostile-payload suite asserted the payload stayed
+   visible as inert text. **It does not** — it is dropped. The test now asserts
+   the drop, which makes adding `rehype-raw` fail here first.
+3. Props applied through `components` overrides (`tabIndex`, `className`) are
+   **post**-sanitization, so the schema does not constrain them. `bdi`
+   isolation and focusability are added the same way.
+
+### Gaps handed on (recorded, not silently dropped)
+
+- **No typography — deliberate.** `@user` chose behaviour-only. Answer-prose
+  styling is the F-07 answer card and still needs a reference.
+- **Shiki remains uninstalled.** Its pin exists (ADR-0003 §4, ledger `:130`) but
+  this slice has no highlighting consumer.
+- **`BL-20` (table extension) and `BL-21` (CodeMirror 6) remain unscheduled** —
+  both need a **new Architect pin**. This handoff's hard-stop was hit
+  deliberately instead of installing around the pin process.
+- **The markdown *producer* does not exist yet** (`BL-22`, unscheduled): this
+  slice ships the consumer, testable against literal markdown strings.
+
+### Protocol note
+
+This handoff is **not archived** yet, on purpose. Archiving happens when the
+Commander rewrites `lane-frontend.md` for the next task; keeping the completed
+handoff at the live path means there is no window with **no** frontend head.
+The archived copy is owed with that rewrite.
+
+### Next handoff
+
+**Commander's call.** The standing candidate is **F-05 (organize)**, still
+blocked on the S-02 collections gap. Do not open F-05 or F-06 without an
+authorising handoff.

@@ -480,3 +480,36 @@
   cannot apply and the rule drops to the cross-axis start — it looks glued to the
   top. Do not fight it with `self-center` (equal specificity, order-dependent):
   drop the height and use symmetric margin so `stretch` yields a centred rule.
+- **2026-09-27 (F-12):** `react-markdown` **drops raw HTML entirely** without
+  `rehype-raw` — a `<script>` payload renders as `""`, not inert text and not an
+  element. Consequences: `rehype-sanitize` is the **second** layer, and a
+  rendered-markdown fixture **cannot** distinguish a narrowed sanitize schema
+  from the library default, because every channel you can narrow (`style`,
+  `on*`, presentational attributes, schemes, `name`) is reachable only through
+  raw HTML. Lock the refusals with **schema-level** tests as well.
+- **2026-09-27 (F-12):** props applied through React-Markdown `components`
+  overrides (`tabIndex`, `className`) are applied **after** sanitization and are
+  not constrained by the schema. `bdi` isolation and focusability belong here.
+- **2026-09-27 (F-12):** read the **installed** `hast-util-sanitize` default
+  schema before writing a sanitize control —
+  `node_modules/.pnpm/hast-util-sanitize@*/node_modules/hast-util-sanitize/lib/schema.js`.
+  Its `'*'` attribute wildcard is far broader than expected (`align`, `color`,
+  `border`, `width`, `height`, `id`, `tabIndex`, `name`), and its `href`
+  protocols include `irc`/`ircs`/`xmpp`. Narrowing is real work, not a formality.
+- **2026-09-27 (F-12):** schemas must be narrowed **only** where the product says
+  so, and the narrowing must keep GFM whole — `ancestors` keeps cells in a
+  `table`, `required` keeps task-list checkboxes, and `id` + `clobberPrefix` is
+  what makes footnote anchors work. Dropping `id` breaks footnotes; dropping
+  `clobberPrefix` makes the `id` allowance unsafe.
+- **2026-09-27 (F-12):** `pnpm --filter @omnidoc/ui add <pkg>@<exact>` writes the
+  exact version into `packages/ui/package.json`; the real store is the **root**
+  `node_modules/.pnpm`, and `packages/ui/node_modules` holds the symlinks. A bare
+  `node -e "require('<pkg>/package.json')"` from the repo root fails — resolve
+  through `packages/ui/node_modules` or `readlink -f` first.
+- **2026-09-27 (F-12):** a backlog `BL-*` id is **not** a task code. Promotion
+  needs Commander to add a real block to `docs/planning/implementation-tracks.md`
+  **and** rewrite `lane-*.md` before an implementer may write code; a `@user` chat
+  instruction is triage, not a handoff. The frontend lane may not write
+  `docs/planning/**` (status lines excepted) or `docs/adr/**` — which is why a
+  new pin (e.g. `@tiptap/extension-table`, `codemirror`) is a **hard-stop**, not
+  a lane-local install.

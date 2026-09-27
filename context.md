@@ -138,6 +138,37 @@ Program of record:
   and the red `login.test.tsx` are both **closed** (`@user` 2026-09-25; fixed in
   `3802d9b`). `nx` flagged `ui:test` flaky once; three uncached re-runs passed
   277/277 — recorded, not a defect. Frontend lane advances to **F-05 (organize)**
+- **2026-09-27:** `@user` triaged markdown support and the frontend lane was
+  **re-sequenced**. Backlog `BL-19` was promoted into the program of record as
+  **F-12 (sanitized markdown render pipeline)** — ADR-0003 §4 already pins
+  `react-markdown` 10.1.0 + `remark-gfm` 4.0.1 + `rehype-sanitize` 6.0.0 and
+  `docs/research/version-ledger.md:127–130` already carries those rows, so **no
+  new pin decision was needed**; the backlog row's "needs an Architect fit
+  check" note was wrong and is corrected in place. **F-05 (organize) is
+  superseded before execution** — its branch carried no commits ahead of
+  `develop` — and returns to `listed`, still blocked on the S-02 collections
+  gap; archived as `status: blocked` at
+  `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`. F-12 is
+  the live frontend head on branch `F12-markdown-render`; `@user` chose
+  **behaviour only, stock tokens** for its look. `BL-20`…`BL-23` stay
+  `proposed` — `BL-20`/`BL-21` still need a new Architect pin
+- **2026-09-27:** **F-12 built** (branch `F12-markdown-render`) — the single
+  sanitized markdown render path: `packages/ui/src/markdown/` (`Markdown` +
+  `markdownSanitizeSchema`) on the accepted ADR-0003 §4 pins, installed exactly
+  (`react-markdown` 10.1.0, `remark-gfm` 4.0.1, `rehype-sanitize` 6.0.0).
+  Behaviour-only; no typography (`@user` 2026-09-27). ADR-0003 §Verification
+  item 5 is met by test: 17 hostile payloads × 3 channel checks, plus a
+  "does not execute" assertion. FE gate **14/14 green**, `ui:test` **350/350**
+  across 13 files. Two findings worth keeping: `react-markdown` **drops raw HTML
+  entirely** without `rehype-raw`, so the schema is defence in depth and a
+  markdown-only fixture cannot distinguish it from the library default; and
+  props applied through `components` overrides (e.g. `tabIndex`) are applied
+  **after** sanitization. Nothing renders `Markdown` yet — F-07 is the first
+  consumer — so no visual check was possible or claimed. Gaps handed on: no
+  typography (F-07 + a reference), Shiki still uninstalled, `BL-20`/`BL-21`
+  still need a new Architect pin, and the markdown *producer* (`BL-22`) is
+  unscheduled. Awaiting Commander validation; the frontend lane has **no next
+  task assigned** (F-05 remains blocked on the S-02 collections gap)
 - **2026-09-25:** **Session redirect loop fixed** (`apps/web`, F-03 surface;
   found by `@user`). Two layers answered "is this browser signed in?" from
   different evidence: `proxy.ts` skipped `/sign-in` on cookie **presence**,
