@@ -71,7 +71,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-02 live (FE, reopened under new design rules); B-05 live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-05 live (FE, opened 2026-09-25); B-05 live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -303,7 +303,7 @@ journeys, no token edits.
 
 | | |
 |--|--|
-| **Status** | **ready** — `docs/handoffs/active/lane-frontend.md` (reopened 2026-09-23, next in sequence; D-01-era head archived) |
+| **Status** | **completed** 2026-09-23 — archived [`docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md`](../handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md) |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-01, F-02a, S-02 |
 | **Blocks** | F-03+ |
@@ -330,6 +330,10 @@ token edits.
 
 ### F-03 — Auth / session UI
 
+| | |
+|--|--|
+| **Status** | **completed** 2026-09-24 — archived [`docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md`](../handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md) |
+
 **Short description:** sign-in / sign-out; session-aware shell entry;
 workspace selector as a pure selector.
 
@@ -346,6 +350,10 @@ Depends: F-02, and B-03 **or** S-03 identity fixtures.
 
 ### F-04 — Capture (TipTap)
 
+| | |
+|--|--|
+| **Status** | **completed** 2026-09-25 (Commander-validated PASS) — archived [`docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md`](../handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md) |
+
 **Short description:** create/edit notes — title + rich body, autosave,
 paste and file-import CTAs; New note lands directly in the editor.
 
@@ -360,6 +368,10 @@ options otherwise.
 Depends: F-02, S-02 notes, and S-03 fixtures for data.
 
 ### F-05 — Organize
+
+| | |
+|--|--|
+| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (opened 2026-09-25; Collections sub-slice soft-stopped pending an S-02 contract change) |
 
 **Short description:** inbox as the unfiled home; light optional
 folders/tags; no structure required to capture.

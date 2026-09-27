@@ -102,6 +102,32 @@
   archived `H-2026-09-20-P1-S03-commander-implementer.md`; opened
   **B-05**. FE `web → mocks` import exception remains a separate
   Commander/FE follow-up, not an S-03 reopen.
+- 2026-09-25: same pattern recurred on **F-04**. The implementer merged
+  the slice to `develop` (`e0070b8`) but left `lane-frontend.md`
+  `in-progress` with **no Outcome**, so Commander closed it: re-ran
+  `typecheck`/`lint`/`test`/`build`, confirmed gate-critical source
+  (`409`→`conflict` with no retry, no client winner, ProseMirror JSON
+  body, generic denial), then archived
+  `H-2026-09-24-P1-F04-implementer-implementer.md` (status completed +
+  Commander Outcome) and rewrote the head to **F-05**. Lesson: a clean
+  tree + a committed branch is **not** completion — check the lane head
+  frontmatter and the Outcome before accepting.
+- 2026-09-25: `nx run-many -t test` flagged `ui:test` as **flaky** while
+  the suite passed. Re-ran uncached 3× (11 files / 277 tests) with no
+  reproduction. Record fleet flakiness flags as noise, not defects,
+  unless a re-run reproduces.
+- 2026-09-25: closing F-04 surfaced a **missing system contract**:
+  `system-ux.md` §1 lists **Collections** (inbox/notes/collections) but
+  `docs/api/openapi.yaml` has no `collections`/`tags` operation and
+  `Note` has no collection/tag field. Commander opened **F-05** scoped
+  to the contract-supported slice (Inbox + Notes list over `listNotes`)
+  and **soft-stopped** folders/tags rather than authoring a client-side
+  shape. Adding it is a contract change (S-02 authorship, backend lane)
+  and needs an `@user` sequencing decision — raised, not invented.
+- 2026-09-25: when two design-doc invariants collide (Inbox = unfiled vs
+  Notes = all), and the contract cannot express the difference, the
+  honest move is to build the contract-supported part and record the
+  gap — do not fabricate a distinction in the UI.
 
 ## Phase-Boundary Stewardship
 

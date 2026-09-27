@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import type { EditorProps } from "@tiptap/pm/view";
 import { useStore } from "zustand";
 import { cn } from "../lib/utils";
 import {
@@ -28,6 +36,34 @@ export const AUTOSAVE_DELAY_MS = 800;
 
 /** How often an import in flight is re-checked. */
 export const IMPORT_POLL_MS = 2_000;
+
+/**
+ * The editor's extension set, built **once**.
+ *
+ * `useEditor` diffs the options it is handed against the live editor after
+ * every commit and calls `editor.setOptions(...)` when any of them differ by
+ * identity (see `EditorInstanceManager.compareOptions` in `@tiptap/react`). The
+ * diff compares `extensions` element-by-element, and `StarterKit.configure()`
+ * returns a **new** extension instance on every call — so building this array
+ * inline inside the component made every render look like an option change and
+ * paid for a full ProseMirror update (`view.setProps` + `view.updateState`).
+ *
+ * That is the new-note title lag: the surface re-renders on every keystroke
+ * (title state plus the save-store dispatch) and several times while the editor
+ * mounts, and each of those renders rebuilt the editor view for a field the
+ * user was not even typing in. Hoisting the array keeps its identity stable, so
+ * the diff reports "nothing changed" and the view is left alone.
+ */
+const CAPTURE_EXTENSIONS = [
+  StarterKit.configure({
+    codeBlock: {
+      // A code block that overflows must be scrollable **by keyboard**
+      // (`ui-qa-checklist.md` §6.1); an overflow container without a tab
+      // stop cannot be scrolled without a pointer.
+      HTMLAttributes: { tabindex: "0" },
+    },
+  }),
+];
 
 /** A note as this surface needs it — the app maps the contract onto this. */
 export type CaptureNote = {
@@ -129,22 +165,11 @@ export function CaptureSurface({
   const createdNoteIdRef = useRef(createdNoteId);
   createdNoteIdRef.current = createdNoteId;
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        codeBlock: {
-          // A code block that overflows must be scrollable **by keyboard**
-          // (`ui-qa-checklist.md` §6.1); an overflow container without a tab
-          // stop cannot be scrolled without a pointer.
-          HTMLAttributes: { tabindex: "0" },
-        },
-      }),
-    ],
-    content: note?.bodyJson ?? EMPTY_DOCUMENT,
-    // Required: the default throws during server rendering, and Next renders
-    // this tree on the server first.
-    immediatelyRender: false,
-    editorProps: {
+  // Memoised for the same reason as `CAPTURE_EXTENSIONS`: a fresh object here
+  // would fail the identity diff and re-run `editor.setOptions` on every render.
+  // Only `bodyLabel` can change it.
+  const editorProps = useMemo<EditorProps>(
+    () => ({
       attributes: {
         role: "textbox",
         "aria-multiline": "true",
@@ -165,7 +190,17 @@ export function CaptureSurface({
         }
         return false;
       },
-    },
+    }),
+    [bodyLabel],
+  );
+
+  const editor = useEditor({
+    extensions: CAPTURE_EXTENSIONS,
+    content: note?.bodyJson ?? EMPTY_DOCUMENT,
+    // Required: the default throws during server rendering, and Next renders
+    // this tree on the server first.
+    immediatelyRender: false,
+    editorProps,
     onUpdate: () => {
       dispatchSaveEvent(store, { type: "edit" });
     },

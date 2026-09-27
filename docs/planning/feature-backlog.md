@@ -113,6 +113,32 @@ because the alternative is that they live only in an archived handoff.
 
 ---
 
+## 4. Rich content — markdown support
+
+Markdown in OmniDoc is a **projection, never the store** (ADR-0001 §2):
+TipTap ProseMirror JSON is the durable body, and one canonical serializer
+produces markdown for export and for chunking/embedding. The stack rows are
+already **accepted** — ADR-0003 §4 pins `react-markdown 10.1.0 + remark-gfm
+4.0.1 + rehype-sanitize 6.0.0` for the render path and Shiki 4.4.3 for code,
+mirrored in `docs/research/version-ledger.md:127–130`.
+
+**Accepted pins are not a plan.** None of those packages is installed
+(`apps/web/package.json`, `packages/ui/package.json`) and no source file under
+`apps/web/app/**` or `packages/ui/src/**` imports them; no `F-*` / `B-*` row
+names markdown rendering, authoring, serialization, or import. The rows below
+are the plan-shaped holes. (`@user` asked 2026-09-27 whether markdown support
+was planned; this section is the answer.)
+
+| ID | Item | Why it is unscheduled | Suggested necessity | State |
+|---|---|---|---|---|
+| BL-19 | **Sanitized markdown render pipeline** — `react-markdown` + `remark-gfm` + `rehype-sanitize` for `AnswerProse`, note/citation previews, **plus the hostile-payload test** | ADR-0003 §4 pins the three packages and calls sanitization "a mandatory architecture control" (`architecture.md` §6) because note content is untrusted UGC; the ledger repeats the pins. But **none of the three is in any `package.json`** and no source file imports them. No task owns it: F-06 takes snippets *from the server*, F-07's row says only "answer card", F-10 is states, F-11 is Playwright. `AnswerProse` and `MarkdownTable` exist as component **contracts with no build task** (`docs/design/components/inventory.md:107,152`), and `docs/design/README.md:108` describes the pipeline as if it were present | **High.** F-07 cannot render an answer without it, and ADR-0003 §Verification item 5 requires "a sanitization test proves a hostile markdown payload cannot execute through the note render path" — an untested sanitizer is not a control. Needs an Architect fit check + ledger rows before install | `proposed` |
+| BL-20 | **Markdown / rich tables in the editor** — pin `@tiptap/extension-table` (or equivalent) so a table can be inserted or pasted, and exercise the overflow rules | Recorded F-04 gap with no owner: `context.md` (2026-09-25) "no table extension"; `docs/design/now.md` "**Tables have no editor extension.** `@tiptap/extension-table` is not one of the pinned editor packages". The pin itself is absent — no ledger row, no `package.json` entry. The design contract promises it anyway: `docs/design/journeys/capture.md` "Tables \| Markdown table block; internal horizontal scroll on narrow viewports (QA 6.4)", `docs/design/foundations/tokens.md` (never clipped columns), `MarkdownTable` inventory row, `quality/ui-qa-checklist.md` 6.4 | **Medium–high.** A design contract the editor physically cannot produce, so QA 6.4 is **unexercised, not passed**. Adding an extension is a **version-pin act** (Architect + ledger), not a lane-local tweak | `proposed` |
+| BL-21 | **CodeMirror 6 fenced-code node view** (ADR-0001 §2), replacing the StarterKit `codeBlock` F-04 shipped; pairs with Shiki server-side highlighting | Recorded F-04 gap: `docs/design/now.md` "**CodeMirror 6 for fenced code** (ADR-0001 §2) is **not built**. StarterKit's code block ships now; the CodeMirror node view is a follow-up slice"; the 2026-09-25 decisions-log entry defers it; `context.md` lists it among F-04 gaps. Neither `codemirror` nor `shiki` is in a `package.json`, and Shiki exists only as a ledger pin (`version-ledger.md:130`). Contracts promise it: `docs/design/journeys/capture.md` ("CodeMirror 6 block; monospace, non-reflowing, keyboard-scrollable overflow"), `CodeBlock` inventory row (`inventory.md:105`), ADR-0003 §4 | **Medium.** Nothing is broken — F-04's acceptance (monospaced, keyboard-scrollable) is met by StarterKit — but an accepted ADR decision and two design contracts are unimplemented and the deferred slice has no home | `proposed` |
+| BL-22 | **Canonical JSON→markdown serializer + export fidelity fixtures** (tables, nested quotes, fenced code, inline identifiers/URLs) | ADR-0001 §2 makes the serializer the **only** markdown producer ("Chunking and embedding consume its output; export consumes the same output") and calls its fidelity "a product surface with its own tests (tables, nested quotes, fenced code, inline identifiers/URLs)". **B-11 is only the export port** (and "can trail the critical path"); B-05 owns the ingestion/chunking *job*, not serializer conformance. No `F-*` / `B-*` row names the serializer or its fixtures | **High.** This projection feeds both retrieval and export, so a fidelity regression silently corrupts both — and with no fixtures, the two consumers can drift apart undetected. ADR-0001 explicitly refuses to treat it as an afterthought | `proposed` |
+| BL-23 | **Markdown import — decision, then conversion** — what a dropped `.md` file becomes in the editor and in the store | The capture surface accepts dropped files and the tests already exercise a markdown one (`packages/ui/src/capture/blocks.test.tsx:252`: `new File(["x"], "dropped.md", { type: "text/markdown" })`), but no conversion path is scheduled — B-05 owns the ingestion/chunking job + progress HTTP, not editor import. It is also not an implementation-taste question: ADR-0001 §2 fixes JSON as the only durable body and forbids parsing markdown back into the store, so "new-note conversion vs attachment vs index-only" is an **architecture / product decision**. Import is blocked end-to-end on B-05 regardless (`POST /api/v1/ingestion-jobs` has no controller) | **Decide now, build after B-05.** The decision is cheap while import is still blocked and expensive once it works | `proposed` |
+
+---
+
 ## Not in this file
 
 Do not duplicate these here — they have canonical homes and duplicating them
@@ -136,6 +162,7 @@ without new evidence. A `BL-*` row that changes state must gain a line here.
 | Date | Item | Decision | By |
 |---|---|---|---|
 | 2026-09-24 | — | File created; BL-01…BL-18 recorded as `proposed`. No triage yet | `@user` (request) |
+| 2026-09-27 | BL-19…BL-23 | Recorded as `proposed` — markdown support (render + sanitization test, editor tables, CodeMirror code blocks, canonical serializer, import). No triage yet | `@user` (request) |
 
 ---
 
