@@ -37,6 +37,8 @@ adapters and this bootstrap keep working.
 
 - **Cursor / opencode:** [`AGENTS.md`](../AGENTS.md) + role agents under
   `.cursor/agents/` or `.opencode/agent/`
+- **Antigravity (IDE / App / CLI):** [`GEMINI.md`](../GEMINI.md) + `.agent/skills/`
+  (role slash commands & skills) + `.agent/skills.json`
 - **Copilot:** [`.github/copilot-instructions.md`](../.github/copilot-instructions.md)
   (root `copilot-instructions.md` is a byte-identical mirror)
 - **Codex:** [`.codex/INSTRUCTIONS.md`](../.codex/INSTRUCTIONS.md)

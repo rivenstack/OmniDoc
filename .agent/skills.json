@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "path": ".agent/skills"
+    },
+    {
+      "path": ".cursor/skills"
+    },
+    {
+      "path": "~/.agents/skills"
+    }
+  ]
+}
