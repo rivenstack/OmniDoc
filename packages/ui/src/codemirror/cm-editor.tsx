@@ -5,18 +5,23 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { markdown } from "@codemirror/lang-markdown";
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { bracketMatching } from "@codemirror/language";
 import {
-  bracketMatching,
-  defaultHighlightStyle,
-  syntaxHighlighting,
-} from "@codemirror/language";
-import { EditorSelection, EditorState, type Extension } from "@codemirror/state";
+  EditorSelection,
+  EditorState,
+  Compartment,
+  type Extension,
+} from "@codemirror/state";
 import { EditorView, keymap, type ViewUpdate } from "@codemirror/view";
 import { cn } from "../lib/utils";
-import { markdownLivePreviewPlugin } from "./markdown-live-preview";
+import {
+  markdownLivePreviewPlugin,
+  markdownLivePreviewTheme,
+} from "./markdown-live-preview";
 
 export type CodeMirrorEditorHandle = {
   focus: () => void;
@@ -31,6 +36,8 @@ export type CodeMirrorEditorProps = {
   onChange: (value: string) => void;
   mode: "text" | "markdown";
   bodyLabel?: string;
+  /** Locks the editor (the surface's lock control). */
+  readOnly?: boolean;
   className?: string;
 };
 
@@ -40,6 +47,10 @@ export type CodeMirrorEditorProps = {
  * Supports two distinct modes:
  * - "text": Clean monospace raw markdown source without preview decorations.
  * - "markdown": Obsidian-style inline live preview with syntax folding.
+ *
+ * `readOnly` is the capture surface's lock: the document is untouched and the
+ * source stops being contenteditable, while the preview keeps rendering (it
+ * simply stops unfolding tokens).
  */
 export const CodeMirrorEditor = forwardRef<
   CodeMirrorEditorHandle,
@@ -50,6 +61,7 @@ export const CodeMirrorEditor = forwardRef<
     onChange,
     mode,
     bodyLabel = "Note body",
+    readOnly = false,
     className,
   },
   ref,
@@ -58,6 +70,24 @@ export const CodeMirrorEditor = forwardRef<
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  // Editable state lives in a compartment so the lock can toggle without
+  // rebuilding the view (a rebuild would drop the caret and scroll position).
+  const [editingCompartment] = useState(() => new Compartment());
+
+  const editingExtensions = (locked: boolean, label: string): Extension => [
+    // Two facets on purpose: `EditorState.readOnly` stops command/API changes
+    // and drag-drop, `EditorView.editable` stops the DOM from being
+    // contenteditable at all.
+    EditorState.readOnly.of(locked),
+    EditorView.editable.of(!locked),
+    EditorView.contentAttributes.of({
+      role: "textbox",
+      "aria-multiline": "true",
+      "aria-label": label,
+      "aria-readonly": locked ? "true" : "false",
+    }),
+  ];
 
   useImperativeHandle(
     ref,
@@ -69,17 +99,19 @@ export const CodeMirrorEditor = forwardRef<
         const view = viewRef.current;
         if (!view) return;
         const { state, dispatch } = view;
-        const changes = state.changeByRange((range: { from: number; to: number }) => {
-          const text = state.sliceDoc(range.from, range.to);
-          const replacement = `${prefix}${text}${suffix}`;
-          return {
-            changes: { from: range.from, to: range.to, insert: replacement },
-            range: EditorSelection.range(
-              range.from + prefix.length,
-              range.to + prefix.length,
-            ),
-          };
-        });
+        const changes = state.changeByRange(
+          (range: { from: number; to: number }) => {
+            const text = state.sliceDoc(range.from, range.to);
+            const replacement = `${prefix}${text}${suffix}`;
+            return {
+              changes: { from: range.from, to: range.to, insert: replacement },
+              range: EditorSelection.range(
+                range.from + prefix.length,
+                range.to + prefix.length,
+              ),
+            };
+          },
+        );
         dispatch(changes);
         view.focus();
       },
@@ -122,14 +154,14 @@ export const CodeMirrorEditor = forwardRef<
         backgroundColor: "transparent",
         color: "var(--foreground)",
         fontSize: "1rem",
-        lineHeight: "1.75",
+        // Matches `text-base` in the Normal and Reading modes: the mode switch
+        // must not change the page's line rhythm.
+        lineHeight: "1.5",
       },
       ".cm-content": {
         caretColor: "var(--foreground)",
         fontFamily:
-          mode === "text"
-            ? "var(--font-geist-mono), monospace"
-            : "inherit",
+          mode === "text" ? "var(--font-geist-mono), monospace" : "inherit",
         padding: "0.75rem 0",
       },
       ".cm-line": {
@@ -147,7 +179,11 @@ export const CodeMirrorEditor = forwardRef<
       baseTheme,
       EditorView.lineWrapping,
       bracketMatching(),
-      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      // No `syntaxHighlighting(defaultHighlightStyle)`: its `tags.heading`
+      // rule is `underline + bold`, which put a stray underline under every
+      // heading in the source modes. Heading/bold/italic/code presentation is
+      // owned by `markdown-live-preview.ts` in Markdown mode; Text mode stays
+      // plain source by design.
       history(),
       keymap.of([
         ...defaultKeymap,
@@ -160,21 +196,21 @@ export const CodeMirrorEditor = forwardRef<
           },
         },
       ]),
-      markdown(),
+      // GFM makes the parser understand the same dialect the Reading mode
+      // renders (`remark-gfm`) and the toolbar can insert — strikethrough,
+      // autolinks, tables. Plain CommonMark silently produced no syntax nodes
+      // for `~~strike~~`.
+      markdown({ base: markdownLanguage }),
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
           onChangeRef.current(update.state.doc.toString());
         }
       }),
-      EditorView.contentAttributes.of({
-        role: "textbox",
-        "aria-multiline": "true",
-        "aria-label": bodyLabel,
-      }),
+      editingCompartment.of(editingExtensions(readOnly, bodyLabel)),
     ];
 
     if (mode === "markdown") {
-      extensions.push(markdownLivePreviewPlugin);
+      extensions.push(markdownLivePreviewPlugin, markdownLivePreviewTheme);
     }
 
     const state = EditorState.create({
@@ -196,17 +232,29 @@ export const CodeMirrorEditor = forwardRef<
     // Recreate when mode changes so extensions are re-bound cleanly.
   }, [mode, bodyLabel]);
 
-  // Synchronize document if value changed externally
+  // Synchronize document if value changed externally. A read-only state
+  // rejects changes, so the sync waits for the unlock (the effect depends on
+  // `readOnly` and re-runs then).
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
     const currentDoc = view.state.doc.toString();
-    if (value !== currentDoc) {
-      view.dispatch({
-        changes: { from: 0, to: currentDoc.length, insert: value },
-      });
-    }
-  }, [value]);
+    if (value === currentDoc || view.state.readOnly) return;
+    view.dispatch({
+      changes: { from: 0, to: currentDoc.length, insert: value },
+    });
+  }, [value, readOnly]);
+
+  // The lock is applied by reconfiguring the compartment, not by remounting.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: editingCompartment.reconfigure(
+        editingExtensions(readOnly, bodyLabel),
+      ),
+    });
+  }, [bodyLabel, editingCompartment, readOnly]);
 
   return (
     <div

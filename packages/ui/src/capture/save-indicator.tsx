@@ -37,7 +37,11 @@ export function SaveIndicator({ status, className }: SaveIndicatorProps) {
     <div
       data-slot="save-indicator"
       data-status={status}
-      className={cn("flex min-w-0 items-center justify-end", className)}
+      // The slot is a fixed width on purpose: the label mounts and unmounts as
+      // the save cycle runs (`Saving…` → `Saved` → nothing), and an
+      // intrinsically-sized slot made the rest of the row jump on every
+      // transition. 4.5rem fits the longest label ("Not saved") at `text-xs`.
+      className={cn("flex w-18 shrink-0 items-center justify-end", className)}
     >
       {status === "idle" ? null : (
         <span

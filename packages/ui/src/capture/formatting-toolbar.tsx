@@ -340,11 +340,7 @@ function CodeMirrorFormattingToolbarView({
               },
             ] as const
           ).map((item) => (
-            <ToolbarButton
-              key={item.label}
-              label={item.label}
-              onRun={item.run}
-            >
+            <ToolbarButton key={item.label} label={item.label} onRun={item.run}>
               {item.icon}
             </ToolbarButton>
           ))}
@@ -366,10 +362,7 @@ function CodeMirrorFormattingToolbarView({
           >
             <IconListNumbers aria-hidden="true" className="size-4" />
           </ToolbarButton>
-          <ToolbarButton
-            label="Quote"
-            onRun={() => cmHandle.prefixLine("> ")}
-          >
+          <ToolbarButton label="Quote" onRun={() => cmHandle.prefixLine("> ")}>
             <IconBlockquote aria-hidden="true" className="size-4" />
           </ToolbarButton>
           <ToolbarButton
@@ -433,11 +426,10 @@ function FormattingToolbarView({
   mode = "normal",
   className,
 }: FormattingToolbarProps) {
-  if (mode === "reading") {
-    return null;
-  }
   if (mode === "normal" && editor) {
-    return <TipTapFormattingToolbarView editor={editor} className={className} />;
+    return (
+      <TipTapFormattingToolbarView editor={editor} className={className} />
+    );
   }
   if ((mode === "markdown" || mode === "text") && cmHandle) {
     return (

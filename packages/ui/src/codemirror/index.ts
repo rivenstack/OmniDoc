@@ -3,4 +3,7 @@ export type {
   CodeMirrorEditorHandle,
   CodeMirrorEditorProps,
 } from "./cm-editor";
-export { markdownLivePreviewPlugin } from "./markdown-live-preview";
+export {
+  markdownLivePreviewPlugin,
+  markdownLivePreviewTheme,
+} from "./markdown-live-preview";

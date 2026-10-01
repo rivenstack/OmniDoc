@@ -468,6 +468,33 @@
 - **2026-09-25 (shell layout):** `MobileTabBar` is `position: fixed`, so it is
   out of flow and **nothing reserves room for it**. Any page whose content
   reaches the viewport bottom on `< md` has its last element hidden underneath.
+- **2026-10-01 (F-04/F-12, fixed):** `capture/markdown-bridge.ts` builds a
+  TipTap editor, and `tiptap-markdown` parses that editor's initial content
+  through a `DOMParser` in its `onBeforeCreate` hook — so merely **constructing**
+  the converter needs a DOM. `immediatelyRender: false` does not help here.
+  Deriving markdown in a `useState` initialiser 500s every route that renders
+  the capture surface (`window is not defined`), and the Reading surface is
+  rendered **before the editor mounts** (`mode === "normal" && editor` is false),
+  so it is part of the first client render too — a `typeof window` branch in the
+  initialiser swaps the 500 for a hydration mismatch. Derive it in a
+  `useEffect` after mount (`markdownText` starts `""` on both sides), and keep a
+  loud throw in the bridge: returning `""` instead would let a server-render
+  caller save an empty note body.
+- **2026-10-01 (F-04/F-12, fixed):** a stored body can legitimately hold a
+  `link` mark with **no** `href` (TipTap's `Link` mark declares a `null`
+  default), and `prosemirror-markdown`'s link serializer assumes a string
+  (`mark.attrs.href.replace(...)`). Serialising one throws, and in a render path
+  that means a dead route. Normalise before serialising (drop the targetless
+  mark, keep its text) — `note.bodyJson` is server data, so the renderer cannot
+  assume it is serializer-clean.
+- **2026-10-01 (Next 16 / React 19.2):** "Encountered a script tag while
+  rendering React component", pointing at `next-themes`' `ThemeProvider`, is
+  usually a **cascade** and not a theme bug. React only emits it from
+  `completeWork`'s `createInstance`, i.e. when it *mounts* the tree on the
+  client instead of hydrating — which is what happens after an earlier SSR or
+  hydration failure. Check a route that renders no failing block (`/sign-in`)
+  first: if it is console-clean, fix the failing route and leave the provider
+  alone.
   The reserve lives on `SidebarInset` in `apps/web/app/(app)/shell.tsx` and its
   value comes from `MOBILE_TAB_BAR_CLEARANCE_CLASS` in
   `packages/ui/src/shell/mobile-tab-bar.tsx`, beside the row height it derives
@@ -513,3 +540,33 @@
   `docs/planning/**` (status lines excepted) or `docs/adr/**` — which is why a
   new pin (e.g. `@tiptap/extension-table`, `codemirror`) is a **hard-stop**, not
   a lane-local install.
+- **2026-10-01 (F-13 review):** a new source folder under `packages/ui/src`
+  ships **no CSS** until it is listed in `packages/ui/src/styles/globals.css`
+  (`@source "../<folder>"`). The failure is silent: classes render as no-ops.
+  `src/codemirror` was missing, so the live-preview fold classes never existed.
+- **2026-10-01 (F-13 review):** never install `@codemirror/language`'s
+  `defaultHighlightStyle` in this project — `tags.heading` is `underline +
+  bold`, which underlines every heading in the CodeMirror modes. Style the
+  preview from a project-owned `EditorView.theme` instead.
+- **2026-10-01 (F-13 review):** a child that mounts later (the CodeMirror
+  editor) cannot be observed by reading `ref.current` **during render** — ref
+  attachment does not re-render the parent. Mirror the handle into state from a
+  callback ref, or dependent UI (the formatting toolbar) stays stale.
+- **2026-10-01 (F-13 review):** Base UI `Menu.RadioItem` defaults to
+  `closeOnClick = false` (unlike `Menu.Item`). A pick-one-and-dismiss menu must
+  pass `closeOnClick` explicitly or it stays open after the pick.
+- **2026-10-01 (F-13 preview):** CodeMirror's base theme sets `.cm-line` padding
+  with a **shorthand**. A same-specificity theme rule (`.cm-live-x`) loses, so
+  line insets need a compound selector (`.cm-line.cm-live-x`).
+- **2026-10-01 (F-13 preview):** `text-indent` **inherits**. A hanging-indent
+  line (indent + negative `text-indent`) shifts an `inline-block` widget's own
+  glyph out of its box; the marker classes must reset `text-indent: 0`.
+- **2026-10-01 (F-13 preview):** Obsidian-style folding has to be gated on
+  focus. A freshly mounted CodeMirror puts the caret at position 0, so
+  "selection touches the line" unfolds the first heading before the user ever
+  interacts with it.
+- **2026-10-01 (F-04 surface):** a save that calls `revalidatePath` hands the
+  client a **fresh `note` prop** while the user is still typing. Seeding editor
+  state from that echo (`useEffect([note.bodyJson])`) silently rewrites the
+  user's input with the serializer's projection of it — seed on note
+  **identity**, not on object identity.

@@ -25,10 +25,14 @@ import {
   nextExpectedVersion as readExpectedVersion,
 } from "./capture-store";
 import { Markdown as TipTapMarkdown } from "tiptap-markdown";
+import { IconLock, IconLockOpen } from "@tabler/icons-react";
 import { CodeMirrorEditor, type CodeMirrorEditorHandle } from "../codemirror";
-import { Markdown } from "../markdown";
+import { IconButton } from "../components/icon-button";
 import { EditorModeSwitcher, type EditorMode } from "./editor-mode-switcher";
-import { markdownToProseMirror, proseMirrorToMarkdown } from "./markdown-bridge";
+import {
+  markdownToProseMirror,
+  proseMirrorToMarkdown,
+} from "./markdown-bridge";
 import { FormattingToolbar, SelectionToolbar } from "./formatting-toolbar";
 import { ImportDropzone, type ImportItem } from "./import-dropzone";
 import { NoteTitleField } from "./note-title-field";
@@ -76,6 +80,34 @@ const CAPTURE_EXTENSIONS = [
     transformCopiedText: true,
   }),
 ];
+
+/**
+ * Body typography shared by every capture mode.
+ *
+ * Normal (TipTap) and Markdown (CodeMirror live preview) must read as the same
+ * page: switching modes changes how the source is edited, not how the note
+ * looks. The look lives in one string so the modes cannot drift apart; the
+ * CodeMirror side mirrors the same values in `markdown-live-preview.ts`
+ * because it renders its own line DOM.
+ */
+const CAPTURE_BODY_CLASSES = [
+  // `break-words` inherits, so long unbroken strings wrap anywhere in the
+  // body without a blanket descendant selector (`ui-qa-checklist.md` §5.9).
+  "break-words text-base text-foreground",
+  "[&_p]:my-3",
+  "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
+  "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",
+  "[&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-medium",
+  "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
+  "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6",
+  "[&_blockquote]:my-4 [&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground",
+  "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-sm",
+  "[&_pre]:focus-visible:ring-3 [&_pre]:focus-visible:ring-ring [&_pre]:outline-none",
+  "[&_code]:rounded-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
+  "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+  "[&_hr]:my-6 [&_hr]:border-border",
+  "[&_a]:text-primary [&_a]:underline",
+].join(" ");
 
 /** A note as this surface needs it — the app maps the contract onto this. */
 export type CaptureNote = {
@@ -174,13 +206,53 @@ export function CaptureSurface({
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
-  const [markdownText, setMarkdownText] = useState(() =>
-    proseMirrorToMarkdown(note?.bodyJson ?? EMPTY_DOCUMENT),
-  );
+  // The note's read-only switch. It is not a mode: every mode can be locked,
+  // and locking hides every editing affordance (toolbar, selection bubble,
+  // title, import) while the live preview keeps rendering.
+  const [locked, setLocked] = useState(false);
+
+  // Derived in the browser, never during server rendering: `proseMirrorToMarkdown`
+  // builds a headless TipTap editor, and TipTap's markdown parser needs a DOM —
+  // converting on the server throws `window is not defined` and takes the route
+  // down with a 500.
+  //
+  // The initial value has to be identical on the server and on the client's
+  // first render, because this value *is* rendered before the editor mounts:
+  // Normal mode shows the TipTap surface, which needs `editor` — until it
+  // exists the body region is an empty box. So it starts empty on both sides —
+  // a `typeof window` branch here would be the hydration mismatch React warns
+  // about — and the effect below fills it in.
+  const [markdownText, setMarkdownText] = useState("");
   const markdownTextRef = useRef(markdownText);
   markdownTextRef.current = markdownText;
 
-  const cmRef = useRef<CodeMirrorEditorHandle>(null);
+  // Seeded once per note — not on every server echo. A save revalidates the
+  // notes route, so the app re-renders with a fresh `note` object while the
+  // user is still typing; re-deriving the source from the saved JSON there
+  // would silently replace their text with the serializer's normalised (and
+  // escaped) projection of it.
+  const seededNoteId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const noteId = note?.id ?? null;
+    if (seededNoteId.current === noteId) return;
+    seededNoteId.current = noteId;
+    setMarkdownText(proseMirrorToMarkdown(note?.bodyJson ?? EMPTY_DOCUMENT));
+  }, [note?.bodyJson, note?.id]);
+
+  // The formatting toolbar's CodeMirror commands need the editor handle, and
+  // the handle only exists once `CodeMirrorEditor` has mounted. Reading a ref
+  // during render cannot see that mount — `cmRef.current` is still `null` on
+  // the render that switches into Text/Markdown, so the toolbar stayed hidden
+  // whenever the switch came from a mode that had no CodeMirror mounted
+  // (Reading → Text). Mirroring the handle into state re-renders the row as
+  // soon as the editor exists.
+  const [cmHandle, setCmHandle] = useState<CodeMirrorEditorHandle | null>(null);
+  const attachCodeMirror = useCallback(
+    (instance: CodeMirrorEditorHandle | null) => {
+      setCmHandle(instance);
+    },
+    [],
+  );
 
   // Latest values for use inside the save callback without re-creating it on
   // every keystroke (which would restart the autosave debounce).
@@ -229,6 +301,14 @@ export function CaptureSurface({
       dispatchSaveEvent(store, { type: "edit" });
     },
   });
+
+  // The lock has to reach the TipTap view imperatively: `editable` is not one
+  // of the options `useEditor` diffs, and the surface does not rebuild the
+  // editor when the lock toggles (that would drop the caret and the undo
+  // history).
+  useEffect(() => {
+    editor?.setEditable(!locked);
+  }, [editor, locked]);
 
   const runSave = useCallback(async (): Promise<void> => {
     const current = store.getState().save;
@@ -443,6 +523,7 @@ export function CaptureSurface({
         <NoteTitleField
           id={titleId}
           value={title}
+          disabled={locked}
           onValueChange={(value) => {
             setTitle(value);
             dispatchSaveEvent(store, { type: "edit" });
@@ -456,6 +537,20 @@ export function CaptureSurface({
         />
         <div className="flex items-center gap-3 pt-2">
           <EditorModeSwitcher mode={mode} onModeChange={handleModeChange} />
+          <IconButton
+            label="Lock editing"
+            variant="ghost"
+            size="icon-sm"
+            pressed={locked}
+            onClick={() => setLocked((value) => !value)}
+            className="text-muted-foreground"
+          >
+            {locked ? (
+              <IconLock aria-hidden="true" className="size-4" />
+            ) : (
+              <IconLockOpen aria-hidden="true" className="size-4" />
+            )}
+          </IconButton>
           <SaveIndicator status={save?.status ?? "idle"} />
         </div>
       </div>
@@ -478,68 +573,57 @@ export function CaptureSurface({
         />
       ) : null}
 
-      {mode !== "reading" ? (
-        <FormattingToolbar
-          editor={editor}
-          cmHandle={cmRef.current}
-          mode={mode}
-        />
+      {!locked ? (
+        <FormattingToolbar editor={editor} cmHandle={cmHandle} mode={mode} />
       ) : null}
 
       <div className="min-h-[50vh] min-w-0">
-        {mode === "normal" && editor ? (
-          <EditorContent
-            editor={editor}
-            className={cn(
-              // `break-words` inherits, so long unbroken strings wrap anywhere in
-              // the body without a blanket descendant selector
-              // (`ui-qa-checklist.md` §5.9).
-              "min-w-0 break-words text-base text-foreground outline-none",
-              "[&_.ProseMirror]:min-h-[40vh] [&_.ProseMirror]:outline-none",
-              // The toolbar is sticky, so the top of the viewport is chrome. A
-              // focused block that the browser scrolls into view must land below
-              // it — focus hidden behind a sticky bar fails
-              // (`ui-qa-checklist.md` §1.2). 9rem covers the 56px top bar plus a
-              // toolbar that has wrapped to two rows on a narrow viewport, and
-              // `scroll-margin` does not inherit, so each tab stop inside the body
-              // carries it.
-              "[&_.ProseMirror]:scroll-mt-36 [&_pre]:scroll-mt-36 [&_a]:scroll-mt-36",
-              "[&_p]:my-3",
-              "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
-              "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",
-              "[&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-medium",
-              "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
-              "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6",
-              "[&_blockquote]:my-4 [&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground",
-              "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-sm",
-              "[&_pre]:focus-visible:ring-3 [&_pre]:focus-visible:ring-ring [&_pre]:outline-none",
-              "[&_code]:rounded-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
-              "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-              "[&_hr]:my-6 [&_hr]:border-border",
-              "[&_a]:text-primary [&_a]:underline",
-            )}
-          />
-        ) : mode === "markdown" || mode === "text" ? (
+        {mode === "normal" ? (
+          editor ? (
+            <EditorContent
+              editor={editor}
+              className={cn(
+                "min-w-0 outline-none",
+                "[&_.ProseMirror]:min-h-[40vh] [&_.ProseMirror]:outline-none",
+                // The toolbar is sticky, so the top of the viewport is chrome. A
+                // focused block that the browser scrolls into view must land below
+                // it — focus hidden behind a sticky bar fails
+                // (`ui-qa-checklist.md` §1.2). 9rem covers the 56px top bar plus a
+                // toolbar that has wrapped to two rows on a narrow viewport, and
+                // `scroll-margin` does not inherit, so each tab stop inside the body
+                // carries it. A locked note has no toolbar, so the extra clearance
+                // is harmless.
+                "[&_.ProseMirror]:scroll-mt-36 [&_pre]:scroll-mt-36 [&_a]:scroll-mt-36",
+                CAPTURE_BODY_CLASSES,
+              )}
+            />
+          ) : (
+            // TipTap has not mounted yet (`immediatelyRender: false`). The box
+            // holds the body's height so the page does not jump when it does.
+            <div className="min-h-[40vh]" />
+          )
+        ) : (
           <CodeMirrorEditor
-            ref={cmRef}
+            ref={attachCodeMirror}
             mode={mode}
             value={markdownText}
             onChange={handleMarkdownChange}
             bodyLabel={bodyLabel}
+            readOnly={locked}
           />
-        ) : (
-          <div className="min-h-[40vh] py-2">
-            <Markdown source={markdownText} />
-          </div>
         )}
       </div>
 
-      {mode === "normal" && editor ? (
+      {mode === "normal" && editor && !locked ? (
         <SelectionToolbar editor={editor} />
       ) : null}
 
       {onImportFile ? (
-        <ImportDropzone items={importItems} onFilesSelected={handleFiles} />
+        <ImportDropzone
+          items={importItems}
+          onFilesSelected={handleFiles}
+          disabled={locked}
+        />
       ) : null}
     </div>
   );

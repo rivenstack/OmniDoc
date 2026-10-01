@@ -1,10 +1,7 @@
 import { createRef } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  CodeMirrorEditor,
-  type CodeMirrorEditorHandle,
-} from "./cm-editor";
+import { CodeMirrorEditor, type CodeMirrorEditorHandle } from "./cm-editor";
 
 afterEach(() => {
   cleanup();
@@ -70,5 +67,126 @@ describe("CodeMirrorEditor", () => {
     });
 
     expect(view?.state.doc.toString()).toBe("# ****hello world");
+  });
+
+  it("folds every syntax token while the editor is unfocused", () => {
+    const handleRef = createRef<CodeMirrorEditorHandle>();
+
+    render(
+      <CodeMirrorEditor
+        ref={handleRef}
+        value={"# Title\n\n- item"}
+        onChange={vi.fn()}
+        mode="markdown"
+      />,
+    );
+
+    const view = handleRef.current?.getEditorView();
+    expect(view).toBeTruthy();
+    if (!view) {
+      throw new Error("CodeMirror view did not mount");
+    }
+
+    // A freshly opened surface parks the caret at 0. Without the focus gate the
+    // first heading would greet the reader with a visible `#`, and the list
+    // item with a `-`.
+    expect(view.contentDOM.textContent).toContain("Title");
+    expect(view.contentDOM.textContent).not.toContain("#");
+    expect(view.contentDOM.textContent).not.toContain("-");
+    expect(view.contentDOM.textContent).toContain("•");
+  });
+
+  it("draws list, fence and rule blocks instead of their markers", () => {
+    const handleRef = createRef<CodeMirrorEditorHandle>();
+
+    render(
+      <CodeMirrorEditor
+        ref={handleRef}
+        value={
+          "- item\n\n- [ ] task\n\n1. first\n\n---\n\n```js\nconst a = 1;\n```"
+        }
+        onChange={vi.fn()}
+        mode="markdown"
+      />,
+    );
+
+    const view = handleRef.current?.getEditorView();
+    expect(view).toBeTruthy();
+    if (!view) {
+      throw new Error("CodeMirror view did not mount");
+    }
+    const dom = view.contentDOM;
+
+    // Bullets replace `-`; the task item gets a checkbox instead of a bullet.
+    expect(dom.querySelectorAll(".cm-live-bullet")).toHaveLength(1);
+    expect(dom.querySelector(".cm-live-task")?.textContent).toBe("☐");
+    // Ordered markers keep the source's own number.
+    expect(dom.querySelector(".cm-live-ordered-mark")?.textContent).toBe("1.");
+    // Every list item carries the hanging indent, including nested content.
+    expect(dom.querySelectorAll(".cm-live-list-item")).toHaveLength(3);
+    // `---` becomes a rule, and the fence becomes a code block.
+    expect(dom.querySelector(".cm-live-hr")).toBeTruthy();
+    expect(dom.querySelectorAll(".cm-live-code-block")).toHaveLength(3);
+    expect(dom.textContent).not.toContain("```");
+    expect(dom.textContent).not.toContain("---");
+  });
+
+  it("folds markdown syntax until the cursor touches the affected content", () => {
+    const handleRef = createRef<CodeMirrorEditorHandle>();
+
+    render(
+      <CodeMirrorEditor
+        ref={handleRef}
+        value={"# Title\n\nSay **hi** now"}
+        onChange={vi.fn()}
+        mode="markdown"
+      />,
+    );
+
+    const view = handleRef.current?.getEditorView();
+    expect(view).toBeTruthy();
+    if (!view) {
+      throw new Error("CodeMirror view did not mount");
+    }
+    const dom = view.contentDOM;
+
+    // Caret parked in the last paragraph: neither the heading's `#` nor the
+    // `**` around "hi" are needed, so both fold away entirely.
+    act(() => {
+      view.dispatch({ selection: { anchor: view.state.doc.length } });
+    });
+    expect(dom.textContent).toContain("Title");
+    expect(dom.textContent).not.toContain("#");
+    expect(dom.textContent).not.toContain("**");
+
+    // Caret anywhere on the heading line unfolds the `#` (line token) while
+    // the `**` stays folded (inline token, different span).
+    act(() => {
+      view.focus();
+      view.dispatch({ selection: { anchor: 3 } });
+    });
+    expect(dom.textContent).toContain("#");
+    expect(dom.textContent).not.toContain("**");
+
+    // Caret inside the bold word unfolds the `**` too.
+    act(() => {
+      view.dispatch({ selection: { anchor: 16 } });
+    });
+    expect(dom.textContent).toContain("**");
+  });
+
+  it("keeps the body non-editable when read-only", () => {
+    render(
+      <CodeMirrorEditor
+        value="# Title"
+        onChange={vi.fn()}
+        mode="text"
+        readOnly
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Note body" });
+    expect(textbox.getAttribute("aria-readonly")).toBe("true");
+    expect(textbox.getAttribute("contenteditable")).not.toBe("true");
   });
 });
