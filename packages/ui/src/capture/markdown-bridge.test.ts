@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { markdownToProseMirror, proseMirrorToMarkdown } from "./markdown-bridge";
 
 describe("markdown-bridge", () => {
@@ -44,5 +44,51 @@ describe("markdown-bridge", () => {
 
     expect(output).toContain("```");
     expect(output).toContain("const x = 42;");
+  });
+
+  it("keeps a link that has a target", () => {
+    const json = markdownToProseMirror("see [docs](https://example.com/docs)");
+    expect(proseMirrorToMarkdown(json)).toContain(
+      "[docs](https://example.com/docs)",
+    );
+  });
+
+  it("serialises a link mark with no target instead of throwing", () => {
+    // TipTap's `Link` mark defaults `href` to `null`, so a stored body can hold
+    // a targetless link. Markdown has no syntax for one, and the underlying
+    // serializer throws on a null target — the text has to survive instead.
+    const json = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "a " },
+            { type: "text", text: "targetless", marks: [{ type: "link" }] },
+            { type: "text", text: " link" },
+          ],
+        },
+      ],
+    };
+
+    expect(() => proseMirrorToMarkdown(json)).not.toThrow();
+    expect(proseMirrorToMarkdown(json)).toBe("a targetless link");
+  });
+
+  it("refuses to convert outside a browser", () => {
+    // The converter is a TipTap editor and TipTap's markdown parser needs a
+    // DOM. Failing loudly beats returning "" — a server-rendered caller that
+    // silently got an empty string would save it as an empty note body.
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(() =>
+        proseMirrorToMarkdown({
+          type: "doc",
+          content: [{ type: "paragraph", content: [{ type: "text", text: "x" }] }],
+        }),
+      ).toThrow(/derive markdown on the client/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
