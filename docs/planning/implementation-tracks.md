@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-12 live (FE, opened 2026-09-27); B-05 live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-13 completed (FE, landed 2026-10-01); B-05 live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -474,7 +474,7 @@ Depends: F-04–F-09. Feeds Phase 2 CX gate.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (opened 2026-09-27; promoted from backlog `BL-19`) |
+| **Status** | **completed** — archived [`docs/handoffs/archive/H-2026-09-27-P1-F12-implementer-implementer.md`](../handoffs/archive/H-2026-09-27-P1-F12-implementer-implementer.md) (Commander-validated PASS 2026-09-27) |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-01 (tokens + primitives, completed); **ADR-0003 §4 pins — already accepted**, ledger rows exist (`version-ledger.md:127–130`), so this task installs pins and does **not** make a new pin decision |
 | **Blocks** | F-07 (answer prose); note / citation previews on F-06+ and F-09 |
@@ -505,21 +505,21 @@ card and still needs a reference.
 
 | | |
 |--|--|
-| **Status** | **listed** — scheduled following `@user` verification of Option A.2 (2026-10-01) |
+| **Status** | **completed** 2026-10-01 (branch `develop`, commits `3c170f9`, `103d4d3`, `fe5a97f`; active handoff `docs/handoffs/active/lane-frontend.md`) — Option A.2 multi-mode capture & editing |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
-| **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), Architect pin for `@codemirror/*` and `tiptap-markdown` |
+| **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), `@codemirror/*` and `tiptap-markdown` |
 | **Blocks** | F-05, Phase 2 CX gate (power-user capture journey) |
 | **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` |
 
-**Short description:** Four-mode note viewing and editing surface (`system-ux.md` §1/§2):
+**Short description:** Three-mode note viewing and editing surface plus note lock control (`system-ux.md` §1/§2):
 1. **Normal**: Visual rich text editor (TipTap) with sticky formatting toolbar, floating bubble menu, and native markdown input shortcuts.
-2. **Markdown**: Obsidian-style inline live preview (CodeMirror 6) with syntax folding/decorations (syntax marks fold/preview when unfocused and expand when cursor is present).
+2. **Markdown**: Obsidian-style inline live preview (CodeMirror 6) with syntax folding/decorations (syntax marks fold/preview when unfocused and expand when cursor is present under Obsidian reveal rules).
 3. **Text**: Pure raw markdown source editor (CodeMirror 6 / monospace) with no preview; formatting toolbar inserts markdown tokens.
-4. **Reading**: Sanitized read-only projection via F-12 `Markdown` component (`react-markdown` + `rehype-sanitize`).
+4. **Lock control**: Read-only protection toggle that makes the note non-editable across all modes without requiring a separate reading mode.
 
 **Integrations:** Bidirectional JSON ↔ Markdown synchronization (`BL-22`) bridges CodeMirror raw markdown edits to the durable ProseMirror JSON store (`ADR-0001 §2`). Unified formatting toolbar provides action bindings for both TipTap and CodeMirror. Autosave debounce and concurrency conflict resolution work seamlessly across all editing modes.
 
-**Look:** Mode switcher pills integrated into capture top bar/toolbar; stock tokens (Mintlify theme); accessible focus and keyboard shortcuts.
+**Look:** Mode switcher menu integrated into capture top bar/toolbar; stock tokens (Mintlify theme); accessible focus and keyboard shortcuts.
 
 ---
 

@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-09-27
+updated: 2026-10-01
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -27,12 +27,13 @@ Owner: `/commander`. This file is the **integration board**, not an
 implementer work assignment.
 
 D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
-B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, and
-**S-03** are **closed and archived**. Two humans own parallel lanes:
+B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, S-03,
+**F-12**, and **F-13** are **closed and archived** (or completed at lane head).
+Two humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-12 ready** (sanitized markdown render pipeline; F-05 superseded before execution) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-13 completed** (multi-mode capture & markdown editing; standing candidate F-05 blocked) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05** |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -40,13 +41,10 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-12 ready**
-  (sanitized markdown render pipeline: `react-markdown` + `remark-gfm` behind
-  `rehype-sanitize`, plus the ADR-0003 §Verification hostile-payload test;
-  opened 2026-09-27 after `@user` triaged backlog `BL-19`). Behaviour-only by
-  `@user` decision — no look work in this slice. **F-05 was superseded before
-  execution** (its branch had no commits) and returns to `listed`, still
-  blocked on the Collections gap.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-13 completed**
+  (multi-mode capture & markdown editing landed 2026-10-01; F-12 completed
+  and archived 2026-09-27). Standing candidate is **F-05 (organize)**,
+  still blocked on the Collections gap.
 - Backend: `docs/handoffs/active/lane-backend.md` → B-05 ingestion /
   chunking jobs + progress (`ready`) — opened 2026-09-20 after S-03
   Commander-validated PASS
@@ -68,6 +66,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Recently archived
 
+- F-12 completed (Commander-validated PASS 2026-09-27):
+  `docs/handoffs/archive/H-2026-09-27-P1-F12-implementer-implementer.md`
 - F-05 **superseded before execution** (`status: blocked`, 2026-09-27 — F-12
   took the lane head; no F-05 work existed):
   `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`

@@ -137,7 +137,18 @@ Program of record:
   and `403`/`404` collapse to one generic denial. The fifth save state `error`
   and the red `login.test.tsx` are both **closed** (`@user` 2026-09-25; fixed in
   `3802d9b`). `nx` flagged `ui:test` flaky once; three uncached re-runs passed
-  277/277 — recorded, not a defect. Frontend lane advances to **F-05 (organize)**
+- **2026-10-01:** **F-13 completed** (branch `develop`, commits `3c170f9`,
+  `103d4d3`, `fe5a97f`) — Option A.2 multi-mode capture & markdown editing
+  architecture landed: (1) Normal TipTap WYSIWYG, (2) Markdown CodeMirror 6
+  inline live preview following Obsidian reveal rules with rendered block
+  constructs (bullets, numbered lists, task checkboxes, code blocks, rules),
+  (3) Text raw monospace markdown source editor, and (4) note Lock button
+  making the note read-only across all modes. Unified `FormattingToolbar`
+  drives both TipTap and CodeMirror. ProseMirror JSON remains durable database
+  SoT; `capture/markdown-bridge.ts` synchronizes markdown and ProseMirror JSON
+  on switch and save. All checks pass (`ui:test` 373/373, web build green).
+  Standing frontend candidate remains **F-05 (organize)**, still blocked on the
+  S-02 collections gap
 - **2026-09-27:** `@user` triaged markdown support and the frontend lane was
   **re-sequenced**. Backlog `BL-19` was promoted into the program of record as
   **F-12 (sanitized markdown render pipeline)** — ADR-0003 §4 already pins
@@ -247,8 +258,10 @@ Program of record:
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
-| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **ready** 2026-09-25 — Inbox + Notes lists over `listNotes`; Collections sub-slice soft-stopped (no S-02 collections/tags surface) | `docs/handoffs/active/lane-frontend.md` |
-| F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
+| F-12 Sanitized markdown render pipeline | frontend | Implementer (front-end programmer) | **completed** 2026-09-27 (Commander-validated PASS) — single sanitized render path in `packages/ui/src/markdown/` on accepted pins; hostile payload test passes | `docs/handoffs/archive/H-2026-09-27-P1-F12-implementer-implementer.md` |
+| F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 — Option A.2: Normal, Markdown live preview, Text, note lock control; bidirectional JSON ↔ Markdown bridge; 373 ui tests | `docs/handoffs/active/lane-frontend.md` |
+| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **listed** — superseded before execution 2026-09-27 (archived `H-2026-09-25-P1-F05`), still blocked on collections gap | `docs/planning/implementation-tracks.md` |
+| F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/archive/H-2026-09-22-P1-F02A-user-implementer.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
 | B-02 Postgres schema + RLS + local Compose | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B02-commander-implementer.md` |
