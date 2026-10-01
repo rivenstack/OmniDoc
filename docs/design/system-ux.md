@@ -25,6 +25,7 @@ the build, not here.
 | Item | Why it is a system contract |
 | --- | --- |
 | New note | Capture must be possible without choosing a folder or tag first |
+| Editor modes | Four operating modes for notes: Normal (WYSIWYG rich text), Markdown (Obsidian-style live preview), Text (raw markdown source), and Reading (sanitized read-only) |
 | Inbox | Default home for unfiled notes |
 | Notes | All notes, distinct from Inbox |
 | Collections | Optional light folders or tags. Not required to capture. No graph in v1 |
@@ -45,6 +46,12 @@ the option, wait for the user, then edit this table.
 ### Capture and notes
 
 - A note can be created with a title and body only.
+- The note editing surface supports four modes:
+  - **Normal**: Visual rich text editor (TipTap) with sticky toolbar, bubble menu, and native markdown input rules. Best for standard users.
+  - **Markdown**: Obsidian-style inline live preview (CodeMirror 6) with syntax folding/decorations. Syntax tokens are editable on focus and previewed inline when unfocused. Best for power users.
+  - **Text**: Pure raw markdown source editor (CodeMirror 6 / monospace) with no preview. The toolbar acts as a shortcut assistant inserting markdown syntax.
+  - **Reading**: Sanitized read-only projection (`packages/ui/src/markdown/`). Fast, non-editable, guarded against XSS.
+- ProseMirror JSON remains the durable source of truth in the database (ADR-0001 §2). Any edit in Text or Markdown mode is synchronized bidirectionally with the ProseMirror document model without data loss.
 - Paste and file import are first-class. Each imported file has its own
   indexing status: pending, indexing, ready, partial, or failed.
 - Saves are versioned. A conflict is visible. The client does not pick

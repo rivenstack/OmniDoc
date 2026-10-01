@@ -501,6 +501,26 @@ code and table overflow (`quality/ui-qa-checklist.md` §6).
 tokens (2026-09-27). Answer-prose typography belongs to the F-07 answer
 card and still needs a reference.
 
+### F-13 — Multi-mode capture & markdown editing
+
+| | |
+|--|--|
+| **Status** | **listed** — scheduled following `@user` verification of Option A.2 (2026-10-01) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), Architect pin for `@codemirror/*` and `tiptap-markdown` |
+| **Blocks** | F-05, Phase 2 CX gate (power-user capture journey) |
+| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` |
+
+**Short description:** Four-mode note viewing and editing surface (`system-ux.md` §1/§2):
+1. **Normal**: Visual rich text editor (TipTap) with sticky formatting toolbar, floating bubble menu, and native markdown input shortcuts.
+2. **Markdown**: Obsidian-style inline live preview (CodeMirror 6) with syntax folding/decorations (syntax marks fold/preview when unfocused and expand when cursor is present).
+3. **Text**: Pure raw markdown source editor (CodeMirror 6 / monospace) with no preview; formatting toolbar inserts markdown tokens.
+4. **Reading**: Sanitized read-only projection via F-12 `Markdown` component (`react-markdown` + `rehype-sanitize`).
+
+**Integrations:** Bidirectional JSON ↔ Markdown synchronization (`BL-22`) bridges CodeMirror raw markdown edits to the durable ProseMirror JSON store (`ADR-0001 §2`). Unified formatting toolbar provides action bindings for both TipTap and CodeMirror. Autosave debounce and concurrency conflict resolution work seamlessly across all editing modes.
+
+**Look:** Mode switcher pills integrated into capture top bar/toolbar; stock tokens (Mintlify theme); accessible focus and keyboard shortcuts.
+
 ---
 
 ## Backend lane — `backend` / `/implementer`
