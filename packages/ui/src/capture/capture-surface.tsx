@@ -24,6 +24,11 @@ import {
   dispatchSaveEvent,
   nextExpectedVersion as readExpectedVersion,
 } from "./capture-store";
+import { Markdown as TipTapMarkdown } from "tiptap-markdown";
+import { CodeMirrorEditor, type CodeMirrorEditorHandle } from "../codemirror";
+import { Markdown } from "../markdown";
+import { EditorModeSwitcher, type EditorMode } from "./editor-mode-switcher";
+import { markdownToProseMirror, proseMirrorToMarkdown } from "./markdown-bridge";
 import { FormattingToolbar, SelectionToolbar } from "./formatting-toolbar";
 import { ImportDropzone, type ImportItem } from "./import-dropzone";
 import { NoteTitleField } from "./note-title-field";
@@ -62,6 +67,13 @@ const CAPTURE_EXTENSIONS = [
       // stop cannot be scrolled without a pointer.
       HTMLAttributes: { tabindex: "0" },
     },
+  }),
+  TipTapMarkdown.configure({
+    html: false,
+    tightLists: true,
+    bulletListMarker: "-",
+    transformPastedText: true,
+    transformCopiedText: true,
   }),
 ];
 
@@ -158,6 +170,18 @@ export function CaptureSurface({
     note?.id ?? null,
   );
 
+  const [mode, setMode] = useState<EditorMode>("normal");
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+
+  const [markdownText, setMarkdownText] = useState(() =>
+    proseMirrorToMarkdown(note?.bodyJson ?? EMPTY_DOCUMENT),
+  );
+  const markdownTextRef = useRef(markdownText);
+  markdownTextRef.current = markdownText;
+
+  const cmRef = useRef<CodeMirrorEditorHandle>(null);
+
   // Latest values for use inside the save callback without re-creating it on
   // every keystroke (which would restart the autosave debounce).
   const titleRef = useRef(title);
@@ -213,7 +237,10 @@ export function CaptureSurface({
     }
     const revision = current.revision;
     const expectedVersion = readExpectedVersion(store);
-    const body = editor?.getJSON() as ProseMirrorDocument | undefined;
+    const body =
+      modeRef.current === "normal"
+        ? (editor?.getJSON() as ProseMirrorDocument | undefined)
+        : markdownToProseMirror(markdownTextRef.current);
 
     // Nothing worth persisting: saving here would create an empty note the user
     // never asked for. The revision is left dirty, so the next real edit still
@@ -287,8 +314,42 @@ export function CaptureSurface({
     }
     setTitle(server.title);
     editor?.commands.setContent(server.bodyJson, { emitUpdate: false });
+    const md = proseMirrorToMarkdown(server.bodyJson);
+    setMarkdownText(md);
+    markdownTextRef.current = md;
     dispatchSaveEvent(store, { type: "reset", version: server.version });
   }, [editor, onLoadServerVersion, store]);
+
+  const handleModeChange = useCallback(
+    (newMode: EditorMode) => {
+      if (newMode === modeRef.current) return;
+
+      if (modeRef.current === "normal" && editor) {
+        const latestJson = editor.getJSON() as ProseMirrorDocument;
+        const latestMd = proseMirrorToMarkdown(latestJson);
+        setMarkdownText(latestMd);
+        markdownTextRef.current = latestMd;
+      } else if (
+        (modeRef.current === "markdown" || modeRef.current === "text") &&
+        editor
+      ) {
+        const parsedJson = markdownToProseMirror(markdownTextRef.current);
+        editor.commands.setContent(parsedJson, { emitUpdate: false });
+      }
+
+      setMode(newMode);
+    },
+    [editor],
+  );
+
+  const handleMarkdownChange = useCallback(
+    (val: string) => {
+      setMarkdownText(val);
+      markdownTextRef.current = val;
+      dispatchSaveEvent(store, { type: "edit" });
+    },
+    [store],
+  );
 
   // Resolve "keep my edits": take their version as the concurrency base and save
   // over it. This is the user's explicit choice, which is exactly what §2
@@ -378,7 +439,7 @@ export function CaptureSurface({
       data-slot="capture-surface"
       className={cn("flex min-w-0 flex-col gap-4", className)}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <NoteTitleField
           id={titleId}
           value={title}
@@ -393,7 +454,10 @@ export function CaptureSurface({
           }}
           className="flex-1"
         />
-        <SaveIndicator status={save?.status ?? "idle"} className="pt-2" />
+        <div className="flex items-center gap-3 pt-2">
+          <EditorModeSwitcher mode={mode} onModeChange={handleModeChange} />
+          <SaveIndicator status={save?.status ?? "idle"} />
+        </div>
       </div>
 
       {save?.status === "conflict" ? (
@@ -414,43 +478,65 @@ export function CaptureSurface({
         />
       ) : null}
 
-      {editor ? <FormattingToolbar editor={editor} /> : null}
+      {mode !== "reading" ? (
+        <FormattingToolbar
+          editor={editor}
+          cmHandle={cmRef.current}
+          mode={mode}
+        />
+      ) : null}
 
       <div className="min-h-[50vh] min-w-0">
-        <EditorContent
-          editor={editor}
-          className={cn(
-            // `break-words` inherits, so long unbroken strings wrap anywhere in
-            // the body without a blanket descendant selector
-            // (`ui-qa-checklist.md` §5.9).
-            "min-w-0 break-words text-base text-foreground outline-none",
-            "[&_.ProseMirror]:min-h-[40vh] [&_.ProseMirror]:outline-none",
-            // The toolbar is sticky, so the top of the viewport is chrome. A
-            // focused block that the browser scrolls into view must land below
-            // it — focus hidden behind a sticky bar fails
-            // (`ui-qa-checklist.md` §1.2). 9rem covers the 56px top bar plus a
-            // toolbar that has wrapped to two rows on a narrow viewport, and
-            // `scroll-margin` does not inherit, so each tab stop inside the body
-            // carries it.
-            "[&_.ProseMirror]:scroll-mt-36 [&_pre]:scroll-mt-36 [&_a]:scroll-mt-36",
-            "[&_p]:my-3",
-            "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
-            "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",
-            "[&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-medium",
-            "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
-            "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6",
-            "[&_blockquote]:my-4 [&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground",
-            "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-sm",
-            "[&_pre]:focus-visible:ring-3 [&_pre]:focus-visible:ring-ring [&_pre]:outline-none",
-            "[&_code]:rounded-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
-            "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-            "[&_hr]:my-6 [&_hr]:border-border",
-            "[&_a]:text-primary [&_a]:underline",
-          )}
-        />
+        {mode === "normal" && editor ? (
+          <EditorContent
+            editor={editor}
+            className={cn(
+              // `break-words` inherits, so long unbroken strings wrap anywhere in
+              // the body without a blanket descendant selector
+              // (`ui-qa-checklist.md` §5.9).
+              "min-w-0 break-words text-base text-foreground outline-none",
+              "[&_.ProseMirror]:min-h-[40vh] [&_.ProseMirror]:outline-none",
+              // The toolbar is sticky, so the top of the viewport is chrome. A
+              // focused block that the browser scrolls into view must land below
+              // it — focus hidden behind a sticky bar fails
+              // (`ui-qa-checklist.md` §1.2). 9rem covers the 56px top bar plus a
+              // toolbar that has wrapped to two rows on a narrow viewport, and
+              // `scroll-margin` does not inherit, so each tab stop inside the body
+              // carries it.
+              "[&_.ProseMirror]:scroll-mt-36 [&_pre]:scroll-mt-36 [&_a]:scroll-mt-36",
+              "[&_p]:my-3",
+              "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
+              "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",
+              "[&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-medium",
+              "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
+              "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6",
+              "[&_blockquote]:my-4 [&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground",
+              "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-sm",
+              "[&_pre]:focus-visible:ring-3 [&_pre]:focus-visible:ring-ring [&_pre]:outline-none",
+              "[&_code]:rounded-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
+              "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+              "[&_hr]:my-6 [&_hr]:border-border",
+              "[&_a]:text-primary [&_a]:underline",
+            )}
+          />
+        ) : mode === "markdown" || mode === "text" ? (
+          <CodeMirrorEditor
+            ref={cmRef}
+            mode={mode}
+            value={markdownText}
+            onChange={handleMarkdownChange}
+            bodyLabel={bodyLabel}
+          />
+        ) : (
+          <div className="min-h-[40vh] py-2">
+            <Markdown source={markdownText} />
+          </div>
+        )}
       </div>
 
-      {editor ? <SelectionToolbar editor={editor} /> : null}
+      {mode === "normal" && editor ? (
+        <SelectionToolbar editor={editor} />
+      ) : null}
 
       {onImportFile ? (
         <ImportDropzone items={importItems} onFilesSelected={handleFiles} />

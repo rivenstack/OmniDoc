@@ -130,6 +130,9 @@ Pinned by `@user` decision; rationale in
 | Shiki | 4.4.3 | 2026-08-10 | 2026-09-14 | MIT | Server-side code highlighting |
 | `@tabler/icons-react` | **3.48.0** | 2026-09-22 | 2026-09-23 | MIT | Icons (chosen 2026-09-23; replaces lucide-react 1.46.0) |
 | next-themes | 0.4.6 | 2025-03-11 | 2026-09-14 | MIT | Dark mode |
+| `tiptap-markdown` | **0.9.0** | 2025-08-01 | 2026-10-01 | MIT | Bidirectional ProseMirror JSON ↔ Markdown serializer/parser |
+| `codemirror` | **6.0.2** | 2025-06-25 | 2026-10-01 | MIT | CodeMirror 6 core editor for text source and live preview |
+| `@codemirror/lang-markdown` | **6.5.2** | 2026-08-15 | 2026-10-01 | MIT | Markdown grammar and syntax tree for CodeMirror 6 |
 | next-intl (deferred) | 4.14.5 | — | 2026-09-14 | MIT | Only if an RTL/second locale is scheduled |
 
 Sanitization, the Radix/React-Aria fallbacks, and the deferred rows are

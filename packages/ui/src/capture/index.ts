@@ -57,6 +57,15 @@ export {
   type ImportItem,
 } from "./import-dropzone";
 export {
+  EditorModeSwitcher,
+  type EditorMode,
+  type EditorModeSwitcherProps,
+} from "./editor-mode-switcher";
+export {
+  markdownToProseMirror,
+  proseMirrorToMarkdown,
+} from "./markdown-bridge";
+export {
   AUTOSAVE_DELAY_MS,
   CaptureSurface,
   IMPORT_POLL_MS,

@@ -18,6 +18,9 @@ import {
   IconStrikethrough,
 } from "@tabler/icons-react";
 import { useEditorState, type Editor } from "@tiptap/react";
+import { undo as cmUndo, redo as cmRedo } from "@codemirror/commands";
+import type { CodeMirrorEditorHandle } from "../codemirror/cm-editor";
+import type { EditorMode } from "./editor-mode-switcher";
 import { Separator } from "../components/separator";
 import {
   Tooltip,
@@ -95,7 +98,7 @@ function topChromeBottom(): number {
  * editor packages. This positions from the DOM selection instead and adds no
  * dependency. The tradeoff is accepted and recorded in `docs/design/now.md`.
  */
-function FormattingToolbarView({
+function TipTapFormattingToolbarView({
   editor,
   className,
 }: {
@@ -123,19 +126,6 @@ function FormattingToolbarView({
 
   return (
     <TooltipProvider>
-      {/*
-        Sticky row. Scrolling up to reach a button and back down to the caret is
-        the one cost this block must not charge the user — `capture.md` §3 asks
-        for exactly this on mobile, and the desk is no different.
-
-        The **wrapper** carries the opaque `bg-background` surface, not the
-        toolbar itself: `bg-muted/30` on a sticky element would let the text it
-        is covering read through it, and swapping the panel for a solid slab
-        would change the look it has in flow. Stacked, the two surfaces
-        composite to the same tint in either position.
-
-        `className` stays on the toolbar, where callers already put it.
-      */}
       <div
         data-slot="formatting-toolbar-sticky"
         className={cn(TOOLBAR_STICKY_CLASS, "bg-background py-1")}
@@ -284,13 +274,182 @@ function FormattingToolbarView({
   );
 }
 
-/**
- * Memoised: the only props are the editor (stable for the life of a surface)
- * and a class name, and the component subscribes to the editor's own state for
- * everything that changes. Without this, every keystroke *anywhere* on the
- * surface — including in the title field — re-rendered this whole row of
- * tooltips for an editor state that had not moved.
- */
+function CodeMirrorFormattingToolbarView({
+  cmHandle,
+  className,
+}: {
+  cmHandle: CodeMirrorEditorHandle;
+  className?: string;
+}) {
+  return (
+    <TooltipProvider>
+      <div
+        data-slot="formatting-toolbar-sticky"
+        className={cn(TOOLBAR_STICKY_CLASS, "bg-background py-1")}
+      >
+        <div
+          data-slot="formatting-toolbar"
+          role="toolbar"
+          aria-label="Formatting"
+          aria-orientation="horizontal"
+          className={cn(
+            "flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/30 p-1",
+            className,
+          )}
+        >
+          <ToolbarButton
+            label="Undo"
+            onRun={() => {
+              const view = cmHandle.getEditorView();
+              if (view) cmUndo(view);
+            }}
+          >
+            <IconArrowBackUp aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Redo"
+            onRun={() => {
+              const view = cmHandle.getEditorView();
+              if (view) cmRedo(view);
+            }}
+          >
+            <IconArrowForwardUp aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
+
+          {(
+            [
+              {
+                label: "Heading 1",
+                icon: <IconH1 aria-hidden="true" className="size-4" />,
+                run: () => cmHandle.prefixLine("# "),
+              },
+              {
+                label: "Heading 2",
+                icon: <IconH2 aria-hidden="true" className="size-4" />,
+                run: () => cmHandle.prefixLine("## "),
+              },
+              {
+                label: "Heading 3",
+                icon: <IconH3 aria-hidden="true" className="size-4" />,
+                run: () => cmHandle.prefixLine("### "),
+              },
+            ] as const
+          ).map((item) => (
+            <ToolbarButton
+              key={item.label}
+              label={item.label}
+              onRun={item.run}
+            >
+              {item.icon}
+            </ToolbarButton>
+          ))}
+
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
+
+          <ToolbarButton
+            label="Bullet list"
+            onRun={() => cmHandle.prefixLine("- ")}
+          >
+            <IconList aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Numbered list"
+            onRun={() => cmHandle.prefixLine("1. ")}
+          >
+            <IconListNumbers aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Quote"
+            onRun={() => cmHandle.prefixLine("> ")}
+          >
+            <IconBlockquote aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Code block"
+            onRun={() => cmHandle.insertBlock("\n```\n\n```\n")}
+          >
+            <IconCodeDots aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Divider"
+            onRun={() => cmHandle.insertBlock("\n---\n")}
+          >
+            <IconMinus aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+
+          <Separator
+            orientation="vertical"
+            className={TOOLBAR_SEPARATOR_CLASS}
+          />
+
+          <ToolbarButton
+            label="Bold"
+            onRun={() => cmHandle.wrapSelection("**", "**")}
+          >
+            <IconBold aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Italic"
+            onRun={() => cmHandle.wrapSelection("*", "*")}
+          >
+            <IconItalic aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Strikethrough"
+            onRun={() => cmHandle.wrapSelection("~~", "~~")}
+          >
+            <IconStrikethrough aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Inline code"
+            onRun={() => cmHandle.wrapSelection("`", "`")}
+          >
+            <IconCode aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+export type FormattingToolbarProps = {
+  editor?: Editor | null;
+  cmHandle?: CodeMirrorEditorHandle | null;
+  mode?: EditorMode;
+  className?: string;
+};
+
+function FormattingToolbarView({
+  editor,
+  cmHandle,
+  mode = "normal",
+  className,
+}: FormattingToolbarProps) {
+  if (mode === "reading") {
+    return null;
+  }
+  if (mode === "normal" && editor) {
+    return <TipTapFormattingToolbarView editor={editor} className={className} />;
+  }
+  if ((mode === "markdown" || mode === "text") && cmHandle) {
+    return (
+      <CodeMirrorFormattingToolbarView
+        cmHandle={cmHandle}
+        className={className}
+      />
+    );
+  }
+  return null;
+}
+
 export const FormattingToolbar = memo(FormattingToolbarView);
 
 /**
