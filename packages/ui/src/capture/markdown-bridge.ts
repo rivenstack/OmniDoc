@@ -1,16 +1,26 @@
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table";
 import { Markdown } from "tiptap-markdown";
 import type { ProseMirrorDocument } from "./document";
 
 /**
- * Headless TipTap editor configured with StarterKit and Markdown extension
+ * Headless TipTap editor configured with StarterKit, Table extensions, and Markdown extension
  * for headless bidirectional conversions between ProseMirror JSON and Markdown text.
  */
 function createConverterEditor(): Editor {
   return new Editor({
     extensions: [
       StarterKit,
+      Table.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Markdown.configure({
         html: false,
         tightLists: true,

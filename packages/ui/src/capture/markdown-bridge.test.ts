@@ -46,6 +46,44 @@ describe("markdown-bridge", () => {
     expect(output).toContain("const x = 42;");
   });
 
+  it("converts GFM markdown tables to ProseMirror JSON and back", () => {
+    const markdown = [
+      "| Col 1 | Col 2 |",
+      "| --- | --- |",
+      "| Alpha | Beta |",
+      "| Gamma | Delta |",
+    ].join("\n");
+
+    const json = markdownToProseMirror(markdown) as {
+      type: string;
+      content?: Array<{
+        type: string;
+        content?: Array<{
+          type: string;
+          content?: Array<{ type: string }>;
+        }>;
+      }>;
+    };
+    expect(json).toBeDefined();
+    expect(json.content).toBeDefined();
+
+    // Verify table structure in ProseMirror JSON
+    const tableNode = json.content?.find(
+      (node) => node.type === "table",
+    );
+    expect(tableNode).toBeDefined();
+    expect(tableNode?.type).toBe("table");
+    expect(tableNode?.content?.length).toBe(3); // 1 header row + 2 body rows
+    expect(tableNode?.content?.[0].content?.[0].type).toBe("tableHeader");
+    expect(tableNode?.content?.[1].content?.[0].type).toBe("tableCell");
+
+    // Convert back to markdown
+    const output = proseMirrorToMarkdown(json);
+    expect(output).toContain("| Col 1 | Col 2 |");
+    expect(output).toContain("| Alpha | Beta |");
+    expect(output).toContain("| Gamma | Delta |");
+  });
+
   it("keeps a link that has a target", () => {
     const json = markdownToProseMirror("see [docs](https://example.com/docs)");
     expect(proseMirrorToMarkdown(json)).toContain(

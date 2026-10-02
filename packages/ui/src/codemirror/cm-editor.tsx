@@ -21,6 +21,7 @@ import { cn } from "../lib/utils";
 import {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
+  tableLivePreview,
 } from "./markdown-live-preview";
 
 export type CodeMirrorEditorHandle = {
@@ -210,7 +211,11 @@ export const CodeMirrorEditor = forwardRef<
     ];
 
     if (mode === "markdown") {
-      extensions.push(markdownLivePreviewPlugin, markdownLivePreviewTheme);
+      extensions.push(
+        tableLivePreview,
+        markdownLivePreviewPlugin,
+        markdownLivePreviewTheme,
+      );
     }
 
     const state = EditorState.create({

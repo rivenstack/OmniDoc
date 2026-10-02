@@ -6,4 +6,7 @@ export type {
 export {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
+  tableLivePreview,
+  TablePreviewWidget,
+  parseMarkdownTable,
 } from "./markdown-live-preview";
