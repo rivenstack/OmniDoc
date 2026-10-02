@@ -189,4 +189,59 @@ describe("CodeMirrorEditor", () => {
     expect(textbox.getAttribute("aria-readonly")).toBe("true");
     expect(textbox.getAttribute("contenteditable")).not.toBe("true");
   });
+
+  it("renders GFM tables as permanent interactive rich HTML table preview with inline markdown support", () => {
+    const handleRef = createRef<CodeMirrorEditorHandle>();
+    const tableMarkdown = [
+      "| Header **Bold** | Header *Italic* |",
+      "| --- | --- |",
+      "| `code` | ~~strike~~ |",
+      "| [link](https://example.com) | Plain text |",
+    ].join("\n");
+
+    render(
+      <CodeMirrorEditor
+        ref={handleRef}
+        value={tableMarkdown}
+        onChange={vi.fn()}
+        mode="markdown"
+      />,
+    );
+
+    const view = handleRef.current?.getEditorView();
+    expect(view).toBeTruthy();
+    if (!view) {
+      throw new Error("CodeMirror view did not mount");
+    }
+    const dom = view.contentDOM;
+
+    // 1. Permanent rich HTML table preview is rendered
+    expect(dom.querySelector("table.cm-live-table")).toBeTruthy();
+    expect(dom.querySelectorAll("th.cm-live-th")).toHaveLength(2);
+    expect(dom.querySelectorAll("td.cm-live-td")).toHaveLength(4);
+    expect(dom.querySelector(".cm-live-table-wrapper")).toBeTruthy();
+
+    // 2. Cell inline markdown is rendered to real DOM elements
+    expect(dom.querySelector("strong.cm-live-strong")?.textContent).toBe("Bold");
+    expect(dom.querySelector("em.cm-live-em")?.textContent).toBe("Italic");
+    expect(dom.querySelector("code.cm-live-code")?.textContent).toBe("code");
+    expect(dom.querySelector("del.cm-live-strike")?.textContent).toBe("strike");
+    const linkEl = dom.querySelector("a.cm-live-link") as HTMLAnchorElement | null;
+    expect(linkEl?.textContent).toBe("link");
+    expect(linkEl?.getAttribute("href")).toBe("https://example.com");
+
+    // 3. Cells are contenteditable for direct editing
+    const firstCell = dom.querySelector("td.cm-live-td") as HTMLElement | null;
+    expect(firstCell?.contentEditable).toBe("true");
+
+    // 4. When focused with cursor, the table remains as an interactive table widget (does NOT unfold to raw text lines)
+    act(() => {
+      view.focus();
+      view.dispatch({ selection: { anchor: 5 } });
+    });
+
+    expect(dom.querySelector("table.cm-live-table")).toBeTruthy();
+    expect(dom.querySelectorAll("th.cm-live-th")).toHaveLength(2);
+    expect(dom.querySelectorAll("td.cm-live-td")).toHaveLength(4);
+  });
 });

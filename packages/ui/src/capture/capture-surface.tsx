@@ -40,6 +40,13 @@ import { SaveIndicator } from "./save-indicator";
 import { SaveProblemBanner } from "./save-problem-banner";
 import type { ImportStatus } from "./import-status";
 
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table";
+
 /** How long the editor waits after the last keystroke before saving. */
 export const AUTOSAVE_DELAY_MS = 800;
 
@@ -70,6 +77,24 @@ const CAPTURE_EXTENSIONS = [
       // (`ui-qa-checklist.md` §6.1); an overflow container without a tab
       // stop cannot be scrolled without a pointer.
       HTMLAttributes: { tabindex: "0" },
+    },
+  }),
+  Table.configure({
+    resizable: false,
+    renderWrapper: true,
+    HTMLAttributes: {
+      class: "w-full border-collapse text-sm",
+    },
+  }),
+  TableRow,
+  TableHeader.configure({
+    HTMLAttributes: {
+      class: "border border-border bg-muted/50 p-2 font-medium text-start",
+    },
+  }),
+  TableCell.configure({
+    HTMLAttributes: {
+      class: "border border-border p-2",
     },
   }),
   TipTapMarkdown.configure({
@@ -107,6 +132,10 @@ const CAPTURE_BODY_CLASSES = [
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
   "[&_hr]:my-6 [&_hr]:border-border",
   "[&_a]:text-primary [&_a]:underline",
+  "[&_.tableWrapper]:my-4 [&_.tableWrapper]:overflow-x-auto [&_.tableWrapper]:max-w-full",
+  "[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm",
+  "[&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:font-medium [&_th]:text-start",
+  "[&_td]:border [&_td]:border-border [&_td]:p-2",
 ].join(" ");
 
 /** A note as this surface needs it — the app maps the contract onto this. */

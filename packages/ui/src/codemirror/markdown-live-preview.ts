@@ -1,5 +1,13 @@
 import { syntaxTree } from "@codemirror/language";
-import type { EditorSelection, Range, Text } from "@codemirror/state";
+import {
+  EditorState,
+  StateEffect,
+  StateField,
+  type EditorSelection,
+  type Extension,
+  type Range,
+  type Text,
+} from "@codemirror/state";
 import {
   Decoration,
   EditorView,
@@ -180,6 +188,339 @@ const codeBlockOnlyLine = Decoration.line({
   class: "cm-live-code-block cm-live-code-block-first cm-live-code-block-last",
 });
 
+export function parseMarkdownTable(text: string): {
+  alignments: Array<"left" | "center" | "right">;
+  headers: string[];
+  rows: string[][];
+} | null {
+  const lines = text
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const parseRow = (line: string): string[] => {
+    let content = line;
+    if (content.startsWith("|")) content = content.slice(1);
+    if (content.endsWith("|")) content = content.slice(0, -1);
+    return content.split("|").map((c) => c.trim());
+  };
+
+  const headers = parseRow(lines[0]);
+  const delimiterCells = parseRow(lines[1]);
+  const alignments = delimiterCells.map((cell) => {
+    const left = cell.startsWith(":");
+    const right = cell.endsWith(":");
+    if (left && right) return "center";
+    if (right) return "right";
+    return "left";
+  });
+
+  const rows = lines.slice(2).map(parseRow);
+  return { alignments, headers, rows };
+}
+
+export function serializeMarkdownTable(
+  headers: string[],
+  alignments: Array<"left" | "center" | "right">,
+  rows: string[][],
+): string {
+  const alignMap = {
+    left: ":---",
+    center: ":---:",
+    right: "---:",
+  };
+  const delimiter = headers.map((_, i) => alignMap[alignments[i]] || "---");
+  const lines = [
+    `| ${headers.join(" | ")} |`,
+    `| ${delimiter.join(" | ")} |`,
+    ...rows.map((r) => {
+      const cells = headers.map((_, i) => r[i] ?? "");
+      return `| ${cells.join(" | ")} |`;
+    }),
+  ];
+  return lines.join("\n");
+}
+
+export function cellDOMToMarkdown(el: HTMLElement): string {
+  let md = "";
+  for (const child of Array.from(el.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      md += child.textContent ?? "";
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      const elem = child as HTMLElement;
+      const tag = elem.tagName.toLowerCase();
+      const inner = cellDOMToMarkdown(elem);
+      if (tag === "strong" || tag === "b") {
+        md += `**${inner}**`;
+      } else if (tag === "em" || tag === "i") {
+        md += `*${inner}*`;
+      } else if (tag === "code") {
+        md += `\`${inner}\``;
+      } else if (tag === "del" || tag === "s") {
+        md += `~~${inner}~~`;
+      } else if (tag === "a") {
+        const href = elem.getAttribute("href") ?? "";
+        md += `[${inner}](${href})`;
+      } else {
+        md += inner;
+      }
+    }
+  }
+  return md.trim();
+}
+
+export function renderCellDOM(cellText: string, container: HTMLElement): void {
+  const regex =
+    /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|~~[^~]+~~|\[[^\]]+\]\([^)]+\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(cellText)) !== null) {
+    if (match.index > lastIndex) {
+      container.appendChild(
+        document.createTextNode(cellText.slice(lastIndex, match.index)),
+      );
+    }
+    const token = match[0];
+    if (token.startsWith("`") && token.endsWith("`")) {
+      const code = document.createElement("code");
+      code.className = "cm-live-code";
+      code.textContent = token.slice(1, -1);
+      container.appendChild(code);
+    } else if (token.startsWith("**") && token.endsWith("**")) {
+      const strong = document.createElement("strong");
+      strong.className = "cm-live-strong";
+      strong.textContent = token.slice(2, -2);
+      container.appendChild(strong);
+    } else if (token.startsWith("*") && token.endsWith("*")) {
+      const em = document.createElement("em");
+      em.className = "cm-live-em";
+      em.textContent = token.slice(1, -1);
+      container.appendChild(em);
+    } else if (token.startsWith("~~") && token.endsWith("~~")) {
+      const del = document.createElement("del");
+      del.className = "cm-live-strike";
+      del.textContent = token.slice(2, -2);
+      container.appendChild(del);
+    } else if (token.startsWith("[") && token.includes("](")) {
+      const endText = token.indexOf("](");
+      const label = token.slice(1, endText);
+      const url = token.slice(endText + 2, -1);
+      const a = document.createElement("a");
+      a.className = "cm-live-link";
+      a.href = url;
+      a.textContent = label;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      container.appendChild(a);
+    }
+    lastIndex = match.index + token.length;
+  }
+
+  if (lastIndex < cellText.length) {
+    container.appendChild(document.createTextNode(cellText.slice(lastIndex)));
+  }
+}
+
+export class TablePreviewWidget extends WidgetType {
+  constructor(
+    private readonly markdown: string,
+    private readonly from: number,
+    private readonly to: number,
+  ) {
+    super();
+  }
+
+  eq(other: TablePreviewWidget) {
+    return (
+      other.markdown === this.markdown &&
+      other.from === this.from &&
+      other.to === this.to
+    );
+  }
+
+  ignoreEvent() {
+    return true;
+  }
+
+  toDOM(view: EditorView) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "cm-live-table-wrapper tableWrapper";
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute("role", "group");
+    wrapper.setAttribute("aria-label", "Table preview");
+
+    const parsed = parseMarkdownTable(this.markdown);
+    if (!parsed) {
+      wrapper.textContent = this.markdown;
+      return wrapper;
+    }
+
+    const table = document.createElement("table");
+    table.className = "cm-live-table";
+
+    const headerCells: HTMLElement[] = [];
+    const bodyCellMatrix: HTMLElement[][] = [];
+
+    const syncToEditor = () => {
+      const currentHeaders = headerCells.map((th) => cellDOMToMarkdown(th));
+      const currentRows = bodyCellMatrix.map((row) =>
+        row.map((td) => cellDOMToMarkdown(td)),
+      );
+      const newMarkdown = serializeMarkdownTable(
+        currentHeaders,
+        parsed.alignments,
+        currentRows,
+      );
+      if (newMarkdown !== this.markdown) {
+        view.dispatch({
+          changes: { from: this.from, to: this.to, insert: newMarkdown },
+        });
+      }
+    };
+
+    const attachCellEvents = (cell: HTMLElement, isHeader: boolean) => {
+      cell.contentEditable = "true";
+      cell.spellcheck = false;
+
+      cell.addEventListener("blur", () => {
+        const md = cellDOMToMarkdown(cell);
+        cell.innerHTML = "";
+        renderCellDOM(md, cell);
+        syncToEditor();
+      });
+
+      cell.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Tab" && !e.shiftKey) {
+          const allCells = Array.from(
+            table.querySelectorAll<HTMLElement>("th, td"),
+          );
+          const currentIndex = allCells.indexOf(cell);
+          if (currentIndex === allCells.length - 1) {
+            e.preventDefault();
+            // Add a new row on Tab from the last cell
+            const newRow: HTMLElement[] = [];
+            const tr = document.createElement("tr");
+            for (let i = 0; i < parsed.headers.length; i++) {
+              const td = document.createElement("td");
+              td.className = "cm-live-td";
+              if (parsed.alignments[i]) {
+                td.style.textAlign = parsed.alignments[i];
+              }
+              attachCellEvents(td, false);
+              tr.appendChild(td);
+              newRow.push(td);
+            }
+            tbody.appendChild(tr);
+            bodyCellMatrix.push(newRow);
+            syncToEditor();
+            newRow[0]?.focus();
+          } else if (currentIndex >= 0 && currentIndex < allCells.length - 1) {
+            e.preventDefault();
+            allCells[currentIndex + 1]?.focus();
+          }
+        } else if (e.key === "Tab" && e.shiftKey) {
+          const allCells = Array.from(
+            table.querySelectorAll<HTMLElement>("th, td"),
+          );
+          const currentIndex = allCells.indexOf(cell);
+          if (currentIndex > 0) {
+            e.preventDefault();
+            allCells[currentIndex - 1]?.focus();
+          }
+        } else if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const tr = cell.parentElement;
+          const nextRow = tr?.nextElementSibling;
+          if (nextRow) {
+            const cellIndex = Array.from(tr?.children ?? []).indexOf(cell);
+            const target = nextRow.children[cellIndex] as
+              | HTMLElement
+              | undefined;
+            target?.focus();
+          } else if (!isHeader) {
+            // Enter on the last row adds a new row
+            const newRow: HTMLElement[] = [];
+            const newTr = document.createElement("tr");
+            for (let i = 0; i < parsed.headers.length; i++) {
+              const td = document.createElement("td");
+              td.className = "cm-live-td";
+              if (parsed.alignments[i]) {
+                td.style.textAlign = parsed.alignments[i];
+              }
+              attachCellEvents(td, false);
+              newTr.appendChild(td);
+              newRow.push(td);
+            }
+            tbody.appendChild(newTr);
+            bodyCellMatrix.push(newRow);
+            syncToEditor();
+            const cellIndex = Array.from(tr?.children ?? []).indexOf(cell);
+            newRow[cellIndex]?.focus();
+          }
+        }
+      });
+    };
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    for (let i = 0; i < parsed.headers.length; i++) {
+      const th = document.createElement("th");
+      th.className = "cm-live-th";
+      if (parsed.alignments[i]) {
+        th.style.textAlign = parsed.alignments[i];
+      }
+      renderCellDOM(parsed.headers[i], th);
+      attachCellEvents(th, true);
+      headerRow.appendChild(th);
+      headerCells.push(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    for (const row of parsed.rows) {
+      const tr = document.createElement("tr");
+      const rowCells: HTMLElement[] = [];
+      for (let i = 0; i < parsed.headers.length; i++) {
+        const td = document.createElement("td");
+        td.className = "cm-live-td";
+        if (parsed.alignments[i]) {
+          td.style.textAlign = parsed.alignments[i];
+        }
+        renderCellDOM(row[i] ?? "", td);
+        attachCellEvents(td, false);
+        tr.appendChild(td);
+        rowCells.push(td);
+      }
+      tbody.appendChild(tr);
+      bodyCellMatrix.push(rowCells);
+    }
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+
+    return wrapper;
+  }
+}
+
+const tableHeaderLine = Decoration.line({
+  class: "cm-live-table-header",
+});
+const tableRowLine = Decoration.line({
+  class: "cm-live-table-row",
+});
+const tableDelimiterLine = Decoration.line({
+  class: "cm-live-table-delimiter",
+});
+const tablePipeDeco = Decoration.mark({
+  class: "cm-live-table-pipe",
+});
+const TABLE_DELIMITER_RULE = Decoration.replace({
+  widget: new MarkerWidget("cm-live-table-hr", ""),
+});
+
 const headingDecos: Partial<Record<string, Decoration>> = {
   ATXHeading1: Decoration.mark({ class: "cm-live-h1" }),
   ATXHeading2: Decoration.mark({ class: "cm-live-h2" }),
@@ -201,6 +542,45 @@ function selectionTouches(
     (range: RangeLike) => range.from <= to && range.to >= from,
   );
 }
+
+function buildTablePreviewDecorations(state: EditorState): DecorationSet {
+  const ranges: Range<Decoration>[] = [];
+
+  syntaxTree(state).iterate({
+    enter: (node) => {
+      if (node.name === "Table") {
+        const text = state.doc.sliceString(node.from, node.to);
+        const parsed = parseMarkdownTable(text);
+        if (parsed) {
+          ranges.push(
+            Decoration.replace({
+              widget: new TablePreviewWidget(text, node.from, node.to),
+              block: true,
+            }).range(node.from, node.to),
+          );
+        }
+        return false;
+      }
+    },
+  });
+
+  return Decoration.set(ranges, true);
+}
+
+export const tableLivePreviewField = StateField.define<DecorationSet>({
+  create(state) {
+    return buildTablePreviewDecorations(state);
+  },
+  update(decorations, tr) {
+    if (tr.docChanged) {
+      return buildTablePreviewDecorations(tr.state);
+    }
+    return decorations;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+export const tableLivePreview: Extension = [tableLivePreviewField];
 
 /** Whitespace that belongs to a marker rather than to the content. */
 function markerEnd(doc: Text, from: number): number {
@@ -343,6 +723,31 @@ function buildDecorations(view: EditorView): DecorationSet {
       } else {
         ranges.push(RULE.range(node.from, node.to));
       }
+    } else if (node.name === "TableHeader") {
+      const line = doc.lineAt(node.from);
+      ranges.push(tableHeaderLine.range(line.from));
+    } else if (node.name === "TableRow") {
+      const line = doc.lineAt(node.from);
+      ranges.push(tableRowLine.range(line.from));
+    } else if (node.name === "TableDelimiter") {
+      const inRow = ancestors.some(
+        (a) => a.name === "TableHeader" || a.name === "TableRow",
+      );
+      const line = doc.lineAt(node.from);
+      if (inRow) {
+        if (isRevealed(line)) {
+          ranges.push(SYNTAX.range(node.from, node.to));
+        } else {
+          ranges.push(tablePipeDeco.range(node.from, node.to));
+        }
+      } else {
+        ranges.push(tableDelimiterLine.range(line.from));
+        if (isRevealed(line)) {
+          ranges.push(SYNTAX.range(node.from, node.to));
+        } else {
+          ranges.push(TABLE_DELIMITER_RULE.range(node.from, node.to));
+        }
+      }
     }
   };
 
@@ -354,8 +759,13 @@ function buildDecorations(view: EditorView): DecorationSet {
         decorate(node);
         ancestors.push({ name: node.name, from: node.from, to: node.to });
       },
-      leave: () => {
-        ancestors.pop();
+      leave: (node: NodeRange) => {
+        if (
+          ancestors.length > 0 &&
+          ancestors[ancestors.length - 1].name === node.name
+        ) {
+          ancestors.pop();
+        }
       },
     });
   }
@@ -513,6 +923,57 @@ export const markdownLivePreviewTheme = EditorView.theme({
   ".cm-live-code-block-last": {
     borderEndStartRadius: "0.375rem",
     borderEndEndRadius: "0.375rem",
+  },
+  // GFM tables: monospace alignment, muted header row, clean delimiter
+  ".cm-line.cm-live-table-header": {
+    backgroundColor: "var(--muted)",
+    fontFamily: "var(--font-geist-mono), monospace",
+    fontSize: "0.875rem",
+    fontWeight: "600",
+    paddingInline: "0.5rem",
+  },
+  ".cm-line.cm-live-table-row": {
+    fontFamily: "var(--font-geist-mono), monospace",
+    fontSize: "0.875rem",
+    paddingInline: "0.5rem",
+  },
+  ".cm-line.cm-live-table-delimiter": {
+    lineHeight: "1rem",
+    paddingInline: "0.5rem",
+  },
+  ".cm-live-table-pipe": {
+    color: "var(--border)",
+  },
+  ".cm-live-table-hr": {
+    display: "block",
+    inlineSize: "100%",
+    blockSize: "0",
+    borderBlockStart: "1px solid var(--border)",
+    verticalAlign: "middle",
+  },
+  // Formatted table preview (Obsidian-style live preview when unfocused)
+  ".cm-live-table-wrapper": {
+    overflowX: "auto",
+    maxWidth: "100%",
+    marginBlock: "0.75rem",
+    cursor: "pointer",
+  },
+  ".cm-live-table": {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "0.875rem",
+  },
+  ".cm-live-th": {
+    border: "1px solid var(--border)",
+    backgroundColor: "var(--muted)",
+    padding: "0.5rem",
+    fontWeight: "600",
+    textAlign: "start",
+  },
+  ".cm-live-td": {
+    border: "1px solid var(--border)",
+    padding: "0.5rem",
+    textAlign: "start",
   },
 });
 

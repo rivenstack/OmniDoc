@@ -237,4 +237,24 @@ describe("CaptureSurface Multi-Mode", () => {
     expect((savedInput as any)?.title).toBe("My Markdown Note");
     expect((savedInput as any)?.bodyJson?.type).toBe("doc");
   });
+
+  it("provides table insertion button in the toolbar and preserves tables across modes", () => {
+    render(<CaptureSurface note={null} onSave={vi.fn()} />);
+
+    // Table insertion button is present in Normal mode toolbar
+    const tableButton = screen.getByRole("button", {
+      name: "Insert table (3x3)",
+    });
+    expect(tableButton).toBeTruthy();
+
+    // Click insert table
+    fireEvent.click(tableButton);
+
+    // Switch to Text mode
+    chooseMode("Text");
+
+    // CodeMirror contains the markdown table
+    const textEditor = document.querySelector(".cm-content");
+    expect(textEditor?.textContent).toContain("| --- | --- | --- |");
+  });
 });

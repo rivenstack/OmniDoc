@@ -521,6 +521,26 @@ card and still needs a reference.
 
 **Look:** Mode switcher pills integrated into capture top bar/toolbar; stock tokens (Mintlify theme); accessible focus and keyboard shortcuts.
 
+### F-14 — Markdown & editor tables
+
+| | |
+|--|--|
+| **Status** | **ready** — scheduled following `@user` approval of BL-20 promotion (2026-10-02) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), F-13 (multi-mode capture), Architect pin for `@tiptap/extension-table*` |
+| **Blocks** | F-05, Phase 2 CX gate |
+| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` |
+
+**Short description:** Rich Markdown and GFM table capabilities across OmniDoc's multi-mode capture editor and reading pipelines:
+1. **Normal mode (TipTap)**: `@tiptap/extension-table` (with row, cell, header) registered in the editor schema; accessible horizontal scroll containment (`ui-qa-checklist.md` §6.4).
+2. **Markdown mode (CodeMirror 6)**: Live preview table styling and syntax reveal rules; pipe syntax unfolds when cursor touches a table line and folds into clean tabular cells when unfocused/locked.
+3. **Text mode (CodeMirror 6)**: Raw GFM pipe table source editing in monospace.
+4. **Toolbar affordances**: Quick default table insertion button and interactive size popover in the sticky toolbar; contextual table row/col manipulation controls in the floating selection bubble.
+
+**Integrations:** Bidirectional JSON ↔ Markdown bridge (`markdown-bridge.ts`) preserves table nodes and attributes across mode switches and persistence.
+
+**Look:** Mintlify token layer (`border-border`, `bg-muted/50`, `text-foreground`); logical directionality utilities (`text-start`, `border-inline`).
+
 ---
 
 ## Backend lane — `backend` / `/implementer`

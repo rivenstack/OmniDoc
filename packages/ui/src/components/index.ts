@@ -163,3 +163,10 @@ export {
   SidebarTrigger,
   useSidebar,
 } from "./sidebar";
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverPortal,
+  PopoverContent,
+  PopoverClose,
+} from "./popover";

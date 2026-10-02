@@ -6,8 +6,12 @@ import {
   IconArrowForwardUp,
   IconBlockquote,
   IconBold,
+  IconChevronDown,
   IconCode,
   IconCodeDots,
+  IconColumnInsertLeft,
+  IconColumnInsertRight,
+  IconColumnRemove,
   IconH1,
   IconH2,
   IconH3,
@@ -15,7 +19,12 @@ import {
   IconList,
   IconListNumbers,
   IconMinus,
+  IconRowInsertBottom,
+  IconRowInsertTop,
+  IconRowRemove,
   IconStrikethrough,
+  IconTable,
+  IconTableMinus,
 } from "@tabler/icons-react";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { undo as cmUndo, redo as cmRedo } from "@codemirror/commands";
@@ -29,6 +38,7 @@ import {
   TooltipTrigger,
 } from "../components/tooltip";
 import { IconButton } from "../components/icon-button";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/popover";
 import { cn } from "../lib/utils";
 
 /**
@@ -78,6 +88,90 @@ function topChromeBottom(): number {
 }
 
 /**
+ * Helper to generate and insert a GFM markdown table in CodeMirror editors.
+ */
+function insertMarkdownTable(
+  cmHandle: CodeMirrorEditorHandle,
+  rows: number,
+  cols: number,
+) {
+  const header =
+    "| " +
+    Array.from({ length: cols }, (_, i) => `Header ${i + 1}`).join(" | ") +
+    " |";
+  const separator =
+    "| " + Array.from({ length: cols }, () => "---").join(" | ") + " |";
+  const bodyRows = Array.from({ length: Math.max(1, rows - 1) }, (_, r) => {
+    return (
+      "| " +
+      Array.from({ length: cols }, (_, c) => `Cell ${r + 1}-${c + 1}`).join(
+        " | ",
+      ) +
+      " |"
+    );
+  });
+  const tableText = `\n${header}\n${separator}\n${bodyRows.join("\n")}\n`;
+  cmHandle.insertBlock(tableText);
+}
+
+/**
+ * Interactive grid size popover for table insertion.
+ */
+function TableSizePicker({
+  onSelect,
+}: {
+  onSelect: (rows: number, cols: number) => void;
+}) {
+  const [hovered, setHovered] = useState<{ rows: number; cols: number }>({
+    rows: 3,
+    cols: 3,
+  });
+
+  const maxRows = 6;
+  const maxCols = 6;
+
+  return (
+    <div className="flex flex-col gap-2 p-1" data-slot="table-size-picker">
+      <div className="text-center text-xs font-medium text-muted-foreground">
+        {hovered.rows} × {hovered.cols} Table
+      </div>
+      <div
+        className="grid gap-1"
+        style={{
+          gridTemplateColumns: `repeat(${maxCols}, minmax(0, 1fr))`,
+        }}
+        onMouseLeave={() => setHovered({ rows: 3, cols: 3 })}
+      >
+        {Array.from({ length: maxRows * maxCols }).map((_, index) => {
+          const r = Math.floor(index / maxCols) + 1;
+          const c = (index % maxCols) + 1;
+          const isHighlighted = r <= hovered.rows && c <= hovered.cols;
+
+          return (
+            <button
+              key={`${r}-${c}`}
+              type="button"
+              className={cn(
+                "size-5 cursor-pointer rounded-xs border transition-colors",
+                isHighlighted
+                  ? "border-primary bg-primary/20"
+                  : "border-muted-foreground/30 hover:border-primary/50",
+              )}
+              onMouseEnter={() => setHovered({ rows: r, cols: c })}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelect(r, c);
+              }}
+              aria-label={`${r} by ${c} table`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Capture block — formatting toolbar (option C: a sticky row for block-level
  * commands, plus a selection toolbar for inline marks).
  *
@@ -123,6 +217,8 @@ function TipTapFormattingToolbarView({
       canRedo: instance.can().redo(),
     }),
   });
+
+  const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
 
   return (
     <TooltipProvider>
@@ -235,6 +331,46 @@ function TipTapFormattingToolbarView({
             <IconMinus aria-hidden="true" className="size-4" />
           </ToolbarButton>
 
+          <div className="flex items-center">
+            <ToolbarButton
+              label="Insert table (3x3)"
+              onRun={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                  .run()
+              }
+            >
+              <IconTable aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Choose table size"
+                    className="flex h-7 w-4 items-center justify-center rounded-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                  />
+                }
+              >
+                <IconChevronDown aria-hidden="true" className="size-3" />
+              </PopoverTrigger>
+              <PopoverContent align="start" sideOffset={4} className="w-auto p-2">
+                <TableSizePicker
+                  onSelect={(rows, cols) => {
+                    setTablePopoverOpen(false);
+                    editor
+                      .chain()
+                      .focus()
+                      .insertTable({ rows, cols, withHeaderRow: true })
+                      .run();
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <Separator
             orientation="vertical"
             className={TOOLBAR_SEPARATOR_CLASS}
@@ -281,6 +417,8 @@ function CodeMirrorFormattingToolbarView({
   cmHandle: CodeMirrorEditorHandle;
   className?: string;
 }) {
+  const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
+
   return (
     <TooltipProvider>
       <div
@@ -378,6 +516,36 @@ function CodeMirrorFormattingToolbarView({
             <IconMinus aria-hidden="true" className="size-4" />
           </ToolbarButton>
 
+          <div className="flex items-center">
+            <ToolbarButton
+              label="Insert table (3x3)"
+              onRun={() => insertMarkdownTable(cmHandle, 3, 3)}
+            >
+              <IconTable aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Choose table size"
+                    className="flex h-7 w-4 items-center justify-center rounded-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                  />
+                }
+              >
+                <IconChevronDown aria-hidden="true" className="size-3" />
+              </PopoverTrigger>
+              <PopoverContent align="start" sideOffset={4} className="w-auto p-2">
+                <TableSizePicker
+                  onSelect={(rows, cols) => {
+                    setTablePopoverOpen(false);
+                    insertMarkdownTable(cmHandle, rows, cols);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <Separator
             orientation="vertical"
             className={TOOLBAR_SEPARATOR_CLASS}
@@ -470,6 +638,7 @@ function SelectionToolbarView({
       italic: instance.isActive("italic"),
       strike: instance.isActive("strike"),
       code: instance.isActive("code"),
+      inTable: instance.isActive("table"),
     }),
   });
   const [position, setPosition] = useState<{
@@ -479,9 +648,14 @@ function SelectionToolbarView({
 
   useEffect(() => {
     function update() {
+      const inTable = editor.isActive("table");
       const selection =
         typeof window === "undefined" ? null : window.getSelection?.();
-      if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      if (
+        !selection ||
+        (!inTable && selection.isCollapsed) ||
+        selection.rangeCount === 0
+      ) {
         setPosition(null);
         return;
       }
@@ -490,7 +664,15 @@ function SelectionToolbarView({
         setPosition(null);
         return;
       }
-      const rect = range.getBoundingClientRect();
+      let rect = range.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0 && inTable) {
+        const cell = editor.view.dom.querySelector(
+          "td:focus-within, th:focus-within, .selectedCell",
+        );
+        if (cell) {
+          rect = cell.getBoundingClientRect();
+        }
+      }
       // jsdom returns an all-zero rect, and a zero-size rect also means the
       // selection is not being painted (e.g. a collapsed block selection).
       if (rect.width === 0 && rect.height === 0) {
@@ -563,6 +745,65 @@ function SelectionToolbarView({
         >
           <IconCode aria-hidden="true" className="size-4" />
         </ToolbarButton>
+
+        {state.inTable && (
+          <>
+            <Separator
+              orientation="vertical"
+              className={TOOLBAR_SEPARATOR_CLASS}
+            />
+            <ToolbarButton
+              label="Add row above"
+              onRun={() => editor.chain().focus().addRowBefore().run()}
+            >
+              <IconRowInsertTop aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Add row below"
+              onRun={() => editor.chain().focus().addRowAfter().run()}
+            >
+              <IconRowInsertBottom aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Delete row"
+              onRun={() => editor.chain().focus().deleteRow().run()}
+            >
+              <IconRowRemove aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <Separator
+              orientation="vertical"
+              className={TOOLBAR_SEPARATOR_CLASS}
+            />
+            <ToolbarButton
+              label="Add column before"
+              onRun={() => editor.chain().focus().addColumnBefore().run()}
+            >
+              <IconColumnInsertLeft aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Add column after"
+              onRun={() => editor.chain().focus().addColumnAfter().run()}
+            >
+              <IconColumnInsertRight aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Delete column"
+              onRun={() => editor.chain().focus().deleteColumn().run()}
+            >
+              <IconColumnRemove aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+            <Separator
+              orientation="vertical"
+              className={TOOLBAR_SEPARATOR_CLASS}
+            />
+            <ToolbarButton
+              label="Delete table"
+              onRun={() => editor.chain().focus().deleteTable().run()}
+            >
+              <IconTableMinus aria-hidden="true" className="size-4" />
+            </ToolbarButton>
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

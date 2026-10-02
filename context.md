@@ -152,6 +152,7 @@ Program of record:
   the live frontend head on branch `F12-markdown-render`; `@user` chose
   **behaviour only, stock tokens** for its look. `BL-20`…`BL-23` stay
   `proposed` — `BL-20`/`BL-21` still need a new Architect pin
+- **2026-10-02:** **F-14 (Markdown & editor tables) completed and verified.** Promoted from BL-20 following `@user` review. Implemented pinned `@tiptap/extension-table*` packages (3.31.3), interactive size popover (matrix picker) + default 3x3 table button, contextual bubble controls (row/col insert/remove, table delete), live preview GFM table decorations & cursor-reveal rules, accessible horizontal scroll containment (`ui-qa-checklist.md` §6.4), and bidirectional JSON ↔ Markdown bridge. Monorepo gate check passed 16/16 (`nx run-many -t typecheck lint test build`), all 376 UI tests green.
 - **2026-09-27:** **F-12 built** (branch `F12-markdown-render`) — the single
   sanitized markdown render path: `packages/ui/src/markdown/` (`Markdown` +
   `markdownSanitizeSchema`) on the accepted ADR-0003 §4 pins, installed exactly
@@ -247,7 +248,8 @@ Program of record:
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
-| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **ready** 2026-09-25 — Inbox + Notes lists over `listNotes`; Collections sub-slice soft-stopped (no S-02 collections/tags surface) | `docs/handoffs/active/lane-frontend.md` |
+| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **listed** — soft-stopped on S-02 collections gap | `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md` |
+| F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **ready** 2026-10-02 — table extensions, popover/bubble toolbar affordances, live preview, bridge | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -329,7 +331,7 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-05 organize, `lane: frontend`, human: front-end
+  `/implementer` (F-14 markdown & editor tables, `lane: frontend`, human: front-end
   programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (B-05 ingestion/chunking + progress, `lane: backend`,
