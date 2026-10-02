@@ -610,6 +610,32 @@ describe("CaptureSurface", () => {
     expect(screen.getByRole("status").textContent).toBe("Saved");
   });
 
+  it("does not automatically retry a failed save in an infinite loop", async () => {
+    vi.useFakeTimers();
+    const onSave = vi
+      .fn<(input: CaptureSaveInput) => Promise<SaveResult>>()
+      .mockResolvedValue({ status: "unavailable" });
+    renderDraft(onSave);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Note title" }), {
+      target: { value: "Ergonomics" },
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY_MS + 10);
+    });
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("status").textContent).toMatch(/couldn't save/i);
+
+    // Fast-forward multiple autosave intervals
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY_MS * 5);
+    });
+
+    // Save must not have been called again automatically
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
   it("offers the import affordance only when the app can accept a file", () => {
     renderDraft(async (): Promise<SaveResult> => saved());
 

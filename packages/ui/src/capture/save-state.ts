@@ -54,6 +54,8 @@ export type SaveEvent =
   | { type: "save_conflict" }
   /** Transport failure, 5xx, or an unreadable response. */
   | { type: "save_failed" }
+  /** Explicit user retry from error state. */
+  | { type: "retry" }
   /** Re-baseline from a server note (initial load, or a resolved conflict). */
   | { type: "reset"; version: string | null; revision?: number };
 
@@ -71,9 +73,16 @@ export function isDirty(state: SaveState): boolean {
  *
  * Only when there is something to save: firing an autosave with no edits would
  * bump the version and announce a save the user did not make.
+ * An active conflict or previous error stops autosave from retrying
+ * automatically in a loop without user intervention.
  */
 export function canSave(state: SaveState): boolean {
-  return isDirty(state) && state.status !== "saving" && state.status !== "conflict";
+  return (
+    isDirty(state) &&
+    state.status !== "saving" &&
+    state.status !== "conflict" &&
+    state.status !== "error"
+  );
 }
 
 export function reduceSaveState(state: SaveState, event: SaveEvent): SaveState {
@@ -117,6 +126,12 @@ export function reduceSaveState(state: SaveState, event: SaveEvent): SaveState {
 
     case "save_failed": {
       return { ...state, status: "error" };
+    }
+
+    case "retry": {
+      return state.status === "error" && isDirty(state)
+        ? { ...state, status: "idle" }
+        : state;
     }
 
     case "reset": {

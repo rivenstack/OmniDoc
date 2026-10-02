@@ -21,6 +21,16 @@ export function RouteFocus() {
       return;
     }
 
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      active?.getAttribute("contenteditable") === "true" ||
+      active?.closest?.("[contenteditable='true'], .ProseMirror, [data-slot='capture-surface']")
+    ) {
+      return;
+    }
+
     const heading = document.querySelector<HTMLElement>(
       "[data-slot='page-heading']",
     );

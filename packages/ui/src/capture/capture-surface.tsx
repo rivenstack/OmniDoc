@@ -290,9 +290,16 @@ export function CaptureSurface({
     [bodyLabel],
   );
 
+  const initialContent = useRef(note?.bodyJson ?? EMPTY_DOCUMENT);
+  const lastNoteId = useRef(note?.id);
+  if (lastNoteId.current !== note?.id) {
+    lastNoteId.current = note?.id;
+    initialContent.current = note?.bodyJson ?? EMPTY_DOCUMENT;
+  }
+
   const editor = useEditor({
     extensions: CAPTURE_EXTENSIONS,
-    content: note?.bodyJson ?? EMPTY_DOCUMENT,
+    content: initialContent.current,
     // Required: the default throws during server rendering, and Next renders
     // this tree on the server first.
     immediatelyRender: false,
@@ -568,6 +575,7 @@ export function CaptureSurface({
         <SaveProblemBanner
           kind="error"
           onRetry={() => {
+            dispatchSaveEvent(store, { type: "retry" });
             void runSave();
           }}
         />

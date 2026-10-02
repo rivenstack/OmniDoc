@@ -170,14 +170,25 @@ describe("transport failure", () => {
     expect(isDirty(failed)).toBe(true);
   });
 
-  it("lets a later edit retry after a failure", () => {
+  it("refuses to auto-save while in error state to prevent infinite retry loops", () => {
     const failed = drive([
       { type: "edit" },
       { type: "save_started" },
       { type: "save_failed" },
     ]);
 
-    const retried = reduceSaveState(failed, { type: "edit" });
+    expect(canSave(failed)).toBe(false);
+    expect(reduceSaveState(failed, { type: "save_started" })).toBe(failed);
+  });
+
+  it("allows explicit retry from error state", () => {
+    const failed = drive([
+      { type: "edit" },
+      { type: "save_started" },
+      { type: "save_failed" },
+    ]);
+
+    const retried = reduceSaveState(failed, { type: "retry" });
 
     expect(retried.status).toBe("idle");
     expect(canSave(retried)).toBe(true);
