@@ -89,6 +89,11 @@ function topChromeBottom(): number {
 
 /**
  * Helper to generate and insert a GFM markdown table in CodeMirror editors.
+ *
+ * The table is pushed onto its own block. A pipe table that directly abuts a
+ * paragraph above it is still a table to the reader, but the block boundary is
+ * what keeps the source readable — and it is the shape the Markdown mode's own
+ * scanner expects to find.
  */
 function insertMarkdownTable(
   cmHandle: CodeMirrorEditorHandle,
@@ -110,7 +115,13 @@ function insertMarkdownTable(
       " |"
     );
   });
-  const tableText = `\n${header}\n${separator}\n${bodyRows.join("\n")}\n`;
+
+  const view = cmHandle.getEditorView();
+  const before = view
+    ? view.state.sliceDoc(0, view.state.selection.main.from)
+    : "";
+  const lead = before === "" || before.endsWith("\n\n") ? "" : "\n";
+  const tableText = `${lead}${header}\n${separator}\n${bodyRows.join("\n")}\n`;
   cmHandle.insertBlock(tableText);
 }
 
@@ -356,7 +367,11 @@ function TipTapFormattingToolbarView({
               >
                 <IconChevronDown aria-hidden="true" className="size-3" />
               </PopoverTrigger>
-              <PopoverContent align="start" sideOffset={4} className="w-auto p-2">
+              <PopoverContent
+                align="start"
+                sideOffset={4}
+                className="w-auto p-2"
+              >
                 <TableSizePicker
                   onSelect={(rows, cols) => {
                     setTablePopoverOpen(false);
@@ -535,7 +550,11 @@ function CodeMirrorFormattingToolbarView({
               >
                 <IconChevronDown aria-hidden="true" className="size-3" />
               </PopoverTrigger>
-              <PopoverContent align="start" sideOffset={4} className="w-auto p-2">
+              <PopoverContent
+                align="start"
+                sideOffset={4}
+                className="w-auto p-2"
+              >
                 <TableSizePicker
                   onSelect={(rows, cols) => {
                     setTablePopoverOpen(false);

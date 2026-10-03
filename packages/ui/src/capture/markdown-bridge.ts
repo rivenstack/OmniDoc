@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@tiptap/extension-table";
 import { Markdown } from "tiptap-markdown";
+import { normalizeMarkdownTables } from "../markdown/table";
 import type { ProseMirrorDocument } from "./document";
 
 /**
@@ -112,6 +113,48 @@ function withoutTargetlessLinks(doc: ProseMirrorDocument): ProseMirrorDocument {
 }
 
 /**
+ * A private-use codepoint that carries a literal `|` through the serializer.
+ *
+ * `prosemirror-markdown` writes a table cell's text verbatim, so a cell holding
+ * `a | b` is serialized as `| a | b |` — three cells where the table has two,
+ * which is a different table the next time it is read. The `|` is swapped for
+ * this sentinel before serializing and swapped back as `\|` after, which is the
+ * GFM spelling for a literal pipe in a cell and what every reader here already
+ * understands (`markdown/table.ts`). It never reaches storage: it exists only
+ * for the duration of one `getMarkdown()` call.
+ */
+const PIPE_SENTINEL = "\uE000";
+
+/**
+ * Hide literal pipes inside table cells from the markdown serializer.
+ *
+ * Only cell text is touched — a `|` in a paragraph is ordinary punctuation.
+ */
+function hideTablePipes(doc: ProseMirrorDocument): ProseMirrorDocument {
+  const walk = (value: unknown, insideCell: boolean): unknown => {
+    if (typeof value !== "object" || value === null) {
+      return value;
+    }
+    const node = value as DocumentNode & { text?: unknown };
+    const isCell = node.type === "tableCell" || node.type === "tableHeader";
+    const next: DocumentNode = { ...node };
+
+    if (insideCell && typeof node.text === "string") {
+      next.text = node.text.replace(/\|/g, PIPE_SENTINEL);
+    }
+    if (Array.isArray(node.content)) {
+      next.content = node.content.map((child) =>
+        walk(child, insideCell || isCell),
+      );
+    }
+
+    return next;
+  };
+
+  return walk(doc, false) as ProseMirrorDocument;
+}
+
+/**
  * Convert a ProseMirror document JSON into clean Markdown string.
  */
 export function proseMirrorToMarkdown(doc: ProseMirrorDocument): string {
@@ -119,22 +162,33 @@ export function proseMirrorToMarkdown(doc: ProseMirrorDocument): string {
     return "";
   }
   const editor = getConverter();
-  editor.commands.setContent(withoutTargetlessLinks(doc), { emitUpdate: false });
+  editor.commands.setContent(hideTablePipes(withoutTargetlessLinks(doc)), {
+    emitUpdate: false,
+  });
   const storage = editor.storage as unknown as { markdown?: { getMarkdown: () => string } };
-  return storage.markdown ? storage.markdown.getMarkdown().trim() : "";
+  const markdown = storage.markdown ? storage.markdown.getMarkdown().trim() : "";
+  return markdown.replaceAll(PIPE_SENTINEL, "\\|");
 }
 
 /**
  * Convert a Markdown string into a ProseMirror document JSON.
+ *
+ * Tables are normalised first. The editor's Markdown mode is deliberately
+ * lenient about a delimiter row that is narrower than its header — that is what
+ * lets `| Head 1 | Head 2 | Head 3 |` + `| --- |` render as a table while it is
+ * being typed — but `tiptap-markdown` follows GFM strictly and would read that
+ * block as a paragraph. Padding it here keeps the two readers agreeing, so a
+ * lenient table in the editor is still a table after a save and reload.
  */
 export function markdownToProseMirror(markdown: string): ProseMirrorDocument {
-  if (!markdown || markdown.trim() === "") {
+  const source = normalizeMarkdownTables(markdown);
+  if (!source || source.trim() === "") {
     return {
       type: "doc",
       content: [{ type: "paragraph" }],
     };
   }
   const editor = getConverter();
-  editor.commands.setContent(markdown, { emitUpdate: false });
+  editor.commands.setContent(source, { emitUpdate: false });
   return editor.getJSON() as ProseMirrorDocument;
 }

@@ -59,8 +59,16 @@ export function NoteTitleField({
         // A title is one line in the document sense, but it must not clip: the
         // overflow behaviour is the same rule as any long unbroken string
         // (`ui-qa-checklist.md` §5.9, §6.3).
+        //
+        // The `md:` size is not decoration. `Input` ships `text-base md:text-sm`
+        // for form fields, and a variant-free `text-3xl` cannot override
+        // `md:text-sm` — tailwind-merge only drops classes in the same group
+        // *and* variant, so the title silently fell back to 14px on desktop and
+        // read as a form field rather than the page's heading. Both sizes are
+        // therefore named explicitly, with the desktop one larger than the
+        // phone's because that is where the extra width is.
         className={cn(
-          "h-auto rounded-none border-0 bg-transparent p-0 text-3xl font-medium tracking-tight shadow-none",
+          "h-auto rounded-none border-0 bg-transparent p-0 text-3xl font-medium tracking-tight shadow-none md:text-4xl",
           // `dark:bg-input/30` from the primitive has to be named explicitly:
           // `bg-transparent` alone does not beat it in dark mode, and the title
           // would keep a visible box.

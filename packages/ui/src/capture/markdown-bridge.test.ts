@@ -84,6 +84,35 @@ describe("markdown-bridge", () => {
     expect(output).toContain("| Gamma | Delta |");
   });
 
+  it("escapes a literal pipe in a cell so the row keeps its shape", () => {
+    // `|` inside a cell is escaped on both sides of the bridge. Without it the
+    // serializer writes the pipe bare, the row gains a cell, and the next read
+    // of the note drops whatever followed it.
+    const markdown = "| a | b |\n| --- | --- |\n| x \\| y | 2 |";
+    expect(proseMirrorToMarkdown(markdownToProseMirror(markdown))).toBe(
+      markdown,
+    );
+  });
+
+  it("keeps a pipe inside a cell's code span", () => {
+    const markdown = "| a | b |\n| --- | --- |\n| `p\\|q` | 2 |";
+    expect(proseMirrorToMarkdown(markdownToProseMirror(markdown))).toBe(
+      markdown,
+    );
+  });
+
+  it("pads a delimiter row that is narrower than its header", () => {
+    // Markdown mode renders `| Head 1 | Head 2 | Head 3 |` + `| --- |` as a
+    // three-column table while it is being typed; GFM readers — including this
+    // bridge — need the delimiter row padded to agree.
+    const json = markdownToProseMirror(
+      "| Head 1 | Head 2 | Head 3 |\n| --- |",
+    );
+    expect(proseMirrorToMarkdown(json)).toBe(
+      "| Head 1 | Head 2 | Head 3 |\n| --- | --- | --- |",
+    );
+  });
+
   it("keeps a link that has a target", () => {
     const json = markdownToProseMirror("see [docs](https://example.com/docs)");
     expect(proseMirrorToMarkdown(json)).toContain(

@@ -570,3 +570,40 @@
   state from that echo (`useEffect([note.bodyJson])`) silently rewrites the
   user's input with the serializer's projection of it — seed on note
   **identity**, not on object identity.
+- **2026-10-03 (F-14 review):** CodeMirror forbids **block** decorations from a
+  `ViewPlugin` ("Block decorations may not be specified via plugins"). A block
+  widget has to come from a `StateField`, so a behaviour pair splits: the
+  `StateField` owns the decorations, a `ViewPlugin` owns any timer/state the
+  decision needs and dispatches an effect to make the field recompute.
+- **2026-10-03 (F-14 review):** never call `view.dispatch` from a widget's
+  `focusout`. That event arrives *inside* CodeMirror's own update whenever the
+  update is what moved focus, and `EditorView.dispatch` then throws
+  "Calls to EditorView.update are not allowed while an update is in progress" —
+  the write is lost. Detect the cycle with `view.updateState === 0` (real, but
+  absent from the public typings) and defer to the next task when it is not.
+- **2026-10-03 (F-14 review):** a widget interaction must **latch after its one
+  write**. The write replaces the widget, so the instance's cached
+  `from`/`to` are stale from then on; a second write from the same instance
+  (a queued `focusout` after Escape, say) splices the block out of its own old
+  range.
+- **2026-10-03 (F-14 review):** `markdown-it`'s GFM table rule splits on `\|`
+  (escapes are honoured) but **not** on a pipe inside a code span — so a cell
+  like `` `a|b` `` parses as two cells there while the repo's own row splitter
+  (code-span aware) reads one. Escaping every bare pipe on serialize, code spans
+  included, is what makes the two agree; `prosemirror-markdown` writes cell text
+  verbatim, so the escape has to be carried out through a sentinel and restored
+  as `\|` (`capture/markdown-bridge.ts`).
+- **2026-10-03 (F-14 review):** a table is defined by its **lines**, not by the
+  syntax tree. `@codemirror/lang-markdown` only builds a `Table` node when the
+  delimiter row has exactly as many cells as the header — a user who types
+  `| Head 1 | Head 2 | Head 3 |` then `| --- |` never has that on screen, so a
+  tree lookup leaves their table as raw pipes. Scan lines instead, and push the
+  same leniency into `markdownToProseMirror` (`normalizeMarkdownTables`), since
+  `tiptap-markdown` follows GFM strictly and would read a short delimiter row as
+  a paragraph.
+- **2026-10-03 (F-04 surface):** the new-note → saved-note transition
+  (`replaceState` to `/notes/{id}` + the save's revalidation) renders a
+  **different page component**, so React unmounts and remounts `CaptureSurface`
+  and every piece of its state is lost — including the editor mode. Anything the
+  user chose that must outlive a save has to live outside the component
+  (`rememberedMode` in `capture-surface.tsx`).

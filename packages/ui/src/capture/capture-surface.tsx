@@ -54,6 +54,20 @@ export const AUTOSAVE_DELAY_MS = 800;
 export const IMPORT_POLL_MS = 2_000;
 
 /**
+ * The last capture mode the user chose, remembered outside React.
+ *
+ * A new note's first save lands on `/notes/{id}` through
+ * `window.history.replaceState`, and the revalidation that follows renders the
+ * `[noteId]` route — a different page component, so the surface is **unmounted
+ * and remounted**. Component state cannot survive that, and losing the mode
+ * means a writer who is in Markdown mode is dropped into the rich-text editor
+ * the moment their first table is saved. Keeping the choice in the module
+ * restores it on the other side of the swap. It is per page load, which is the
+ * right lifetime: a fresh visit starts in the default, editable mode.
+ */
+let rememberedMode: EditorMode = "normal";
+
+/**
  * The editor's extension set, built **once**.
  *
  * `useEditor` diffs the options it is handed against the live editor after
@@ -231,7 +245,7 @@ export function CaptureSurface({
     note?.id ?? null,
   );
 
-  const [mode, setMode] = useState<EditorMode>("normal");
+  const [mode, setMode] = useState<EditorMode>(rememberedMode);
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
@@ -454,6 +468,7 @@ export function CaptureSurface({
       }
 
       setMode(newMode);
+      rememberedMode = newMode;
     },
     [editor],
   );
