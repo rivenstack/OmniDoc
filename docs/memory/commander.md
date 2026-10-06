@@ -128,6 +128,25 @@
   Notes = all), and the contract cannot express the difference, the
   honest move is to build the contract-supported part and record the
   gap — do not fabricate a distinction in the UI.
+- 2026-10-06: `@user` split **B-05** before Implementer execution into
+  **B-05a** (Researcher → Architect, one owner at a time) then
+  **B-05b** (Implementer). Superseded archive:
+  `H-2026-09-20-P1-B05-superseded-split.md`. Do not reopen a ready
+  Implementer handoff while design is open. After Research archive,
+  rewrite lane to B-05a Architect (`B05A-ARCH`); after Architect,
+  open B-05b (or brief `@user` accept only if a new ADR is proposed).
+- 2026-10-06: B-05a Researcher **completed** → archived
+  `H-2026-10-06-P1-B05A-commander-researcher.md`; evidence
+  `docs/research/technical/16-ingestion-chunking-jobs.md` (no vendor
+  selection). Commander rewrote `lane-backend.md` to **B-05a Architect**
+  (`H-2026-10-06-P1-B05A-ARCH`). **B-05b not opened.**
+- 2026-10-06: B-05a Architect **completed** → archived
+  `H-2026-10-06-P1-B05A-ARCH-commander-architect.md`; lock in
+  `architecture.md` §5.2.1; **no ADR-0006**. Soft-stop consumed →
+  `H-2026-10-06-P1-B05A-SOFTSTOP-architect-commander.md`. Commander
+  accepted design and rewrote `lane-backend.md` to **B-05b
+  Implementer** (`H-2026-10-06-P1-B05B`). Next after B-05b archive:
+  **B-05c** (not B-06).
 
 ## Phase-Boundary Stewardship
 

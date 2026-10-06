@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-12 live (FE, opened 2026-09-27); B-05 live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-12 live (FE, opened 2026-09-27); B-05b live (BE) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -599,7 +599,7 @@ Depends: B-02, S-02.
 
 ### B-04c — B-01–B-04 quality checkpoint
 
-Depends: B-04. Same-lane gate **before S-03 / B-05**, two sequential
+Depends: B-04. Same-lane gate **before S-03 / B-05a**, two sequential
 owners (exactly one live owner at a time):
 
 1. **Commander** evaluates B-01–B-04 (go/no-go) — **completed GO**
@@ -607,28 +607,105 @@ owners (exactly one live owner at a time):
 2. On GO, **Implementer** closes unit / integration / load / API e2e
    gaps + Postman under `apps/api/postman` — **completed**
    (`H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`)
-3. **Commander** then opens **S-03** (mock corpus) **before B-05** —
-   **completed** 2026-09-20; Implementer must not open B-05
+3. **Commander** then opens **S-03** (mock corpus) **before B-05a** —
+   **completed** 2026-09-20; Implementer must not open B-05a / B-05b
 
 Does **not** replace B-12 (retrieval isolation after B-08). Does **not**
 open Phase Check.
 
-### B-05 — Ingestion / chunking jobs + progress port
+### B-05a — Ingestion / chunking techniques + design
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-backend.md` (`ready` 2026-09-20) |
-| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Status** | **completed (Architect 2026-10-06)** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md); Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md) |
+| **Lane / agent** | `backend` — sequential owners (exactly one live at a time): `/researcher` → `/architect` |
 | **Depends on** | B-04c completed; **S-03 completed** |
-| **Blocks** | B-06 |
+| **Blocks** | B-05b |
+| **Write path** | Researcher: `docs/research/technical/16-*` (+ ledger/matrix notes). Architect: ADR-0006 **if** material, and/or `architecture.md` §3 / §5.2 elaboration |
+
+Product capability remains “ingestion / chunking jobs + progress”
+(REC-02). Track split (2026-10-06): gather evidence and lock design
+**before** Implementer writes adapters. Port ops and S-02 HTTP stay
+frozen; under-specified is **how** to chunk TipTap→markdown
+projections and **how** to run/progress jobs under ADR-0005 + Free Tier.
+
+**Owner sequence (like B-04c):**
+
+1. **Researcher** — classified evidence only (no vendor selection as
+   architecture). Extension-first: Java chunkers/parsers and job runners
+   (Tika, LangChain4j splitters, DB-backed outbox / `SKIP LOCKED`,
+   `@Async`, Spring Batch, second Boot process, etc.). Constraints:
+   stable chunk ids per note version; pollable job progress; tenant +
+   membership re-check on workers; no Spring AI on the wire this slice;
+   embeddings deferred to B-06; Python sidecar not reopened.
+2. On Research archive, **Commander** rewrites the same `lane-backend.md`
+   head to the **Architect** slice of B-05a (same `task: "B-05a"`;
+   archive tag e.g. `B05A-ARCH`). Architect locks implementer-ready
+   choices: chunking algorithm + libraries (or explicit custom
+   splitter), Phase 1 job persistence + worker model (default prefer
+   DB-backed job rows + in-process worker if evidence ties), shared
+   pipeline for `enqueueImport` / `chunkVersion`, failure mapping to
+   existing port codes, and what B-05b must not invent.
+3. Optional brief `@user` accept **only if** Architect opens a **new
+   ADR**; otherwise Commander accepts the Architect design and opens
+   **B-05b**.
+
+### B-05b — IngestionPort implement (jobs + progress)
+
+| | |
+|--|--|
+| **Status** | **ready** — live on [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Commander-opened 2026-10-06 after B-05a accept) |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | **B-05a completed** (Researcher + Architect; Commander-accepted; no ADR) |
+| **Blocks** | B-05c |
 | **Write path** | `apps/api/**` (ingestion jobs, chunks, progress HTTP) |
 
-Depends: B-04c and **S-03** (completed ahead on the backend lane for FE
-mock journeys). Indexing lag is a first-class state (REC-02).
+Same deliverables as the superseded single B-05 implementer handoff:
+`IngestionPort` (`enqueueImport`, `getJob`, `chunkVersion`), Flyway
+jobs/chunks + RLS, S-02 HTTP, progress visible, stable chunk ids —
+**constrained by the B-05a locked design**. Do not re-decide chunking
+or worker topology. Out of scope: B-06+ embed/search/Ask; mocks rewrite.
+
+### B-05c — Ingestion test closeout + guided verification
+
+| | |
+|--|--|
+| **Status** | **listed** — opens after B-05b |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | **B-05b completed** |
+| **Blocks** | B-06 |
+| **Write path** | `apps/api/**` tests / Postman / load; `docs/quality/b05c-verification-walkthrough.md` |
+
+Test closeout and guided verification for the B-05a design lock after
+B-05b lands product code. Not a redesign surface.
+
+**Unit:** projector golden tests on S-03 fixtures + FE-bridge parity
+with allowed deltas; chunker determinism (2 runs × 20 fixtures ⇒
+identical ids / offsets / anchors); substring invariant;
+heading-mutation id policy; failure-code mapping; status machine;
+progress units.
+
+**Integration** on Testcontainers PG18+pgvector: Flyway + RLS on new
+tables; enqueue → claim → ready; crash reclaim via lease expiry with no
+duplicate chunks; two concurrent claimers with `SKIP LOCKED`; membership
+revoked mid-job ⇒ failed; cross-tenant `getJob` 403/404; CSRF on POST;
+413/415; PDF/DOCX/MD/HTML/TXT happy paths; corrupt bytes; timeout;
+outbox rechunk + coalescing; ArchUnit rules.
+
+**End-to-end:** API-level HTTP `*E2eIT` multipart → poll → chunks in DB;
+Postman collection + `apps/api/load/b05c-ingestion-smoke.sh`; browser
+e2e through the FE drop zone is optional cross-lane (Playwright is not
+installed in `apps/web`).
+
+**Guided verification deliverable:** a step-by-step runbook the agent
+hands the user — start Compose + API, import each file type, watch
+`0/4 → 4/4`, inspect `chunk_sets` / `chunks` rows, reproduce 413/415,
+cross-tenant 403, crash-reclaim — each step with exact command +
+expected observation. Commander validates.
 
 ### B-06 — pgvector + mock embed adapter
 
-Depends: B-02, B-05. Hash/pseudo-vectors; `embedding_model_id` + dims
+Depends: B-02, B-05b, B-05c. Hash/pseudo-vectors; `embedding_model_id` + dims
 recorded; **tenant filter mandatory** on similarity. Zero cross-tenant
 hits tolerated.
 
@@ -753,7 +830,10 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
 | F-12 | **ready** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-09-27) |
 | F-05 | **superseded before execution** (2026-09-27) — archived [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
-| B-05 | [`docs/handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |
+| B-05 (implementer, pre-split) | **superseded** — [`../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md`](../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md) |
+| B-05b | **ready** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (opened 2026-10-06) |
+| B-05c | listed — opens after B-05b |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

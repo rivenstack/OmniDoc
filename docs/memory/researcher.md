@@ -58,3 +58,19 @@
 - Lightsail 90-day Paid trial ≠ Free plan; App Runner sits on Paid-plan
   lists for Sign up for AWS (new) — do not assume Free-plan eligibility
   from brand familiarity
+- Ingestion chunking (B-05a): TipTap JSON → markdown needs **one**
+  canonical serializer; Java chunkers should prefer port-supplied
+  projected `text` over a second TipTap port. Library splitters
+  (Spring AI `TokenTextSplitter`, LangChain4j recursive) are adapters
+  only — map to OmniDoc `Chunk` offsets/ids; never leak framework types
+  to HTTP
+- Postgres `FOR UPDATE SKIP LOCKED` is the official queue-claim primitive
+  (PG SELECT locking docs); pair with durable job rows + lease/reaper.
+  Redis/SQS popularity is weak Free Tier evidence versus Postgres-only
+- Apache Tika is a **parser**, not a citation chunker; Spring Batch adds
+  restart metadata and a second schema — score against S-02
+  `IngestionJob` projection cost before adopting
+- Python sidecar remains Phase-1-out (`14` adverse + ADR-0005); cite
+  policy only — do not reopen as a B-05 recommendation
+- Embeddings/pgvector writes are B-06 handoff points after stable
+  chunks; do not select embed stacks inside ingestion research

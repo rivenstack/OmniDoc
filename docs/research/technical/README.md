@@ -2,9 +2,13 @@
 
 **Owner:** `/researcher`  
 **Phase / Task:** 0 / 0.2 (baseline); **0.8 Wave C** amends `05`, `07`,
-matrix, shortlist, optional `09`; **R-BE** adds `10`–`15`  
-**Research date:** 2026-09-13; Wave C access **2026-09-14**; R-BE **2026-09-15**  
-**Version pins:** [`../version-ledger.md`](../version-ledger.md) — Java/Spring rows verified 2026-09-15; FE/data 2026-09-14; re-verify before each Phase Check  
+matrix, shortlist, optional `09`; **R-BE** adds `10`–`15`; **B-05a**
+adds `16`  
+**Research date:** 2026-09-13; Wave C access **2026-09-14**; R-BE
+**2026-09-15**; B-05a **2026-10-06**  
+**Version pins:** [`../version-ledger.md`](../version-ledger.md) —
+Java/Spring rows verified 2026-09-15; B-05a library pins 2026-10-06;
+FE/data 2026-09-14; re-verify before each Phase Check  
 **Status:** Evidence and shortlists only — **not** an architecture decision
 
 ## Purpose
@@ -33,6 +37,7 @@ vendor, or provider is selected here.
 | [13-spring-ai-openrouter-byok-fit.md](./13-spring-ai-openrouter-byok-fit.md) | Spring AI / LangChain4j / raw HTTP behind ports (R-BE) |
 | [14-python-sidecar-policy.md](./14-python-sidecar-policy.md) | When a Python sidecar could be justified (R-BE) |
 | [15-java-test-obs-migrate.md](./15-java-test-obs-migrate.md) | Logging, tests, Flyway/JDBC, OpenAPI handshake (R-BE) |
+| [16-ingestion-chunking-jobs.md](./16-ingestion-chunking-jobs.md) | Java-fit chunking + ingestion job runners; citation-stable chunks (B-05a) |
 
 ## Project Constraints Applied
 
@@ -61,5 +66,8 @@ vendor, or provider is selected here.
 ## Handoff
 
 R-BE archived: `docs/handoffs/archive/H-2026-09-15-P0B-RBE-commander-researcher.md`  
-Java/Spring evidence feeds `/architect` **ADR-0005** (`proposed`) + `@user` U-BE.
+Java/Spring evidence feeds `/architect` **ADR-0005** (`accepted`).  
+B-05a archived: `docs/handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`  
+— feeds `/architect` B-05a design (chunking + jobs); **no** vendor
+selection in research. Embeddings remain B-06.
 Frontend stack selection remains ADR-0001 (already `accepted` §1–§5, §7).

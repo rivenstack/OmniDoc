@@ -122,16 +122,24 @@ chrome at n≈1–few (REC-18); collaborative editing is **much later**.
 ### Ingestion → chunking → embedding → indexing
 
 ```text
-Capture / import
-  → durable note/document version
-  → ingestion job (visible progress to UI via port)
-  → chunks (immutable for a version; new version ⇒ new chunks)
-  → embeddings (model id + dimensions recorded)
+Import path (enqueueImport)
+  → validate → parse → persist note/version → chunk path
+Rechunk path (note-save outbox / chunkVersion)
+  → resolve current version → chunk path
+Chunk path (shared)
+  → ProseMirror JSON → pm-md-v1 projection → omni-blockpack-v1 chunks
+  → chunk_sets + chunks rows (immutable for a version)
+  → embeddings (B-06; model id + dimensions recorded)
   → lexical + vector indexes (tenant-scoped)
 ```
 
-Indexing lag is a first-class state (ready / pending / failed), not
-silent success (REC-02).
+Two enqueue kinds feed one chunk path: `import` (bytes → new note +
+first version → chunks) and `rechunk` (existing note's current version →
+chunks). Job progress uses stage units known at enqueue
+(`totalUnits = 4`, never 0 while pending) — see §5.2.1. Indexing lag is
+a first-class pollable state (`pending|running|ready|failed|partial`),
+not silent success (REC-02). Chunk ids are stable per note version under
+a frozen policy tuple; new version ⇒ new chunks.
 
 ### Retrieval and answer synthesis
 
@@ -185,7 +193,9 @@ prose when the corpus lacks support is a contract violation.
 ### Citation payload (minimum)
 
 - `noteId`, `versionId`, `chunkId`
-- Passage anchor (offsets or stable block id)
+- Passage anchor (offsets or stable block id) — Phase 1 lock: offsets
+  into the `pm-md-v1` projection **and** top-level block ordinals
+  (`startBlock`/`endBlock`) in the version's `body_json` (see §5.2.1)
 - Preview text suitable for same-view inspection
 - Optional `updatedAt` (UTC) for stale-risk cues
 
@@ -225,6 +235,198 @@ sketch, mock path, production path, failure states.
 | **Mock** | Instant or clock-step jobs; fixed chunk boundaries for fixtures |
 | **Production** | Worker + storage; parser adapters behind port |
 | **Failures** | `unsupported_type`, `too_large`, `timeout`, `partial` (some files ok), `unavailable` |
+
+#### 5.2.1 B-05a design lock (2026-10-06)
+
+Implementer-ready lock for B-05b. Evidence:
+[`docs/research/technical/16-ingestion-chunking-jobs.md`](docs/research/technical/16-ingestion-chunking-jobs.md)
+(§1–§4, Architect inputs). Elaboration of ADR-0001 §2 / ADR-0005 —
+**no ADR-0006**. Port ops and S-02 HTTP stay frozen.
+
+##### 1. Canonical TipTap → markdown owner = Java (`apps/api`)
+
+| | |
+|--|--|
+| **Owner** | JVM projector in a `projection` package behind this port |
+| **Id** | `pm-md-v1` (corpus projection SoT for chunking now; export B-11 later) |
+| **Rationale** | `chunkVersion(text)` and import both run on the JVM; S-02 `Note` carries only `bodyJson` (no markdown on the wire) so the frozen contract is untouched; a shared Node utility would add a second runtime (same adverse class as the Python sidecar in `14`) |
+| **FE bridge** | `packages/ui/src/capture/markdown-bridge.ts` is **editor interaction tooling** only (markdown editing mode / paste; browser-only, needs a DOM). Never a corpus authority; output never persisted. No FE change required; no soft-stop |
+| **Parity** | B-05c owns FE-bridge vs Java projector parity on S-03 fixtures with a documented allowed-delta list |
+| **UniqueID** | TipTap UniqueID **out** for Phase 1 (would mandate a note-SoT change ⇒ ADR + FE extension pin); top-level block ordinals from JSON cover the anchor need |
+
+**Projector allowlist** (StarterKit + table set): nodes `doc`,
+`paragraph`, `heading` (1–6), `bulletList`, `orderedList`, `listItem`,
+`blockquote`, `codeBlock` (fenced, language attr), `hardBreak`,
+`horizontalRule`, `table` / `tableRow` / `tableHeader` / `tableCell`
+(GFM pipe tables; literal `|` escaped as `\|`); marks `bold`, `italic`,
+`strike`, `code`, `link`. Unknown node types degrade to concatenated
+text content with a recorded warning (job does not fail). Same JSON ⇒
+byte-identical projection string.
+
+##### 2. Chunk algorithm, ids, policy
+
+| | |
+|--|--|
+| **Algorithm** | Custom deterministic **block-pack splitter**, id `omni-blockpack-v1`, over the `pm-md-v1` projection |
+| **Shape** | Each top-level ProseMirror block projected individually; projection = blocks joined by `\n\n`; a chunk is a run of consecutive whole blocks; a heading always starts a new chunk (`headingBreak`); a single block larger than `maxChars` hard-splits at paragraph → sentence → whitespace → char boundaries |
+| **Frozen params** | `{maxChars: 1200, softMinChars: 300, headingBreak: true, overlapChars: 0}` |
+| **Char unit** | UTF-16 code units (Java `String` / JS `string` — identical on both runtimes); no tokenizer dependency (B-06 verifies `maxChars` against the embed model's limit) |
+
+**Not selected** (cite `16` §1.3 / §4): Spring AI `TokenTextSplitter`
+(no block anchors / offset guarantees; Spring AI is adapter-only per
+ADR-0005 and must stay dark in B-05); LangChain4j
+`DocumentSplitters.recursive` (loses block anchors; separate release
+train for no citation gain).
+
+**Chunk id:** `{versionId}_c{ordinal}` with a 4-digit zero-padded
+ordinal (e.g. `v123_c0007`).
+
+**Chunk row columns:** `chunk_id`, `tenant_id`, `workspace_id`,
+`note_id`, `version_id`, `ordinal`, `start_block`, `end_block`,
+`start_offset`, `end_offset`, `text`, `text_sha256`, `created_at`;
+unique `(version_id, ordinal)`. Invariant:
+`projection.substring(start_offset, end_offset) == text`.
+
+**`chunk_sets` row per version:** `(version_id PK, tenant_id,
+projector_id, chunker_id, params_hash, projection_sha256, chunk_count,
+created_at)`.
+
+**Policy rule:** same version + same
+`(projector_id, chunker_id, params_hash)` ⇒ idempotent no-op (verify
+`projection_sha256`, return the existing set). Same version + different
+policy ⇒ **forbidden in B-05b** (reject; do not re-chunk in place).
+Policy bumps are a future re-index job that replaces a version's whole
+set in one transaction and invalidates its old chunk ids; Ask/citation
+assembly (B-08) drops citations whose `chunkId` is unknown — never
+remaps silently.
+
+##### 3. Citation fields
+
+Both: `startOffset` / `endOffset` into the projection string **and**
+block anchors `startBlock` / `endBlock` (top-level block ordinals in the
+version's `body_json`). Preview text = chunk `text`. Satisfies §4
+"offsets or stable block id" with both.
+
+##### 4. Phase 1 job persistence + worker model
+
+**Tables** (additive Flyway; RLS exactly like V2 policies;
+`omnidoc_app` DML grants):
+
+| Table | Key columns |
+|-------|-------------|
+| `ingestion_jobs` | `job_id` PK, `tenant_id`, `workspace_id`, `actor_id`, `kind` (`import`\|`rechunk`), `status` (`pending`\|`running`\|`ready`\|`failed`\|`partial`), `completed_units`, `total_units`, `note_id` NULL, `version_id` NULL, `file_name`, `media_type`, `size_bytes`, `error_code` NULL, `attempts`, `lease_owner` NULL, `lease_until` NULL, `created_at`, `started_at`, `finished_at` |
+| `ingestion_job_payloads` | `job_id` PK/FK, `tenant_id`, `bytes` BYTEA — payload row deleted when the job reaches a terminal state |
+
+**Runner:** ADR-0005 in-process `@Async` / TaskExecutor dispatcher,
+triggered after the enqueue transaction commits
+(`TransactionSynchronization.afterCommit`), plus a `@Scheduled` sweeper
+(e.g. every 15 s) that dispatches `pending` rows and reclaims `running`
+rows whose `lease_until` has expired (crash reclaim).
+
+**Claim:** because the app role's RLS is fail-closed before a tenant GUC
+is bound, the claim runs through a `SECURITY DEFINER` SQL function owned
+by `omnidoc_migrator` (e.g. `claim_ingestion_job(worker_id,
+lease_seconds)`) implementing `UPDATE … WHERE job_id = (SELECT … WHERE
+status='pending' OR (status='running' AND lease_until < now()) ORDER BY
+created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING job_id, tenant_id,
+actor_id, workspace_id, kind`. Grant `EXECUTE` to `omnidoc_app` only.
+All other job/chunk DML runs under normal RLS.
+
+**After claim:** worker opens a transaction per stage, binds
+`app.current_tenant_id` and `app.current_actor_id` (existing
+`TenantRlsSession` / `ActorRls` discipline) and **re-resolves the
+actor's membership in the job's workspace via the B-03 binder**; loss of
+membership ⇒ job `failed` (never trust enqueue-time claims). Lease
+120 s; heartbeat (extend lease) after each stage; `attempts > 3` ⇒
+`failed`. Stage writes are idempotent so a reclaimed job re-running a
+stage cannot double-insert chunks (`chunk_sets` PK + chunks unique
+index).
+
+**Not Phase 1 / deferred** (with reasons): Spring Batch (extra
+`BATCH_*` schema without an RLS story; `16` §2 J2); second Boot worker
+process (I-03 memory evidence; the claim SQL is already multi-instance
+safe so no redesign needed); Redis/SQS (adverse Free Tier / ops, `07`;
+`16` §4); Python (ADR-0005 §6; `14`).
+
+**Note-save hook:** the B-04 version-commit path writes a coalesced
+`rechunk` outbox job in the same transaction (one pending `rechunk` per
+note — partial unique index on `(note_id) WHERE kind='rechunk' AND
+status='pending'`); the worker chunks the note's `current_version_id`
+at claim time, so autosave never blocks on chunking and intermediate
+autosave versions may legitimately have no chunks.
+
+##### 5. Progress units
+
+Unit = pipeline stage. `totalUnits = 4` is known at enqueue and never 0:
+
+| Stage | Meaning |
+|-------|---------|
+| 1 | validated (allowlist + size) |
+| 2 | parsed |
+| 3 | note/version persisted |
+| 4 | chunks persisted |
+
+`pending` = `0/4`; `ready` = `4/4`; `failed` / `partial` keep the count
+of fully completed stages. Matches S-03 fixtures (`0/4`, `2/4`, `4/4`).
+`chunkVersion` is the synchronous primitive (returns `ChunkSet`, no job
+row); `rechunk` jobs reuse stages 3–4 semantics with `totalUnits = 4`
+as well for one vocabulary (stages 1–2 complete immediately).
+
+##### 6. Parser allowlist + limits (`@user` confirmed 2026-10-06)
+
+| Allow | Detect |
+|-------|--------|
+| `text/markdown` (+ `.md`), `text/plain`, `text/html`, `application/pdf`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | Declared `mediaType` / extension, confirmed by Tika type detection; mismatch or anything else ⇒ `unsupported_type` (415 at enqueue) |
+| Archives (`zip`), executables, images | `unsupported_type` |
+
+**Parsers** behind one parser adapter port:
+
+- Apache **Tika 4.1.0** for PDF / DOCX / HTML text extraction
+  (text-only fidelity; layout / OCR not Phase 1)
+- Markdown via **commonmark-java 0.30.0**
+  (`org.commonmark:commonmark` + `commonmark-ext-gfm-tables`) AST →
+  ProseMirror JSON on the same node allowlist as §1 (inverse mapping)
+- Plain text / Tika text → paragraphs split on blank lines; title =
+  file name without extension
+
+**Limits** (config properties, not literals):
+
+| Limit | Failure |
+|-------|---------|
+| max 10 MiB | `too_large` (413 at enqueue; also enforced server-side after upload) |
+| parse wall-clock 60 s; whole-job 5 min | `timeout` (job `failed` with `error_code=timeout`) |
+| Tika `TikaException` on openable-but-corrupt bytes | job `failed` with `error_code=unsupported_type` |
+| extraction completed with warnings / dropped content but a version was persisted | `partial` |
+| DB / pool / executor rejection | `unavailable` (503 class) |
+
+Tika memory: stream input; cap `setMaxStringLength` / write limit
+consistent with the size cap. Import creates a **new** note + first
+version in the actor's selected workspace (tenant from membership,
+never from the client).
+
+##### 7. Spring AI ETL
+
+**Not permitted** in B-05 (no `TikaDocumentReader`, no
+`TokenTextSplitter`); plain Tika + custom code. ArchUnit expectation
+for B-05b: no `org.springframework.ai..` anywhere in ingestion
+packages and no `org.apache.tika..` types outside the parser adapter
+package; no Tika / commonmark types on HTTP DTOs or in the domain.
+
+##### 8. B-05b must not invent
+
+A second TipTap serializer (anywhere); a different chunker / params /
+id scheme; overlap; a tokenizer; a broker (Redis / SQS); Spring Batch;
+a second process; different unit semantics or `totalUnits=0` while
+pending; Spring AI ETL types; Python; embedding / pgvector columns or
+writes; new OpenAPI operations; a different allowlist / limits without
+`@user`.
+
+##### 9. B-06 handoff contract
+
+Chunk rows carry tenant, workspace, note, version, stable id, ordinal,
+text, offsets + block anchors, `text_sha256`; `chunk_sets` carries the
+policy tuple. No embedding columns or writes in B-05b; B-06 adds
+`embedding_model_id` / dims and vectors keyed by `chunk_id`.
 
 ### 5.3 Embedding
 

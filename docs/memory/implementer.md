@@ -607,3 +607,70 @@
   and every piece of its state is lost — including the editor mode. Anything the
   user chose that must outlive a save has to live outside the component
   (`rememberedMode` in `capture-surface.tsx`).
+- **2026-10-06 (B-05b):** `BYPASSRLS` is a **role attribute checked against
+  `current_user`**, and it beats `FORCE ROW LEVEL SECURITY` — which is what
+  makes a migrator-owned `SECURITY DEFINER` function the right way for a
+  worker to claim a job *before* any tenant is known. Always pair it with
+  `SET search_path = pg_catalog, public` and
+  `REVOKE ALL … FROM PUBLIC` + `GRANT EXECUTE` to `omnidoc_app` only;
+  a definer function without a pinned `search_path` is a privilege-escalation
+  hole, not a convenience.
+- **2026-10-06 (B-05b):** in a `LANGUAGE sql` function body, a parameter or
+  `RETURNS TABLE` output name that collides with a column name is **captured
+  by the column**, silently changing the predicate. Prefix them (`p_`, `o_`);
+  the function compiles either way, so tests are the only signal.
+- **2026-10-06 (B-05b):** binding an `@Async` method by capturing `this` in
+  the bean's own constructor bypasses the proxy — the work runs on the caller's
+  thread. Bind the **proxied** bean from a separate `InitializingBean` `@Bean`.
+  And never declare your own `Executor` bean just to get a thread pool: Boot's
+  `applicationTaskExecutor` is `@ConditionalOnMissingBean(Executor.class)`, so
+  defining one silently removes the auto-configured one from under `@Async`.
+- **2026-10-06 (B-05b):** a post-commit dispatch
+  (`TransactionSynchronization.afterCommit`) is a **latency hint, not a
+  guarantee** — the `@Scheduled` sweeper is the guarantee. Swallow exceptions
+  in the hint and let the sweeper pick the job up; the inverse (failing the
+  request because the hint failed) turns a durable queue into a fragile one.
+- **2026-10-06 (B-05b):** never hash a `jsonb` column's `::text` round-trip for
+  idempotency. Postgres does not preserve key order or whitespace, so the same
+  document hashes differently after a write/read cycle. Hash the **projection**
+  built from the parsed tree.
+- **2026-10-06 (B-05b):** Tika type detection is a **hierarchy**, so a zip
+  renamed `.docx` and declared as DOCX passes `declared ∩ detected` — DOCX
+  *specializes* `application/zip`. Content detection narrows the allowlist; it
+  does not prove the bytes are parseable. Let the parse fail the job.
+- **2026-10-06 (B-05b):** prefer narrow Tika modules
+  (`tika-parser-{pdf,microsoft,html,text}-module`) over
+  `tika-parsers-standard-package`, which pulls formats outside the allowlist
+  onto the classpath — an allowlist enforced only in code while the parsers are
+  present is a weaker boundary. (Incidentally, `tika-core` 4.1.0 itself depends
+  on commonmark 0.30.0 + `commonmark-ext-gfm-tables`, which is a free
+  cross-check of the version-ledger pins.)
+- **2026-10-06 (B-05b):** distinguish **lease loss** from **membership loss** in
+  a leased worker. Lease loss means another runner legitimately owns the job —
+  abandon silently. Membership loss means the actor may no longer read the
+  workspace — fail the job. Treating them alike either double-writes or
+  spuriously fails work.
+- **2026-10-06 (B-05b):** two concurrent runners can both decide to create the
+  same `chunk_sets` row. `ON CONFLICT (version_id) DO NOTHING` plus a re-read
+  (0 rows updated ⇒ the other runner won) is the whole fix; a pre-check
+  `SELECT` is not.
+- **2026-10-06 (B-05b):** let the **adapter**, not the servlet container,
+  produce `too_large`. Boot's multipart limit must sit *above* the ingestion cap
+  (12 MB vs 10 MiB here) or a just-over-limit upload surfaces as a container
+  exception instead of the port's own failure code.
+- **2026-10-06 (B-05b):** a consumer-owned interface is how you hook a new
+  adapter into an existing one without a cycle. `adapters/notes/RechunkOutbox`
+  is declared by notes and implemented by ingestion, with an ArchUnit rule
+  pinning the direction and a `NOOP` constant keeping the old constructor
+  working.
+- **2026-10-06 (B-05b):** adding a background sweeper breaks sibling Spring ITs
+  that `TRUNCATE` in `@BeforeEach` — the sweeper can hold row locks on the
+  tables being truncated. Park it per-test with `@DynamicPropertySource`
+  (`sweep-initial-delay-ms` far in the future) rather than leaving a flaky
+  lock race in another lane's suite. For the ingestion suite itself, drive
+  `worker.drain()` by hand so claim/lease/membership transitions are
+  deterministic, and keep **one** IT with the real scheduler on.
+- **2026-10-06 (B-05b):** assert a chunker's substring invariant
+  (`projection.substring(start,end) == text`) **in production code**, not only
+  in tests. A silently wrong anchor becomes a wrong citation months later in
+  B-08, long after the chunk was written.

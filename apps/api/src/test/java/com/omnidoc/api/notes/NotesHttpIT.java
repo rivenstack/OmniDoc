@@ -143,6 +143,11 @@ class NotesHttpIT {
 		registry.add("spring.datasource.username", () -> APP);
 		registry.add("spring.datasource.password", () -> APP_PASSWORD);
 		registry.add("spring.flyway.enabled", () -> false);
+		// B-05b: park the ingestion sweeper so it cannot contend with the per-test
+		// TRUNCATE. The rechunk outbox itself still runs — that is the point of B-05b's
+		// hook, and these assertions are about notes, not chunks.
+		registry.add("omnidoc.ingestion.sweep-initial-delay-ms", () -> 3_600_000);
+		registry.add("omnidoc.ingestion.sweep-interval-ms", () -> 3_600_000);
 	}
 
 	@BeforeAll

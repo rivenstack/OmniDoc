@@ -96,3 +96,17 @@ OpenRouter vs direct provider pairing; vault pattern (see `09`).
 **R-BE 2026-09-15:** backend language/runtime, Java auth class, Spring AI
 behind ports, polyglot layout, Python sidecar policy — evidence only;
 ADR-0005 + `@user`.
+
+## 8. Ingestion / chunking jobs (B-05a, 2026-10-06)
+
+Supplement only — full matrix in
+[`16-ingestion-chunking-jobs.md`](./16-ingestion-chunking-jobs.md).
+Embeddings / pgvector write path remain **B-06**.
+
+| Category | Options scored (no selection) | Conf. |
+|----------|-------------------------------|-------|
+| Chunkers | Custom deterministic splitter; Spring AI `TokenTextSplitter` (2.0.1); LangChain4j recursive (1.21.0); Tika = parser not chunker | H |
+| TipTap → markdown | `@tiptap/static-renderer` `renderToMarkdown`; TipTap Markdown manager; FE `tiptap-markdown` 0.9.0 — **one** canonical owner required | H |
+| Job runners | `@Async`/TaskExecutor (ADR-0005 Phase 1 pin); Spring Batch 6.0.5; PG `FOR UPDATE SKIP LOCKED` queue/outbox; second Boot worker | H |
+| Parsers | Apache Tika 4.1.0 / 3.3.2; Spring AI `TikaDocumentReader`; failure → port codes | H |
+| Out of Phase 1 | Python sidecar (`14` adverse); Redis/SQS without Free Tier PoC (`07`) | H |

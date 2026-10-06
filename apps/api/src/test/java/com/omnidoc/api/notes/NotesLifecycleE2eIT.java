@@ -83,6 +83,9 @@ class NotesLifecycleE2eIT {
 		registry.add("spring.datasource.username", () -> APP);
 		registry.add("spring.datasource.password", () -> APP_PASSWORD);
 		registry.add("spring.flyway.enabled", () -> false);
+		// B-05b: park the ingestion sweeper; this journey asserts notes, not chunks.
+		registry.add("omnidoc.ingestion.sweep-initial-delay-ms", () -> 3_600_000);
+		registry.add("omnidoc.ingestion.sweep-interval-ms", () -> 3_600_000);
 	}
 
 	@BeforeAll
