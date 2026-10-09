@@ -57,6 +57,7 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	systemProperty("omnidoc.repo.root", projectDir.parentFile.parentFile.absolutePath)
 }
 
 // Free Tier RSS awareness (I-03 owns SKU PoC). Override via JAVA_TOOL_OPTIONS.

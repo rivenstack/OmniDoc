@@ -1,0 +1,169 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "blockquote",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Review: “The team said ‘keep the original source’.”"
+            }
+          ]
+        },
+        {
+          "type": "blockquote",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Nested quote: preserve passage context."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": {
+        "language": "ts"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "const workspaceId = \"ws_mine\";"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use "
+        },
+        {
+          "type": "text",
+          "text": "expectedVersion",
+          "marks": [
+            {
+              "type": "code"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " with pgvector, BYOK, and OpenAI."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Reference guide",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://example.test/guide?q=BYOK"
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " /notes/research/launch.md"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "content": [
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableHeader",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Stage"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Owner"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Review"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Alex"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Ab9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9XAb9X"
+        }
+      ]
+    }
+  ]
+}
+

@@ -60,7 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @Testcontainers(disabledWithoutDocker = true)
-class IngestionHttpIT {
+class IngestionLifecycleE2eIT {
 
 	private static final String MIGRATOR = "omnidoc_migrator";
 	private static final String MIGRATOR_PASSWORD = "omnidoc_migrator_dev";

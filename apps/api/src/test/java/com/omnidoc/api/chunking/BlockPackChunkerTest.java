@@ -2,8 +2,11 @@ package com.omnidoc.api.chunking;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import tools.jackson.databind.json.JsonMapper;
 
 import com.omnidoc.api.projection.Projection;
@@ -148,6 +151,55 @@ class BlockPackChunkerTest {
 		assertThat(this.policy.sameAs("pm-md-v1", "omni-blockpack-v1", other.paramsHash())).isFalse();
 	}
 
+	@TestFactory
+	Stream<DynamicTest> twentyRepresentativeFixturesAreByteDeterministic() {
+		return determinismFixtures().stream().map(fixture -> DynamicTest.dynamicTest(
+			fixture.name(), () -> {
+				Projection projection = this.projector.project(fixture.bodyJson());
+				List<ChunkDraft> first = this.chunker.chunk(projection, VERSION_ID, this.policy);
+				List<ChunkDraft> second = this.chunker.chunk(projection, VERSION_ID, this.policy);
+
+				assertThat(second).containsExactlyElementsOf(first);
+				assertThat(second).extracting(ChunkDraft::textSha256)
+					.containsExactlyElementsOf(first.stream().map(ChunkDraft::textSha256).toList());
+				assertThat(first).extracting(ChunkDraft::ordinal)
+					.containsExactlyElementsOf(IntStream.range(0, first.size()).boxed().toList());
+				for (ChunkDraft chunk : first) {
+					assertThat(projection.text().substring(chunk.startOffset(), chunk.endOffset()))
+						.isEqualTo(chunk.text());
+					assertThat(chunk.chunkId()).isEqualTo(
+						VERSION_ID + "_c" + "%04d".formatted(chunk.ordinal()));
+					assertThat(chunk.startBlock()).isLessThanOrEqualTo(chunk.endBlock());
+					assertThat(chunk.text().length()).isLessThanOrEqualTo(this.policy.maxChars());
+				}
+			}));
+	}
+
+	@Test
+	void headingMutationPolicyIsVersionScopedAndNeverPromisesCrossVersionIds() {
+		Projection original = projectionOf(
+			paragraph("intro") + "," + heading(2, "Alpha") + "," + paragraph("body"));
+		Projection renamed = projectionOf(
+			paragraph("intro") + "," + heading(2, "Beta") + "," + paragraph("body"));
+		Projection inserted = projectionOf(
+			paragraph("intro") + "," + heading(2, "Alpha") + "," + paragraph("body")
+				+ "," + heading(2, "New") + "," + paragraph("tail"));
+
+		List<ChunkDraft> originalChunks = this.chunker.chunk(original, "version-original", this.policy);
+		List<ChunkDraft> renamedChunks = this.chunker.chunk(renamed, "version-renamed", this.policy);
+		List<ChunkDraft> insertedChunks = this.chunker.chunk(inserted, "version-inserted", this.policy);
+
+		assertThat(originalChunks).extracting(ChunkDraft::chunkId)
+			.allMatch(id -> id.startsWith("version-original_c"));
+		assertThat(renamedChunks).extracting(ChunkDraft::chunkId)
+			.allMatch(id -> id.startsWith("version-renamed_c"));
+		assertThat(insertedChunks).extracting(ChunkDraft::chunkId)
+			.allMatch(id -> id.startsWith("version-inserted_c"));
+		assertThat(renamedChunks).extracting(ChunkDraft::text)
+			.isNotEqualTo(originalChunks.stream().map(ChunkDraft::text).toList());
+		assertThat(insertedChunks).hasSizeGreaterThan(originalChunks.size());
+	}
+
 	private Projection projectionOf(String blocks) {
 		return this.projector.project("{\"type\":\"doc\",\"content\":[" + blocks + "]}");
 	}
@@ -158,5 +210,50 @@ class BlockPackChunkerTest {
 				+ ("p" + index + " ") + "x".repeat(charsEach) + "\"}]}")
 			.reduce((left, right) -> left + "," + right)
 			.orElseThrow();
+	}
+
+	private List<DeterminismFixture> determinismFixtures() {
+		return List.of(
+			fixture("empty-document", ""),
+			fixture("single-paragraph", paragraph("short body")),
+			fixture("heading-boundaries", heading(1, "One") + "," + paragraph("body") + "," + heading(2, "Two")),
+			fixture("sentence-fallback", paragraph("Sentence boundary. ".repeat(100))),
+			fixture("whitespace-fallback", paragraph("word ".repeat(400))),
+			fixture("character-fallback", paragraph("A".repeat(3000))),
+			fixture("unicode-utf16", paragraph("emoji 🧪 and café ".repeat(120))),
+			fixture("fenced-code", "{\"type\":\"codeBlock\",\"attrs\":{\"language\":\"java\"},\"content\":[{\"type\":\"text\",\"text\":\"class A {}\"}]}"),
+			fixture("table", "{\"type\":\"table\",\"content\":[{\"type\":\"tableRow\",\"content\":[{\"type\":\"tableHeader\",\"content\":[" + paragraph("A") + "]},{\"type\":\"tableHeader\",\"content\":[" + paragraph("B") + "]}]},{\"type\":\"tableRow\",\"content\":[{\"type\":\"tableCell\",\"content\":[" + paragraph("x | y") + "]},{\"type\":\"tableCell\",\"content\":[" + paragraph("2") + "]}]}]}"),
+			fixture("blockquote", "{\"type\":\"blockquote\",\"content\":[" + paragraph("quoted") + "]}"),
+			fixture("bullet-list", "{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"content\":[" + paragraph("one") + "]},{\"type\":\"listItem\",\"content\":[" + paragraph("two") + "]}]}"),
+			fixture("ordered-list", "{\"type\":\"orderedList\",\"attrs\":{\"start\":3},\"content\":[{\"type\":\"listItem\",\"content\":[" + paragraph("three") + "]}]}"),
+			fixture("hard-break", "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"line one\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"line two\"}]}"),
+			fixture("horizontal-rule", paragraph("before") + ",{\"type\":\"horizontalRule\"}," + paragraph("after")),
+			fixture("soft-min-tail", paragraph("word ".repeat(255))),
+			fixture("exact-max", paragraph("x".repeat(1200))),
+			fixture("one-over-max", paragraph("x".repeat(1201))),
+			fixture("many-small-blocks", IntStream.range(0, 50).mapToObj(i -> paragraph("p" + i)).reduce((a, b) -> a + "," + b).orElseThrow()),
+			fixture("consecutive-headings", heading(1, "A") + "," + heading(2, "B") + "," + heading(3, "C")),
+			fixture("mixed-marks", "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"pgvector\",\"marks\":[{\"type\":\"bold\"}]},{\"type\":\"text\",\"text\":\" BYOK OpenAI\"}]}"));
+	}
+
+	private DeterminismFixture fixture(String name, String blocks) {
+		return new DeterminismFixture(name, "{\"type\":\"doc\",\"content\":[" + blocks + "]}");
+	}
+
+	private String paragraph(String text) {
+		return "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":"
+			+ this.projectorJson(text) + "}]}";
+	}
+
+	private String heading(int level, String text) {
+		return "{\"type\":\"heading\",\"attrs\":{\"level\":" + level
+			+ "},\"content\":[{\"type\":\"text\",\"text\":" + this.projectorJson(text) + "}]}";
+	}
+
+	private String projectorJson(String text) {
+		return JsonMapper.builder().build().writeValueAsString(text);
+	}
+
+	private record DeterminismFixture(String name, String bodyJson) {
 	}
 }

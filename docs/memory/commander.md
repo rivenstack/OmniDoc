@@ -147,6 +147,14 @@
   accepted design and rewrote `lane-backend.md` to **B-05b
   Implementer** (`H-2026-10-06-P1-B05B`). Next after B-05b archive:
   **B-05c** (not B-06).
+- 2026-10-09: B-05b completed at `ff2912a`; Commander independently
+  reviewed V4/RLS, workspace selector and worker membership paths, then reran
+  `cd apps/api && ./gradlew clean test` (100 tests, 0 failures/errors/skips).
+  Accepted the archive, preserved the consumed soft-stop as
+  `H-2026-10-09-P1-B05B-SOFTSTOP-implementer-commander.md`, and opened
+  **B-05c**. B-05c owns the full ingestion verification matrix, API E2E,
+  Postman/load artifacts, and guided walkthrough; it may repair proved B-05
+  defects but may not redesign §5.2.1 or open B-06.
 
 ## Phase-Boundary Stewardship
 

@@ -674,3 +674,12 @@
   (`projection.substring(start,end) == text`) **in production code**, not only
   in tests. A silently wrong anchor becomes a wrong citation months later in
   B-08, long after the chunk was written.
+- **2026-10-09 (B-05c):** cross-runtime parity can stay backend-owned without
+  making Node part of the Gradle build: capture the read-only frontend output
+  as a checked-in golden, pin the exact bridge/normalizer/fixture SHA-256 values,
+  and make the Java test fail when those inputs drift. An empty allowed-delta
+  list is meaningful only after the real frontend serializer was executed.
+- **2026-10-09 (B-05c):** exercise Flyway fresh install, populated upgrade,
+  and runtime-role RLS in separate Testcontainers databases. This preserves the
+  required "new tables begin empty" observation while still allowing seeded
+  tenant rows for fail-closed and direct-DML security checks.

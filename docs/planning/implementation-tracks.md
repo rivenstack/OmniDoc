@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-12 live (FE, opened 2026-09-27); B-05b live (BE) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — frontend lane continues independently; B-05c live (BE, opened 2026-10-09) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -654,7 +654,7 @@ projections and **how** to run/progress jobs under ADR-0005 + Free Tier.
 
 | | |
 |--|--|
-| **Status** | **ready** — live on [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Commander-opened 2026-10-06 after B-05a accept) |
+| **Status** | **completed; Commander-accepted 2026-10-09** — archived [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md); independent clean gate 100/100 |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | **B-05a completed** (Researcher + Architect; Commander-accepted; no ADR) |
 | **Blocks** | B-05c |
@@ -670,7 +670,7 @@ or worker topology. Out of scope: B-06+ embed/search/Ask; mocks rewrite.
 
 | | |
 |--|--|
-| **Status** | **listed** — opens after B-05b |
+| **Status** | **ready** — live on [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Commander-opened 2026-10-09) |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | **B-05b completed** |
 | **Blocks** | B-06 |
@@ -832,8 +832,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | F-05 | **superseded before execution** (2026-09-27) — archived [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |
 | B-05 (implementer, pre-split) | **superseded** — [`../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md`](../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md) |
-| B-05b | **ready** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (opened 2026-10-06) |
-| B-05c | listed — opens after B-05b |
+| B-05b | **completed; Commander-accepted** — [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md) (2026-10-09) |
+| B-05c | **ready** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (opened 2026-10-09) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

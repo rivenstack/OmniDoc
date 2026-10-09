@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-10-06
+updated: 2026-10-09
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -18,7 +18,7 @@ updated: 2026-10-06
 ## Start Command
 
 ```text
-/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute B-05b implementation yourself.
+/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute B-05c implementation yourself.
 ```
 
 ## Objective
@@ -28,13 +28,14 @@ implementer work assignment.
 
 D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
 B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, **S-03**,
-and **B-05a** (Researcher + Architect) are **closed and archived**. Two
+**B-05a** (Researcher + Architect), and **B-05b** are **closed and
+archived**. Two
 humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
 | Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-12 ready** (sanitized markdown render pipeline; F-05 superseded before execution) |
-| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05b Implementer** (B-05a design accepted; ready) |
+| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05c Implementer** (verification closeout; ready) |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
 not serialize FE behind BE (or vice versa) when dependencies are clear.
@@ -48,10 +49,11 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
   `@user` decision — no look work in this slice. **F-05 was superseded before
   execution** (its branch had no commits) and returns to `listed`, still
   blocked on the Collections gap.
-- Backend: `docs/handoffs/active/lane-backend.md` → **B-05b Implementer**
-  (`ready` 2026-10-06) — implement `IngestionPort` against Commander-
-  accepted `architecture.md` §5.2.1. **B-05a** Researcher + Architect
-  archived; **no ADR-0006**. **B-05c** listed after B-05b.
+- Backend: `docs/handoffs/active/lane-backend.md` → **B-05c Implementer**
+  (`ready` 2026-10-09) — close the B-05 ingestion test matrix, API E2E,
+  Postman/load artifacts, and guided walkthrough. **B-05b** was
+  Commander-accepted after an independent 100-test clean gate; B-06 remains
+  closed.
 - Shared / DevOps heads: none live
 
 ## Cross-lane dependencies
@@ -64,14 +66,19 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-04c** Implementer closeout | **completed** (archived 2026-09-20) | Unblocked S-03 |
 | **S-03** (mock corpus, BE) | **completed** (archived 2026-09-20) | Unblocks F-03+ / F-04+ fixtures; unblocked B-05a. FE still needs a narrowly scoped `web → mocks` import exception before wiring MSW in-app |
 | **B-05a** | **completed** (Architect accepted 2026-10-06) | Design lock in `architecture.md` §5.2.1; no ADR-0006 |
-| **B-05b** | **live** (Implementer) | Product code for ingestion/chunking/jobs; blocks B-05c |
-| **B-05c** | **listed** | Opens after B-05b; then B-06 |
+| **B-05b** | **completed** (Commander-accepted 2026-10-09) | Product code for ingestion/chunking/jobs landed; unblocked B-05c |
+| **B-05c** | **live** (Implementer) | Verification closeout; blocks B-06 |
 | **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05's folders/tags sub-slice stays soft-stopped, and F-05 is now back to `listed` — the remediation is unchanged: an `@user`/Commander sequencing decision (contract change). |
 | **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. Java `pm-md-v1` is corpus SoT for chunking (B-05b); FE bridge remains editor tooling only. |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- B-05b Implementer **completed and Commander-accepted** (2026-10-09 —
+  independent `./gradlew clean test`: 100 tests, 0 failures/errors/skips):
+  `docs/handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`;
+  consumed soft-stop:
+  `docs/handoffs/archive/H-2026-10-09-P1-B05B-SOFTSTOP-implementer-commander.md`
 - B-05a Architect soft-stop **consumed** (2026-10-06 — Commander
   accepted design; opened B-05b):
   `docs/handoffs/archive/H-2026-10-06-P1-B05A-SOFTSTOP-architect-commander.md`
@@ -128,10 +135,11 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
    forking a client shape is prohibited. (Index note: FE lane head may
    currently show F-12 / F-14 — keep pointers aligned with
    `lane-frontend.md`.)
-2. Leave **B-05b Implementer** to `/implementer` on the backend lane
-   (opened 2026-10-06 after B-05a design accept). On B-05b archive:
-   open **B-05c** (test closeout + guided verification). Do **not**
-   open B-06 until B-05c completes.
+2. Leave **B-05c Implementer** to `/implementer` on the backend lane
+   (opened 2026-10-09 after Commander accepted B-05b). It owns the complete
+   verification matrix, API E2E, Postman/load artifacts, and guided
+   walkthrough. Do **not** open B-06 until B-05c completes and Commander
+   accepts its archive.
 3. When **B-05c** completes, open the next backend slice (B-06 pgvector,
    or a collections contract amendment if `@user` sequences it first) —
    or soft-stop if a cross-lane/contract issue blocks.

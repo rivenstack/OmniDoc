@@ -1,17 +1,33 @@
 package com.omnidoc.api.ingestion;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +51,8 @@ import com.omnidoc.api.adapters.ingestion.JdbcIngestionAdapter;
 import com.omnidoc.api.adapters.ingestion.JdbcRechunkOutbox;
 import com.omnidoc.api.adapters.ingestion.VersionChunker;
 import com.omnidoc.api.adapters.ingestion.parser.ImportParser;
+import com.omnidoc.api.adapters.ingestion.parser.ImportMediaType;
+import com.omnidoc.api.adapters.ingestion.parser.ParsedDocument;
 import com.omnidoc.api.adapters.ingestion.parser.TikaImportParser;
 import com.omnidoc.api.adapters.notes.JdbcNotesAdapter;
 import com.omnidoc.api.application.port.IdentityPort;
@@ -126,6 +144,8 @@ class IngestionWorkerIT {
 	private static IngestionPort ingestionPort;
 	private static NotesPort notesPort;
 	private static IngestionWorker worker;
+	private static VersionChunker versionChunker;
+	private static IdentityPort identityPort;
 	private static JsonMapper jsonMapper;
 
 	@BeforeAll
@@ -166,14 +186,14 @@ class IngestionWorkerIT {
 		repository = new IngestionJobRepository(appJdbc, rls, appTx);
 		IngestionDispatcher dispatcher = new IngestionDispatcher();
 		ProseMirrorMarkdownProjector projector = new ProseMirrorMarkdownProjector(jsonMapper);
-		VersionChunker versionChunker =
+		versionChunker =
 			new VersionChunker(appJdbc, repository, projector, new BlockPackChunker());
 		ImportParser parser = new TikaImportParser(jsonMapper, 1024 * 1024);
 		IngestionLimits limits = IngestionLimits.defaults();
 
 		notesPort = new JdbcNotesAdapter(
 			appJdbc, rls, appTx, jsonMapper, new JdbcRechunkOutbox(repository, dispatcher));
-		IdentityPort identityPort = new JdbcIdentityAdapter(
+		identityPort = new JdbcIdentityAdapter(
 			appJdbc, rls, appTx, new BCryptPasswordEncoder(), jsonMapper);
 		ingestionPort = new JdbcIngestionAdapter(repository, versionChunker, parser, dispatcher, limits);
 		worker = new IngestionWorker(repository, versionChunker, parser, notesPort, identityPort, limits);
@@ -363,6 +383,158 @@ class IngestionWorkerIT {
 		assertThat(job.get("status")).isEqualTo("ready");
 		assertThat(job.get("attempts")).isEqualTo(2);
 		assertThat(job.get("lease_owner")).isNull();
+		String versionId = (String) job.get("version_id");
+		assertThat(migratorJdbc().queryForObject(
+			"SELECT COUNT(*) FROM chunks WHERE version_id = ?", Integer.class, versionId))
+			.isEqualTo(migratorJdbc().queryForObject(
+				"SELECT chunk_count FROM chunk_sets WHERE version_id = ?", Integer.class, versionId));
+	}
+
+	@Test
+	void twoConcurrentClaimersUseSkipLockedAndNeverClaimTheSameJob() throws Exception {
+		IngestionJob first = success(ingestionPort.enqueueImport(importOf("first.md")));
+		IngestionJob second = success(ingestionPort.enqueueImport(importOf("second.md")));
+		CountDownLatch start = new CountDownLatch(1);
+		try (var executor = Executors.newFixedThreadPool(2)) {
+			var a = executor.submit(() -> {
+				start.await();
+				return repository.claim("claimer-a", 120).orElseThrow().jobId();
+			});
+			var b = executor.submit(() -> {
+				start.await();
+				return repository.claim("claimer-b", 120).orElseThrow().jobId();
+			});
+			start.countDown();
+			Set<String> claimed = new HashSet<>(List.of(a.get(5, TimeUnit.SECONDS), b.get(5, TimeUnit.SECONDS)));
+			assertThat(claimed).containsExactlyInAnyOrder(first.id().value(), second.id().value());
+		}
+	}
+
+	@Test
+	void allFiveSupportedImportTypesReachTerminalWithPersistedChunks() throws Exception {
+		List<ImportFixture> fixtures = List.of(
+			new ImportFixture("notes.md", "text/markdown", MARKDOWN.getBytes(StandardCharsets.UTF_8)),
+			new ImportFixture("notes.txt", "text/plain", "Plain pgvector BYOK OpenAI".getBytes(StandardCharsets.UTF_8)),
+			new ImportFixture("notes.html", "text/html", "<html><body><h1>HTML</h1><p>tenant_id</p></body></html>".getBytes(StandardCharsets.UTF_8)),
+			new ImportFixture("notes.pdf", "application/pdf", pdfBytes()),
+			new ImportFixture("notes.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docxBytes()));
+
+		for (ImportFixture fixture : fixtures) {
+			IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf(fixture)));
+			worker.drain();
+			Map<String, Object> terminal = jobRow(enqueued.id().value());
+			assertThat(terminal.get("status")).as(fixture.fileName()).isIn("ready", "partial");
+			assertThat(terminal.get("completed_units")).isEqualTo(4);
+			assertThat(payloadRows(enqueued)).isZero();
+			assertThat(migratorJdbc().queryForObject(
+				"SELECT COUNT(*) FROM chunks WHERE version_id = ?", Integer.class, terminal.get("version_id")))
+				.as(fixture.fileName()).isPositive();
+		}
+	}
+
+	@Test
+	void corruptAllowedDocumentFailsAfterValidationAndDeletesPayload() {
+		byte[] fakePdf = "%PDF-1.7\nnot actually a pdf".getBytes(StandardCharsets.UTF_8);
+		IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf(
+			new ImportFixture("broken.pdf", "application/pdf", fakePdf))));
+
+		worker.drain();
+
+		Map<String, Object> terminal = jobRow(enqueued.id().value());
+		assertThat(terminal.get("status")).isEqualTo("failed");
+		assertThat(terminal.get("error_code")).isEqualTo("unsupported_type");
+		assertThat(terminal.get("completed_units")).isEqualTo(1);
+		assertThat(payloadRows(enqueued)).isZero();
+	}
+
+	@Test
+	void parserWarningsProducePartialAtFourOfFourAndDeletePayload() {
+		IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf(new ImportFixture(
+			"partial.md", "text/markdown",
+			"Before ![diagram](diagram.png) after\n\n<div>raw</div>".getBytes(StandardCharsets.UTF_8)))));
+
+		worker.drain();
+
+		Map<String, Object> terminal = jobRow(enqueued.id().value());
+		assertThat(terminal.get("status")).isEqualTo("partial");
+		assertThat(terminal.get("error_code")).isEqualTo("partial");
+		assertThat(terminal.get("completed_units")).isEqualTo(4);
+		assertThat(payloadRows(enqueued)).isZero();
+	}
+
+	@Test
+	void parseTimeoutInterruptsWorkFailsAtOneOfFourAndDeletesPayload() throws Exception {
+		AtomicBoolean interrupted = new AtomicBoolean();
+		ImportParser slowParser = new ImportParser() {
+			@Override
+			public Optional<ImportMediaType> resolveType(
+				String declaredMediaType, String fileName, byte[] bytes) {
+				return Optional.of(ImportMediaType.MARKDOWN);
+			}
+
+			@Override
+			public ParsedDocument parse(byte[] bytes, ImportMediaType mediaType, String fileName) {
+				try {
+					Thread.sleep(10_000);
+				}
+				catch (InterruptedException ex) {
+					interrupted.set(true);
+					Thread.currentThread().interrupt();
+				}
+				return new ParsedDocument("late", bodyJson("late"), List.of());
+			}
+		};
+		IngestionLimits shortLimits = new IngestionLimits(
+			1024 * 1024, Duration.ofMillis(25), Duration.ofSeconds(1),
+			Duration.ofSeconds(30), 3, 1);
+		IngestionWorker timeoutWorker = new IngestionWorker(
+			repository, versionChunker, slowParser, notesPort, identityPort, shortLimits);
+		IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf("timeout.md")));
+
+		timeoutWorker.drain();
+
+		Map<String, Object> terminal = jobRow(enqueued.id().value());
+		assertThat(terminal.get("status")).isEqualTo("failed");
+		assertThat(terminal.get("error_code")).isEqualTo("timeout");
+		assertThat(terminal.get("completed_units")).isEqualTo(1);
+		assertThat(payloadRows(enqueued)).isZero();
+		for (int attempt = 0; attempt < 20 && !interrupted.get(); attempt++) {
+			Thread.sleep(10);
+		}
+		assertThat(interrupted.get()).isTrue();
+	}
+
+	@Test
+	void wholeJobDeadlineFailsBeforeParsingAndDeletesPayload() {
+		ImportParser parser = new TikaImportParser(jsonMapper, 1024 * 1024);
+		IngestionLimits expiredLimits = new IngestionLimits(
+			1024 * 1024, Duration.ofSeconds(1), Duration.ZERO,
+			Duration.ofSeconds(30), 3, 1);
+		IngestionWorker deadlineWorker = new IngestionWorker(
+			repository, versionChunker, parser, notesPort, identityPort, expiredLimits);
+		IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf("deadline.md")));
+
+		deadlineWorker.drain();
+
+		Map<String, Object> terminal = jobRow(enqueued.id().value());
+		assertThat(terminal.get("status")).isEqualTo("failed");
+		assertThat(terminal.get("error_code")).isEqualTo("timeout");
+		assertThat(terminal.get("completed_units")).isEqualTo(1);
+		assertThat(payloadRows(enqueued)).isZero();
+	}
+
+	@Test
+	void terminalJobsRejectFurtherProgressOrTerminalRewrites() {
+		IngestionJob enqueued = success(ingestionPort.enqueueImport(importOf("terminal.md")));
+		var claim = repository.claim("terminal-owner", 120).orElseThrow();
+		assertThat(repository.finish(claim, JobStatus.FAILED, "unavailable", 2, "terminal-owner")).isTrue();
+
+		assertThat(repository.advance(claim, 3, "terminal-owner", 120)).isFalse();
+		assertThat(repository.finish(claim, JobStatus.READY, null, 4, "terminal-owner")).isFalse();
+		Map<String, Object> terminal = jobRow(enqueued.id().value());
+		assertThat(terminal.get("status")).isEqualTo("failed");
+		assertThat(terminal.get("completed_units")).isEqualTo(2);
+		assertThat(payloadRows(enqueued)).isZero();
 	}
 
 	@Test
@@ -458,6 +630,62 @@ class IngestionWorkerIT {
 				fileName));
 	}
 
+	private static EnqueueImport importOf(ImportFixture fixture) {
+		return new EnqueueImport(
+			actorA(), new WorkspaceId(WORKSPACE_A),
+			new ImportContent(new ByteArrayInputStream(fixture.bytes()), fixture.mediaType(), fixture.fileName()));
+	}
+
+	private static byte[] pdfBytes() throws IOException {
+		try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			PDPage page = new PDPage();
+			document.addPage(page);
+			try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+				content.beginText();
+				content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+				content.newLineAtOffset(72, 720);
+				content.showText("PDF pgvector BYOK OpenAI tenant_id");
+				content.endText();
+			}
+			document.save(output);
+			return output.toByteArray();
+		}
+	}
+
+	private static byte[] docxBytes() throws IOException {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+			ZipOutputStream zip = new ZipOutputStream(output)) {
+			writeZipEntry(zip, "[Content_Types].xml", """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+				  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+				  <Default Extension="xml" ContentType="application/xml"/>
+				  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+				</Types>
+				""");
+			writeZipEntry(zip, "_rels/.rels", """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+				  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+				</Relationships>
+				""");
+			writeZipEntry(zip, "word/document.xml", """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+				  <w:body><w:p><w:r><w:t>DOCX pgvector BYOK OpenAI tenant_id</w:t></w:r></w:p></w:body>
+				</w:document>
+				""");
+			zip.finish();
+			return output.toByteArray();
+		}
+	}
+
+	private static void writeZipEntry(ZipOutputStream zip, String name, String contents) throws IOException {
+		zip.putNextEntry(new ZipEntry(name));
+		zip.write(contents.getBytes(StandardCharsets.UTF_8));
+		zip.closeEntry();
+	}
+
 	private static String bodyJson(String text) {
 		return jsonMapper.writeValueAsString(Map.of(
 			"type", "doc",
@@ -541,5 +769,8 @@ class IngestionWorkerIT {
 
 	private static String jdbcUrlFor(String database) {
 		return POSTGRES.getJdbcUrl().replace("/postgres", "/" + database);
+	}
+
+	private record ImportFixture(String fileName, String mediaType, byte[] bytes) {
 	}
 }

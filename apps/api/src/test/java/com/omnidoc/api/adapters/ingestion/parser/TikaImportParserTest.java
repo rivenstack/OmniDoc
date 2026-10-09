@@ -1,7 +1,11 @@
 package com.omnidoc.api.adapters.ingestion.parser;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -178,6 +182,14 @@ class TikaImportParserTest {
 	}
 
 	@Test
+	void boundedOperatorPdfAndDocxFixturesParseOffline() throws Exception {
+		assertOperatorFixture(
+			"load/fixtures/b05c-sample.pdf.b64", ImportMediaType.PDF, "sample.pdf", "PDF pgvector");
+		assertOperatorFixture(
+			"load/fixtures/b05c-sample.docx.b64", ImportMediaType.DOCX, "sample.docx", "DOCX pgvector");
+	}
+
+	@Test
 	void titleIsTheFileNameWithoutItsExtension() {
 		assertThat(ImportMediaType.titleOf("Ada's \"nested 'quotes'\" — notes (v2)!?.md"))
 			.isEqualTo("Ada's \"nested 'quotes'\" — notes (v2)!?");
@@ -197,5 +209,17 @@ class TikaImportParserTest {
 			throw new IllegalStateException(ex);
 		}
 		return bytes.toByteArray();
+	}
+
+	private void assertOperatorFixture(
+		String path, ImportMediaType mediaType, String fileName, String expectedText) throws Exception {
+		byte[] bytes = decodeFixture(path);
+		assertThat(this.parser.resolveType(mediaType.wireType(), fileName, bytes)).contains(mediaType);
+		ParsedDocument parsed = this.parser.parse(bytes, mediaType, fileName);
+		assertThat(this.projector.project(parsed.bodyJson()).text()).contains(expectedText);
+	}
+
+	private static byte[] decodeFixture(String path) throws IOException {
+		return Base64.getMimeDecoder().decode(Files.readString(Path.of(path), StandardCharsets.UTF_8));
 	}
 }

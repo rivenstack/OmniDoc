@@ -20,6 +20,10 @@ class PortFailuresTest {
 		assertThat(PortFailures.status(PortFailure.Code.NOT_FOUND)).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(PortFailures.status(PortFailure.Code.CONFLICT)).isEqualTo(HttpStatus.CONFLICT);
 		assertThat(PortFailures.status(PortFailure.Code.TOO_LARGE)).isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
+		assertThat(PortFailures.status(PortFailure.Code.UNSUPPORTED_TYPE)).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+		assertThat(PortFailures.status(PortFailure.Code.TIMEOUT)).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+		assertThat(PortFailures.status(PortFailure.Code.UNAVAILABLE)).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		assertThat(PortFailures.status(PortFailure.Code.PARTIAL)).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 		assertThat(PortFailures.status(PortFailure.Code.QUOTA_EXHAUSTED)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
 	}
 

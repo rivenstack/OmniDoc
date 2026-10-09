@@ -17,6 +17,17 @@ High-signal rules for Codex. Keep diffs small. Prefer reading over guessing.
 
 If the handoff `to:` is not your role, stop and say so.
 
+## Role selection
+
+OmniDoc roles are Codex skills under `.agents/skills/`. Select them
+explicitly with `$commander`, `$architect`, `$researcher`,
+`$ux-researcher`, `$designer`, `$implementer`, or `$phase-check`.
+Use `/skills` to browse them. ChatGPT surfaces may also expose enabled
+skills through `@` or the slash picker.
+
+Do not infer a role switch merely because a task resembles another role.
+The user must select the new role or explicitly instruct the switch.
+
 ## Codex working style
 
 - Be direct; state assumptions only when blocked
@@ -45,10 +56,10 @@ Postgres is backend-owned; AWS deploy is DevOps (often unassigned).
 
 | Topic | Route |
 |-------|-------|
-| Phase / ownership | `/commander` (or tell `@user`) |
-| Boundaries / ADRs | `/architect` |
-| Evidence / vendors | `/researcher` |
-| Customer UX claims | `/ux-researcher` |
-| System UX / design language | `/designer` |
-| Construction | `/implementer` |
-| Verification | `/phase-check` |
+| Phase / ownership | `$commander` (or tell `@user`) |
+| Boundaries / ADRs | `$architect` |
+| Evidence / vendors | `$researcher` |
+| Customer UX claims | `$ux-researcher` |
+| System UX / design language | `$designer` |
+| Construction | `$implementer` |
+| Verification | `$phase-check` |

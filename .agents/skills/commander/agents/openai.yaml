@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commander"
+  short_description: "Coordinate OmniDoc phases and handoffs"
+  default_prompt: "Use $commander to coordinate the active OmniDoc lanes and persistent handoffs."

@@ -1,0 +1,22 @@
+{
+  "corpusVersion": "s-03-v1",
+  "sourceNoteIds": [
+    "ws_mine_formatting",
+    "ws_sample_formatting"
+  ],
+  "frontendBridgeInputs": {
+    "packages/ui/src/capture/markdown-bridge.ts": "3baf7794972b7d266a09e58168539701ca720bb8cf105691be08b33bc75e6d1a",
+    "packages/ui/src/markdown/table.ts": "c02006aa12cb1aab4f7f160c72d928a3fa92dfcccf529c6632c235cb343edc2c",
+    "packages/mocks/src/fixtures.ts": "306693f33fbbba4924d742e9b600ffa7b861ca4015772b02881ea3d9ec205567"
+  },
+  "cases": [
+    {
+      "id": "rich-formatting",
+      "bodyJson": "rich-formatting.json",
+      "javaGolden": "rich-formatting.java.md",
+      "frontendGolden": "rich-formatting.frontend.md",
+      "allowedDeltas": []
+    }
+  ]
+}
+
