@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -34,7 +34,7 @@ humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-12 ready** (sanitized markdown render pipeline; F-05 superseded before execution) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-15 ready** (Obsidian-parity editor redesign; governance G-1…G-4 complete 2026-10-10) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-05c Implementer** (verification closeout; ready) |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -42,13 +42,16 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-12 ready**
-  (sanitized markdown render pipeline: `react-markdown` + `remark-gfm` behind
-  `rehype-sanitize`, plus the ADR-0003 §Verification hostile-payload test;
-  opened 2026-09-27 after `@user` triaged backlog `BL-19`). Behaviour-only by
-  `@user` decision — no look work in this slice. **F-05 was superseded before
-  execution** (its branch had no commits) and returns to `listed`, still
-  blocked on the Collections gap.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-15 ready**
+  (Obsidian-parity editor redesign: one Obsidian-fidelity markdown editing
+  engine plus one formatting surface for TipTap and CodeMirror; plan
+  `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`;
+  opened 2026-10-10 after governance tasks G-1…G-4 completed). F-13
+  (multi-mode capture) and F-14 (tables) are **completed**; F-15
+  supersedes-in-part their CM6 internals while preserving their
+  user-facing behaviour. **F-05 was superseded before execution** (its
+  branch had no commits) and returns to `listed`, still blocked on the
+  Collections gap.
 - Backend: `docs/handoffs/active/lane-backend.md` → **B-05c Implementer**
   (`ready` 2026-10-09) — close the B-05 ingestion test matrix, API E2E,
   Postman/load artifacts, and guided walkthrough. **B-05b** was
@@ -74,6 +77,9 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Recently archived
 
+- F-14 **completed and archived** (2026-10-10 — governance reconciliation;
+  the lane head had sat at `status: completed` since 2026-10-02):
+  `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md`
 - B-05b Implementer **completed and Commander-accepted** (2026-10-09 —
   independent `./gradlew clean test`: 100 tests, 0 failures/errors/skips):
   `docs/handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`;
@@ -128,13 +134,13 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. **F-05 is the live frontend ticket** (opened 2026-09-25 after F-04 was
-   Commander-validated PASS and archived). Scope: Inbox as the unfiled home
-   plus the Notes list over S-02 `listNotes`. The **Collections**
-   (folders/tags) sub-slice is soft-stopped: no contract surface exists, and
-   forking a client shape is prohibited. (Index note: FE lane head may
-   currently show F-12 / F-14 — keep pointers aligned with
-   `lane-frontend.md`.)
+1. **F-15 is the live frontend ticket** (opened 2026-10-10 after governance
+   tasks G-1…G-4 completed; F-13/F-14 reconciled to `completed`). Scope:
+   the Obsidian-parity editor redesign per
+   `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`,
+   executed task-by-task from Phase A. **F-05 remains superseded before
+   execution** and `listed`, still soft-stopped on the S-02 Collections gap
+   (no contract surface exists, and forking a client shape is prohibited).
 2. Leave **B-05c Implementer** to `/implementer` on the backend lane
    (opened 2026-10-09 after Commander accepted B-05b). It owns the complete
    verification matrix, API E2E, Postman/load artifacts, and guided

@@ -227,6 +227,18 @@ Program of record:
   `cd apps/api && ./gradlew clean test`: **100 tests, 0 failures, 0 errors,
   0 skipped**. The backend lane advanced to **B-05c** (test closeout +
   guided verification); B-06 remains closed until B-05c is accepted
+- **2026-10-10:** **F-15 opened** — the Obsidian-parity capture editor
+  redesign ([`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md),
+  branch `f15-editor-redesign-governance`) entered the program of record.
+  Governance tasks **G-1…G-4 completed**: editor package pins recorded in
+  `docs/research/version-ledger.md` (candidates `@codemirror/autocomplete`
+  6.20.3 + `@codemirror/search` 6.7.2 pending Architect confirmation; vim,
+  math, and mermaid explicitly **gated** — `@user` 2026-10-10), the
+  `[[wikilink]]` v1 deferral recorded in the design contract, and the
+  capture mode contract synced to **three modes + lock**. **F-13**
+  (multi-mode capture, commits `3c170f9`/`fe5a97f`/`acaa031`) and **F-14**
+  (tables, 2026-10-02) are marked **completed**; the frontend lane head is
+  rewritten to F-15 (Phase A next)
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -266,7 +278,9 @@ Program of record:
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
 | F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **listed** — soft-stopped on S-02 collections gap | `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md` |
-| F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **ready** 2026-10-02 — table extensions, popover/bubble toolbar affordances, live preview, bridge | `docs/handoffs/active/lane-frontend.md` |
+| F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 (`@user`-verified) — three capture modes + lock, CodeMirror 6 live preview, JSON↔markdown bridge (commits `3c170f9`/`fe5a97f`/`acaa031`) | `docs/handoffs/active/lane-frontend.md` |
+| F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 — table extensions, popover/bubble toolbar affordances, live preview, bridge | `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md` |
+| F-15 Obsidian-parity editor redesign | frontend | Implementer (front-end programmer) | **ready** 2026-10-10 — governance G-1…G-4 complete; Phase A next | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -350,8 +364,8 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-14 markdown & editor tables, `lane: frontend`, human: front-end
-  programmer)
+  `/implementer` (F-15 Obsidian-parity editor redesign, `lane: frontend`, human:
+  front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (B-05c ingestion test closeout + guided verification,
   `lane: backend`; human: back-end programmer; B-06 remains closed)

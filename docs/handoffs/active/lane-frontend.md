@@ -1,90 +1,116 @@
 ---
-handoff_id: H-2026-10-02-P1-F14
+handoff_id: H-2026-10-10-P1-F15
 affinity: implementation
 track: parallel
-status: completed
+status: ready
 phase: "1"
-task: "F-14"
+task: "F-15"
 lane: frontend
 human_owner: front-end-programmer
 from: commander
 to: implementer
-created: 2026-10-02
-updated: 2026-10-02
+created: 2026-10-10
+updated: 2026-10-10
 ---
 
-# F-14 — Markdown & editor tables
+# F-15 — Obsidian-parity capture editor redesign
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-frontend.md and execute F-14 exactly. Install pinned @tiptap/extension-table* packages (3.31.3), wire the extensions into the ProseMirror schema and the bidirectional markdown-bridge, implement table horizontal scroll containment, add the interactive table popover and contextual selection bubble controls, and support live preview GFM table reveal rules. Run the full test gate.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute F-15 exactly, beginning with Phase A Task A-1 of docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md. One bite-sized task at a time; commit after each; every task ends green before the next begins.
 ```
 
 ## Objective
 
-Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer. **allowed_task_classes:** `F-14` only.
+Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer. **allowed_task_classes:** `F-15` only.
 
-Implement rich Markdown and GFM tables across TipTap Normal mode, CodeMirror Markdown live preview, Text mode, and the bidirectional JSON ↔ Markdown bridge.
+Replace the ad-hoc CodeMirror 6 live preview with a single Obsidian-fidelity markdown editing engine, and drive it and TipTap from **one** command/toolbar surface, per the plan of record:
+[`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md).
+
+Governance tasks **G-1…G-4 are complete** (2026-10-10): editor pins recorded in `docs/research/version-ledger.md`, the `[[wikilink]]` v1 deferral recorded, F-13/F-14 reconciled to `completed`, and the capture mode contract synced to three modes + lock. Begin at **Phase A, Task A-1**.
 
 ## Required Reading
 
-1. `architecture.md` §2, §6 (Markdown projection, sanitization, isolation)
-2. `quality/ui-qa-checklist.md` §6.4 (narrow-viewport horizontal scroll containment, accessible name, focusable container)
-3. `docs/design/now.md` (F-14 decisions: default 3x3 table insertion + interactive size popover, floating selection bubble controls)
-4. `docs/research/version-ledger.md` (pinned versions for `@tiptap/extension-table*` at 3.31.3)
-5. `packages/ui/src/capture/capture-surface.tsx`, `markdown-bridge.ts`, `formatting-toolbar.tsx`, `packages/ui/src/codemirror/markdown-live-preview.ts`
+1. `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md` — the full plan (phases A–H, per-task steps and commits)
+2. `architecture.md` §2 (ProseMirror JSON SoT), §6 (sanitization / untrusted content), §8 (directionality)
+3. `docs/design/system-ux.md` §1/§2 (three modes + lock contract)
+4. `docs/design/now.md` (F-13/F-14 decisions this builds on)
+5. `docs/research/version-ledger.md` — editor package rows (G-1)
+6. `quality/ui-qa-checklist.md`
+7. `packages/ui/src/codemirror/cm-editor.tsx`, `markdown-live-preview.ts`; `packages/ui/src/capture/capture-surface.tsx`, `formatting-toolbar.tsx`, `markdown-bridge.ts`
 
 ## Inputs / Evidence
 
-- BL-20 promoted to F-14 following `@user` approval (2026-10-02)
-- TipTap core and starter-kit pinned at 3.31.3
-- `tiptap-markdown` 0.9.0 includes table serializing and parsing support when schema contains table nodes
-- GFM table grammar parsed by `@codemirror/lang-markdown` via Lezer markdown GFM bundle
-
-## Task details
-
-| Concern | This task |
-| --- | --- |
-| Dependencies | Install `@tiptap/extension-table@3.31.3`, `@tiptap/extension-table-row@3.31.3`, `@tiptap/extension-table-cell@3.31.3`, `@tiptap/extension-table-header@3.31.3` in `packages/ui` |
-| Data bridge | Register table extensions in `createConverterEditor` (`markdown-bridge.ts`) so `proseMirrorToMarkdown` and `markdownToProseMirror` preserve table structures without loss |
-| Normal mode | Register table extensions in `CAPTURE_EXTENSIONS` (`capture-surface.tsx`). Add Mintlify styling and accessible horizontal scroll containment in `CAPTURE_BODY_CLASSES` |
-| Toolbar | Add quick default 3x3 table insertion button and interactive size popover (rows x cols) to `formatting-toolbar.tsx` |
-| Bubble menu | In `SelectionToolbarView`, detect table node selection and expose row/column insertion and deletion tools |
-| Markdown mode | Add GFM table support to `markdown-live-preview.ts` under Obsidian reveal rules |
-| A11y & QA | Verify `quality/ui-qa-checklist.md` §6.4 (mobile ~390px scroll containment, focusable keyboard navigation `tabIndex={0}`, logical CSS) |
-| Tests | Unit tests in `markdown-bridge.test.ts`, mode switching in `capture-modes.test.tsx`, toolbar in `blocks.test.tsx` |
+- REA static analysis of Obsidian 1.14.4 (evidence ID `ev_c7f5023cbab1916ee56d4fcc8326a157e59cb79ab35cd88e4765949144f207f0`, bundle `/tmp/opencode/obsidian-1.14.4-bundle.json`) — behaviour only; no Obsidian code, CSS, or assets copied (licensing boundary)
+- F-13 delivered commits `3c170f9` / `fe5a97f` / `acaa031`; F-14 completed 2026-10-02
+- Existing regression net: `cm-editor.test.tsx` and `table-preview.test.tsx` must stay green throughout
 
 ## Allowed Write Paths
 
-- `packages/ui/**`
+- `packages/ui/src/capture/**`
+- `packages/ui/src/codemirror/**`
+- `packages/ui/package.json` — **pinned deps only**, and only the G-1 ledger candidate rows (`@codemirror/autocomplete` 6.20.3, `@codemirror/search` 6.7.2) at their recorded versions, after Architect confirmation; no other dependency may be added
 - `docs/handoffs/active/lane-frontend.md`
 - `docs/design/now.md`
 - `context.md`
 - `docs/memory/implementer.md`
 
+## Out of Scope
+
+- `packages/ui/src/markdown/**` (F-12 render path) — untouched, except the gated C-6 math/mermaid change, which is **not** in this slice
+- Backend lane, `docs/api/**`, `packages/contracts/**`
+- ADR authorship/amendment (Architect only); production AI activation; RTL locale claims
+- Vim mode (F-3), math/mermaid (C-6), `[[wikilink]]` autocomplete (plan Phase E) — all gated/deferred; do not install their packages
+
+## Deliverables
+
+Phases A–H of the plan, in order, one commit per task:
+
+- **A** foundation: `EditorSettings`, shared body typography, extension factory + Compartments, live-preview module split (no behaviour change)
+- **B** one formatting toolbar for both engines (command registry + TipTap/CodeMirror adapters)
+- **C** live-preview fidelity (viewport-scoped tables, `atomicRanges`, highlight/comment, callouts, footnotes, images)
+- **D** editing ergonomics (auto-pairing, multiple selections, indentation, smart lists, gutters, live settings)
+- **F** power features (find/replace, folding) — vim stays gated
+- **G** per-line direction + directionality audit
+- **H** hardening (fidelity matrix, interaction suite, a11y pass, perf budget, full gate + docs)
+
+## Constraints and Prohibited Decisions
+
+- One bite-sized task per commit; each task ends green (`npx vitest run` cwd `packages/ui`; `npx nx typecheck ui` repo root) before the next begins
+- ProseMirror JSON stays the durable SoT; markdown stays a derived projection; the block never calls the API
+- No new dependency outside the G-1 ledger rows; rejected or deferred packages must not appear in `packages/ui/package.json`
+- Logical CSS only; locale-driven direction; `bdi` isolation for identifiers/code/UGC; no physical-direction JS
+- Accessibility is a release gate (focus order, keyboard, labels, reduced motion, contrast), not a cosmetic pass
+- Do not self-approve governance items; Architect / Designer / Commander own those
+
 ## Acceptance Criteria
 
-- Markdown tables round-trip losslessly between ProseMirror JSON and Markdown text via `markdown-bridge.ts`
-- Tables can be inserted in Normal mode via default button or size popover
-- Table cell selection displays floating bubble actions (add/remove row, add/remove col, delete table)
-- CodeMirror Markdown live preview formats GFM tables and unfolds into raw pipes when selection touches a row
-- Wide tables scroll internally without page widening or clipping on mobile (~390px viewport, `ui-qa-checklist.md` §6.4)
-- Full monorepo check passes: `pnpm nx run-many -t typecheck lint test build`
+- Every plan task lands with its named commit; `npx vitest run` (packages/ui) and `npx nx typecheck ui` green at each step
+- Full monorepo gate green at H-5: `pnpm nx run-many -t typecheck lint test build`
+- User-facing behaviour of F-13/F-14 preserved (three modes + lock, tables, live preview); the H-1 fidelity matrix proves constructs round-trip
+- The toolbar exposes the identical button set and shortcuts in Normal, Markdown, and Text; no command is mouse-only
+- RTL-readiness and a11y checks pass per `quality/ui-qa-checklist.md`; no RTL locale support claimed
 
-## Outcome
+## Stop / Escalate Conditions
 
-Completed 2026-10-02 by `/implementer` & `/phase-check`.
+- **Soft-stop:** a cross-lane or infra dependency blocks (e.g. an F-12 render-path change for C-6 — gated anyway)
+- **Hard-stop:** write collision with another lane, an ADR reopen, any production AI activation, any RTL-shipped claim, or a dependency outside the G-1 pins
+- Escalate to `/commander` via `docs/handoffs/current.md`; do not reassign work silently
 
-1. **Dependencies:** Installed `@tiptap/extension-table@3.31.3`, `@tiptap/extension-table-row@3.31.3`, `@tiptap/extension-table-cell@3.31.3`, and `@tiptap/extension-table-header@3.31.3` in `packages/ui` (matching `@tiptap/core` 3.31.3 pin).
-2. **Components:** Created `packages/ui/src/components/popover.tsx` wrapping `@base-ui/react/popover` for the interactive table size matrix.
-3. **Data Bridge:** Wired named table extensions into `createConverterEditor` (`packages/ui/src/capture/markdown-bridge.ts`). Tested round-trip GFM table Markdown ↔ ProseMirror JSON in `markdown-bridge.test.ts`.
-4. **Normal Mode:** Configured Table extensions in `CAPTURE_EXTENSIONS` (`capture-surface.tsx`) with `renderWrapper: true`, horizontal scroll containment (`.tableWrapper: overflow-x-auto max-w-full`), logical CSS (`text-start`, `border-border`), and semantic tokens.
-5. **Formatting Toolbar:** Added interactive `TableSizePicker` popover (up to 6x6 matrix hover picker) alongside quick 3x3 default table button for both TipTap and CodeMirror views.
-6. **Selection Bubble Toolbar:** Added table node detection (`editor.isActive("table")`) exposing row insertion/removal, column insertion/removal, and table deletion tools.
-7. **CodeMirror Markdown Live Preview:** Extended `markdownLivePreviewPlugin` in `markdown-live-preview.ts` to style `TableHeader`, `TableRow`, and fold `TableDelimiter` into subtle divider lines when unselected, unfolding raw pipes when cursor touches the row.
-8. **Verification:**
-   - Full monorepo gate check passed 16/16 (`pnpm nx run-many -t typecheck lint test build`).
-   - Monorepo unit tests passed 5/5 projects cleanly (`--skip-nx-cache`), 376/376 UI tests green.
-   - Tested table creation and mode-switch preservation in `capture-modes.test.tsx`.
+## Gates
 
+- Production AI/provider activation remains gated
+- RTL locale remains deferred (readiness discipline required)
+- Vim, math (KaTeX), and mermaid remain gated (`@user` 2026-10-10) — no install without an explicit yes plus a pin
+- `[[wikilink]]` stays literal text in v1 (G-2)
+
+## Completion Instructions
+
+On completion of the final task (H-5): archive this handoff to
+`docs/handoffs/archive/H-2026-10-10-P1-F15-commander-implementer.md`,
+rewrite `docs/handoffs/active/lane-frontend.md` with the next track ID
+(or leave the lane head marked completed for Commander), update
+`context.md`, and record durable lessons in `docs/memory/implementer.md`.
+Same-lane iteration continues until a cross-lane dependency soft-stops
+the lane.
