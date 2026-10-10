@@ -1,7 +1,7 @@
 # System UX
 
 **Owner:** `/designer`, with `@user` choices
-**Status:** live contract (2026-09-22)
+**Status:** live contract (2026-10-10)
 **Changes:** rare. Offer options. The user chooses. Then edit this file.
 
 This is the only design document other systems must honor. It records
@@ -52,6 +52,7 @@ the option, wait for the user, then edit this table.
   - **Text**: Pure raw markdown source editor (CodeMirror 6 / monospace) with no preview. The toolbar acts as a shortcut assistant inserting markdown syntax.
   - **Reading**: Sanitized read-only projection (`packages/ui/src/markdown/`). Fast, non-editable, guarded against XSS.
 - ProseMirror JSON remains the durable source of truth in the database (ADR-0001 §2). Any edit in Text or Markdown mode is synchronized bidirectionally with the ProseMirror document model without data loss.
+- `[[wikilink]]` syntax is **plain text in v1** — no link resolution, no autocomplete, and no unresolved-link styling. Recorded 2026-10-10 (`@user`): out of scope until the backlog item is promoted. The note source of truth (ProseMirror JSON) and `docs/api/openapi.yaml` are unchanged. If it is promoted later, the representation choice — a dedicated `wikilink` mark carrying `{ targetId, targetTitle }` (Obsidian-faithful; needs a TipTap mark plus `tiptap-markdown` serializer/parser work) or a plain internal `omni://` link mark (cheapest; breaks on rename) — is re-opened then, as a contract-level decision rather than a UI choice.
 - Paste and file import are first-class. Each imported file has its own
   indexing status: pending, indexing, ready, partial, or failed.
 - Saves are versioned. A conflict is visible. The client does not pick
