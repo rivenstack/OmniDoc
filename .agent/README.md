@@ -41,6 +41,7 @@ adapters and this bootstrap keep working.
   (role slash commands & skills) + `.agent/skills.json`
 - **Copilot:** [`.github/copilot-instructions.md`](../.github/copilot-instructions.md)
   (root `copilot-instructions.md` is a byte-identical mirror)
-- **Codex:** [`.codex/INSTRUCTIONS.md`](../.codex/INSTRUCTIONS.md)
+- **Codex:** [`.codex/INSTRUCTIONS.md`](../.codex/INSTRUCTIONS.md) +
+  repo-scoped role skills under [`.agents/skills/`](../.agents/skills/)
 - **Gemini Chat / AI Studio:** attach [`GEMINI_CONTEXT.md`](../GEMINI_CONTEXT.md)
   (snapshot — refresh from SoT before attach)

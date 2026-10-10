@@ -1,0 +1,4 @@
+interface:
+  display_name: "UX Researcher"
+  short_description: "Research OmniDoc customer journeys and trust"
+  default_prompt: "Use $ux-researcher to investigate the assigned OmniDoc customer-experience question."

@@ -1,0 +1,183 @@
+{
+  "info": {
+    "name": "OmniDoc B-05c ingestion verification",
+    "description": "Bounded local verification of S-02 multipart ingestion. Requires the B-04 local seed and a small file path in importFile.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Sign in",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const xsrf = pm.cookies.get('XSRF-TOKEN');",
+              "pm.test('CSRF cookie present', () => pm.expect(xsrf).to.be.a('string').and.not.empty);",
+              "pm.environment.set('xsrfToken', xsrf);",
+              "pm.environment.set('pollAttempts', '0');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/session"
+      }
+    },
+    {
+      "name": "2. Enqueue import",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 202', () => pm.response.to.have.status(202));",
+              "const job = pm.response.json();",
+              "pm.test('starts at 0/4', () => { pm.expect(job.status).to.eql('pending'); pm.expect(job.completedUnits).to.eql(0); pm.expect(job.totalUnits).to.eql(4); });",
+              "pm.environment.set('jobId', job.jobId);",
+              "pm.environment.set('pollAttempts', '0');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "OmniDoc-Workspace-Id",
+            "value": "{{workspaceId}}"
+          },
+          {
+            "key": "X-XSRF-TOKEN",
+            "value": "{{xsrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "{{importFile}}"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/ingestion-jobs"
+      }
+    },
+    {
+      "name": "3. Poll job (bounded)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const job = pm.response.json();",
+              "pm.test('total remains four', () => pm.expect(job.totalUnits).to.eql(4));",
+              "const attempts = Number(pm.environment.get('pollAttempts') || '0') + 1;",
+              "pm.environment.set('pollAttempts', String(attempts));",
+              "if (job.status === 'pending' || job.status === 'running') {",
+              "  pm.test('poll limit not exceeded', () => pm.expect(attempts).to.be.below(31));",
+              "  if (attempts < 30) pm.execution.setNextRequest('3. Poll job (bounded)');",
+              "} else {",
+              "  pm.test('terminal ready or partial', () => pm.expect(['ready', 'partial']).to.include(job.status));",
+              "  pm.test('terminal is 4/4', () => pm.expect(job.completedUnits).to.eql(4));",
+              "  if (job.noteId) pm.environment.set('noteId', job.noteId);",
+              "  if (job.versionId) pm.environment.set('versionId', job.versionId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "OmniDoc-Workspace-Id",
+            "value": "{{workspaceId}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/ingestion-jobs/{{jobId}}"
+      }
+    },
+    {
+      "name": "4. Reject non-multipart body",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 415', () => pm.response.to.have.status(415));",
+              "pm.test('stable unsupported_type code', () => pm.expect(pm.response.json().code).to.eql('unsupported_type'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OmniDoc-Workspace-Id",
+            "value": "{{workspaceId}}"
+          },
+          {
+            "key": "X-XSRF-TOKEN",
+            "value": "{{xsrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": "{{baseUrl}}/api/v1/ingestion-jobs"
+      }
+    },
+    {
+      "name": "5. Unknown job",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 404', () => pm.response.to.have.status(404));",
+              "pm.test('stable not_found code', () => pm.expect(pm.response.json().code).to.eql('not_found'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "OmniDoc-Workspace-Id",
+            "value": "{{workspaceId}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/ingestion-jobs/job-not-real"
+      }
+    }
+  ]
+}
+

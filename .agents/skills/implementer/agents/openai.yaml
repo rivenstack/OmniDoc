@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementer"
+  short_description: "Execute an approved OmniDoc lane handoff"
+  default_prompt: "Use $implementer to execute the assigned OmniDoc lane handoff exactly."

@@ -35,6 +35,17 @@ dependencies {
 	implementation("org.postgresql:postgresql")
 	implementation("com.pgvector:pgvector:0.1.6")
 
+	// B-05b import parsers (architecture.md §5.2.1 §6). Narrow Tika modules only —
+	// tika-parsers-standard-package pulls formats outside the allowlist.
+	// No Spring AI ETL (no TikaDocumentReader / TokenTextSplitter): §7.
+	implementation("org.apache.tika:tika-core:4.1.0")
+	implementation("org.apache.tika:tika-parser-pdf-module:4.1.0")
+	implementation("org.apache.tika:tika-parser-microsoft-module:4.1.0")
+	implementation("org.apache.tika:tika-parser-html-module:4.1.0")
+	implementation("org.apache.tika:tika-parser-text-module:4.1.0")
+	implementation("org.commonmark:commonmark:0.30.0")
+	implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -46,6 +57,7 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	systemProperty("omnidoc.repo.root", projectDir.parentFile.parentFile.absolutePath)
 }
 
 // Free Tier RSS awareness (I-03 owns SKU PoC). Override via JAVA_TOOL_OPTIONS.

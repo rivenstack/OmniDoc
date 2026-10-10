@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architect"
+  short_description: "Own OmniDoc architecture and ADR decisions"
+  default_prompt: "Use $architect to resolve the assigned OmniDoc architecture decision."

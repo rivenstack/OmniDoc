@@ -1,0 +1,4 @@
+interface:
+  display_name: "Phase Check"
+  short_description: "Independently verify OmniDoc release gates"
+  default_prompt: "Use $phase-check to verify the assigned OmniDoc phase or completed handoff."

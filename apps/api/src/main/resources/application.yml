@@ -19,10 +19,26 @@ server:
 omnidoc:
   cors:
     allowed-origins: ${OMNIDOC_CORS_ORIGINS:http://localhost:3000}
+  # B-05b ingestion limits (architecture.md §5.2.1 §6). Properties, not literals.
+  ingestion:
+    max-upload-bytes: ${OMNIDOC_INGESTION_MAX_UPLOAD_BYTES:10485760}
+    parse-timeout-ms: ${OMNIDOC_INGESTION_PARSE_TIMEOUT_MS:60000}
+    job-timeout-ms: ${OMNIDOC_INGESTION_JOB_TIMEOUT_MS:300000}
+    lease-ms: ${OMNIDOC_INGESTION_LEASE_MS:120000}
+    max-attempts: ${OMNIDOC_INGESTION_MAX_ATTEMPTS:3}
+    max-drain-per-dispatch: ${OMNIDOC_INGESTION_MAX_DRAIN:64}
+    sweep-initial-delay-ms: ${OMNIDOC_INGESTION_SWEEP_INITIAL_DELAY_MS:5000}
+    sweep-interval-ms: ${OMNIDOC_INGESTION_SWEEP_INTERVAL_MS:15000}
 
 spring:
   application:
     name: omnidoc-api
+  servlet:
+    multipart:
+      # Headroom above the 10 MiB ingestion cap so the adapter — not the container —
+      # produces the `too_large` port failure for a file just over the limit.
+      max-file-size: 12MB
+      max-request-size: 13MB
   autoconfigure:
     exclude:
       - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration

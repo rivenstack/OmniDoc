@@ -1,4 +1,4 @@
-# Postman — OmniDoc B-01–B-04 local API
+# Postman — OmniDoc local API
 
 Collection for identity + notes integrity against a local `apps/api`
 instance. Consumes S-02 paths; does not fork OpenAPI.
@@ -8,6 +8,7 @@ instance. Consumes S-02 paths; does not fork OpenAPI.
 | File | Purpose |
 |------|---------|
 | `omnidoc-b01-b04.postman_collection.json` | Session, workspaces, notes CRUD, conflict, soft-delete, purge |
+| `omnidoc-b05c-ingestion.postman_collection.json` | Bounded multipart enqueue, poll, terminal progress, and ingestion errors |
 | `local.postman_environment.json` | `baseUrl`, seed credentials, workspace/note ids |
 
 ## Prerequisites
@@ -44,7 +45,14 @@ Newman (optional):
 ```bash
 npx --yes newman run apps/api/postman/omnidoc-b01-b04.postman_collection.json \
   -e apps/api/postman/local.postman_environment.json
+
+npx --yes newman run apps/api/postman/omnidoc-b05c-ingestion.postman_collection.json \
+  -e apps/api/postman/local.postman_environment.json
 ```
+
+The B-05c collection expects `importFile` to name a small local file. The
+environment defaults to `apps/api/load/fixtures/b05c-sample.md` when Newman
+is launched from the repository root. Polling stops after 30 requests.
 
 ## Fixture credentials
 

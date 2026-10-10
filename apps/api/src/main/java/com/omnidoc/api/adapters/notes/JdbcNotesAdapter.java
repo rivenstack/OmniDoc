@@ -71,16 +71,27 @@ public class JdbcNotesAdapter implements NotesPort {
 	private final TenantRlsSession rlsSession;
 	private final TransactionTemplate transactionTemplate;
 	private final ObjectMapper objectMapper;
+	private final RechunkOutbox rechunkOutbox;
 
 	public JdbcNotesAdapter(
 		JdbcTemplate jdbcTemplate,
 		TenantRlsSession rlsSession,
 		TransactionTemplate transactionTemplate,
 		ObjectMapper objectMapper) {
+		this(jdbcTemplate, rlsSession, transactionTemplate, objectMapper, RechunkOutbox.NOOP);
+	}
+
+	public JdbcNotesAdapter(
+		JdbcTemplate jdbcTemplate,
+		TenantRlsSession rlsSession,
+		TransactionTemplate transactionTemplate,
+		ObjectMapper objectMapper,
+		RechunkOutbox rechunkOutbox) {
 		this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
 		this.rlsSession = Objects.requireNonNull(rlsSession, "rlsSession");
 		this.transactionTemplate = Objects.requireNonNull(transactionTemplate, "transactionTemplate");
 		this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+		this.rechunkOutbox = Objects.requireNonNull(rechunkOutbox, "rechunkOutbox");
 	}
 
 	@Override
@@ -114,6 +125,7 @@ public class JdbcNotesAdapter implements NotesPort {
 				versionId,
 				ownership);
 			insertVersion(versionId, noteId, request.actor(), request.fields());
+			this.rechunkOutbox.noteCommitted(request.actor(), request.workspaceId(), new NoteId(noteId));
 			return findVisibleNote(request.actor(), new NoteId(noteId), Optional.of(request.workspaceId()));
 		});
 	}
@@ -158,6 +170,7 @@ public class JdbcNotesAdapter implements NotesPort {
 			}
 
 			insertVersion(versionId, request.noteId().value(), request.actor(), request.fields());
+			this.rechunkOutbox.noteCommitted(request.actor(), request.workspaceId(), request.noteId());
 			UpdateRow row = updated.getFirst();
 			return new PortResult.Success<>(new Note(
 				request.noteId(),
@@ -276,6 +289,9 @@ public class JdbcNotesAdapter implements NotesPort {
 			if (!rows.getFirst().workspaceId().equals(request.workspaceId().value())) {
 				return failure(PortFailure.Code.FORBIDDEN, "Note does not belong to the selected workspace.");
 			}
+			// Chunks and ingestion jobs reference the note and its versions, so the
+			// corpus goes first — a purge must not leave an orphan chunk behind.
+			this.rechunkOutbox.notePurged(request.actor(), request.noteId());
 			this.jdbcTemplate.update(
 				"DELETE FROM note_versions WHERE tenant_id = ? AND note_id = ?",
 				request.actor().tenantId().value(), request.noteId().value());

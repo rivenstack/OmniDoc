@@ -1,0 +1,4 @@
+interface:
+  display_name: "Researcher"
+  short_description: "Research evidence for OmniDoc decisions"
+  default_prompt: "Use $researcher to investigate the assigned OmniDoc evidence question."

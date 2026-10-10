@@ -46,3 +46,15 @@
 - Year-1 OmniDoc persistence pin: Spring Data JDBC (CRUD) +
   JdbcTemplate/pgvector-java (vector/RLS) + Flyway; Log4j2 JSON (not
   Logback); ArchUnit for Java boundaries beside Nx FE tags
+- Canonical TipTap→markdown corpus projection lives on the runtime that
+  persists it (JVM for OmniDoc); browser markdown bridges are editor
+  tooling only and must never become a second SoT
+- A fail-closed RLS app role needs a `SECURITY DEFINER` claim path for
+  cross-tenant worker pickup; all other DML stays under normal RLS +
+  GUC bind
+- Job progress `totalUnits` must be known at enqueue (never 0 while
+  pending) so S-02 fixtures and UI honesty stay aligned
+- A frozen policy tuple on `chunk_sets` is what makes chunk ids stable;
+  same-version policy bumps are reject-or-replace, never silent remap
+- User-authorized exceptions to Architect "must not touch" write paths
+  must be named explicitly in the handoff Outcome

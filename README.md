@@ -101,8 +101,12 @@ scaffolding.
 ## Agent operating system (at a glance)
 
 OmniDoc is built with a multi-agent workflow that runs on Cursor,
-GitHub Copilot, and opencode. Humans and agents
+GitHub Copilot, opencode, and Codex. Humans and agents
 share the same handoff protocol.
+
+Role labels use `/role` in the shared documentation. In Codex, select the
+same checked-in role as `$role` (for example, `$commander`); see the Codex
+setup guide below.
 
 | Role | Owns |
 |------|------|
@@ -126,6 +130,7 @@ Exactly **one** owner per handoff. Chat-only handoffs are invalid.
 - Live status: [`context.md`](context.md)
 - Handoff protocol: [`docs/handoffs/README.md`](docs/handoffs/README.md)
 - Cursor setup: [`CURSOR-SETUP.md`](CURSOR-SETUP.md)
+- Codex setup: [`.codex/README.md`](.codex/README.md)
 - opencode setup: [`OPENCODE-SETUP.md`](OPENCODE-SETUP.md)
 - Workflow patterns: [`AGENTS-GUIDE.md`](AGENTS-GUIDE.md)
 

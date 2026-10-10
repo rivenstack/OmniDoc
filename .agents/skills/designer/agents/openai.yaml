@@ -1,0 +1,4 @@
+interface:
+  display_name: "Designer"
+  short_description: "Define OmniDoc system UX and design language"
+  default_prompt: "Use $designer to resolve the assigned OmniDoc system UX or design-language work."

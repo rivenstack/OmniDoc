@@ -2,7 +2,8 @@
 
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
-**Last verified:** 2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
+**Last verified:** 2026-10-06 (B-05a ingestion/chunking library pins);
+2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
 **Status:** Evidence ledger; ADR-accepted pins are binding where an ADR cites them
 
 This file is the **single authority for version-bound claims** in this
@@ -88,6 +89,12 @@ S-01b and update this table if they diverge from the Boot **4.1.1** line.
 | Migrations | **Flyway** | Boot BOM | 2026-09-15 | ADR-0005 | Migration role ≠ app role. |
 | CRUD persistence | **Spring Data JDBC** | Boot BOM | 2026-09-15 | ADR-0005 | Not JPA. |
 | Vector / RLS SQL | **JdbcTemplate** + pgvector-java | — | 2026-09-15 | ADR-0005 | Tenant GUC on same connection in a transaction. |
+| Spring Batch (Boot BOM) | **6.0.5** | — | 2026-10-06 | Maven Central `spring-boot-dependencies:4.1.1` (`spring-batch.version`) | Evidence candidate for job runner (B-05a); not an ADR accept. Boot Batch auto-config docs accessed 2026-10-06. |
+| Apache Tika (`tika-core`) | **4.1.0** (latest); **3.3.2** (3.x maintenance) | 4.1.0 Maven Last-Modified 2026-09-26; 3.3.2 2026-07-16 | 2026-10-06 | tika.apache.org/download.html + Maven Central metadata | Import parser candidate. 4.x needs Java 17+; 3.x Java 11+. Spring AI `TikaDocumentReader` docs still cite Tika formats (accessed 2026-10-06). **Selected B-05a (2026-10-06)**: parser adapter for PDF/DOCX/HTML. |
+| LangChain4j (`dev.langchain4j:langchain4j`) | **1.21.0** | Maven Last-Modified 2026-10-02 | 2026-10-06 | Maven Central metadata + docs.langchain4j.dev | `DocumentSplitters.recursive` evidence candidate (B-05a); adapter-only if used. Not selected for Phase 1 chunking (B-05a). |
+| commonmark-java (`org.commonmark:commonmark`) | **0.30.0** | Maven metadata lastUpdated 2026-08-06 | 2026-10-06 | Maven Central `org/commonmark/commonmark/maven-metadata.xml` | Selected B-05a for markdown → ProseMirror AST (with `commonmark-ext-gfm-tables`). BSD-2-Clause licence and companion `commonmark-ext-gfm-tables` version to be confirmed by B-05b before use. |
+| TipTap static renderer (`@tiptap/static-renderer`) | line with TipTap **3.31.3** | — | 2026-10-06 | tiptap.dev static-renderer docs | `renderToMarkdown` without Editor; UniqueID attrs need `generateUniqueIds` pre-process. Not a Java pin. |
+| TipTap UniqueID (`@tiptap/extension-unique-id`) | TipTap extension line (verify npm at adopt) | — | 2026-10-06 | tiptap.dev UniqueID docs | Block-id citation anchor candidate; FE pin if Architect locks. |
 
 ## Tooling
 

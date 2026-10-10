@@ -125,7 +125,7 @@ Program of record:
   Fixed two silent defects: Tailwind never scanned `packages/ui/src/capture`
   (missing `@source`), and `editorProps.attributes.class` was replacing TipTap's
   `ProseMirror` class. Gaps: CodeMirror for fenced code deferred; no table
-  extension; MSW still unauthorized; import end-to-end depends on B-05
+  extension; MSW still unauthorized; import end-to-end depends on B-05b
 - **2026-09-25:** **F-04 completed and archived — Commander-validated PASS.**
   The implementer built and merged the capture slice (branch `F04-capture-tiptap`,
   `develop` at `e0070b8`) but did not append an Outcome or archive the lane head,
@@ -210,6 +210,23 @@ Program of record:
   PASS-with-notes after Codex token exhaustion left archive/Outcome
   incomplete). Backend lane advanced to **B-05** (ingestion /
   chunking jobs + progress)
+- **2026-10-06:** `@user` split B-05 before Implementer execution into
+  **B-05a** (Researcher evidence → Architect design) then **B-05b**
+  (Implementer). Prior B-05 implementer handoff archived as
+  superseded. Researcher slice **completed** and archived
+  (`H-2026-10-06-P1-B05A-commander-researcher.md`; evidence
+  `docs/research/technical/16-ingestion-chunking-jobs.md`). Architect
+  slice **completed** and archived
+  (`H-2026-10-06-P1-B05A-ARCH-commander-architect.md`; lock in
+  `architecture.md` §5.2.1; **no ADR-0006**)
+- **2026-10-06:** Commander **accepted** B-05a design; backend lane
+  rewritten to **B-05b Implementer** (`ready`). **B-05c** remains
+  listed after B-05b
+- **2026-10-09:** B-05b **completed and Commander-accepted**. Commander
+  inspected the additive V4/RLS/worker/HTTP path and independently reran
+  `cd apps/api && ./gradlew clean test`: **100 tests, 0 failures, 0 errors,
+  0 skipped**. The backend lane advanced to **B-05c** (test closeout +
+  guided verification); B-06 remains closed until B-05c is accepted
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -259,7 +276,10 @@ Program of record:
 | B-04c Commander eval (B-01–B-04) | backend | Commander | **completed** (GO) | `docs/handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md` |
 | B-04c Test + Postman closeout | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md` |
 | S-03 Deterministic mock corpus | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md` |
-| B-05 Ingestion / chunking + progress | backend | Implementer (back-end programmer) | **ready** | `docs/handoffs/active/lane-backend.md` |
+| B-05 (pre-split implementer) | backend | Implementer (back-end programmer) | **superseded** 2026-10-06 | `docs/handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md` |
+| B-05a Ingestion/chunking research + design | backend | Researcher → Architect (sequential) | **completed** (Commander-accepted 2026-10-06; no ADR-0006) | `docs/handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md` |
+| B-05b IngestionPort implement | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-09 | `docs/handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md` |
+| B-05c Ingestion test closeout + guided verification | backend | Implementer (back-end programmer) | **ready** 2026-10-09 | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -271,10 +291,9 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **F-03+** unblocked by **S-03** fixtures (and/or **B-03** live
   identity) — FE still needs a narrowly scoped `web → mocks`
   development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-05 hits it too**
-- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05
+- AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05c
 - DevOps I-* have no human owner yet
-- Backend working-tree changes (B-01 ports, S-03 mocks, etc.) remain
-  **uncommitted** — commit before merge/PR; does not block B-05
+- **B-06** is gated on Commander acceptance of B-05c
 - **`packages/ui` suite is green again.** The `login.test.tsx` note assertion
   was a deliberate change, not a regression: `@user` decided 2026-09-25 that the
   disabled social sign-in buttons stay **unannotated** (the account-creation
@@ -334,5 +353,5 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   `/implementer` (F-14 markdown & editor tables, `lane: frontend`, human: front-end
   programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (B-05 ingestion/chunking + progress, `lane: backend`,
-  human: back-end programmer)
+  `/implementer` (B-05c ingestion test closeout + guided verification,
+  `lane: backend`; human: back-end programmer; B-06 remains closed)
