@@ -33,6 +33,9 @@ omnidoc:
 spring:
   application:
     name: omnidoc-api
+  ai:
+    model:
+      embedding: none
   servlet:
     multipart:
       # Headroom above the 10 MiB ingestion cap so the adapter — not the container —

@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-14 completed in frontend head; B-06d Implementer ready (BE, scoped ADR exception accepted 2026-10-11) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-14 completed in frontend head; B-07 live in the backend head; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -721,10 +721,10 @@ hits tolerated.
 
 | | |
 |--|--|
-| **Status** | **Implementer ready / live** — Researcher and Architect archived; `@user` accepted the bounded ADR-0004 pre-CX exception on 2026-10-11 for AvalAI `text-embedding-v4` at 1024 dimensions; account/key/route checks remain before live smoke; live head: [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| **Status** | **completed offline; operator live smoke deferred** — Implementer archive: [`../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md); consumed return: [`../handoffs/archive/H-2026-10-11-P1-B06D-RETURN-implementer-commander.md`](../handoffs/archive/H-2026-10-11-P1-B06D-RETURN-implementer-commander.md). `@user` accepted the bounded ADR-0004 pre-CX exception on 2026-10-11; the checked-in probe stopped `blocked-before-io`, so actual account/key/route checks remain a separate operator gate |
 | **Lane / agent** | `backend` — sequential owners (exactly one live owner at a time): `/researcher` → `/architect` → `/implementer` |
 | **Depends on** | B-06 completed; official-docs input supplied; Researcher must verify canonical provider identity and evidence; then Architect fit/ADR disposition; `@user` supplies a development key outside the repository only after GO |
-| **Blocks** | B-07 by explicit `@user` sequencing until B-06d completes or returns NO-GO |
+| **Blocks** | no further Phase 1 lane work after Commander consumed the offline slice; live smoke remains a separate operator gate |
 | **Write path** | Researcher: bounded provider evidence under `docs/research/technical/**` (+ ledger/matrix when applicable). Architect: `architecture.md` and an ADR amendment only if material. Implementer: `apps/api/**` plus an opt-in local verification runbook; exact paths belong in the live handoff |
 
 **Purpose:** evaluate and, only on GO, add a development-only AvalAI embedding
@@ -760,11 +760,17 @@ in retrieval; live failures never fall through to another mode; and removing the
 adapter leaves the B-06 mock/vector path and B-07 contract unchanged. Ask/chat
 use remains outside this task (B-08 and the production-AI gate still apply).
 
+**Commander integration note (2026-10-11):** the offline implementation and
+blocked-before-I/O probe were accepted as sufficient to clear the user-imposed
+sequencing dependency. Actual AvalAI account/terms/payment, key, route, charge,
+and live retrieval observations remain deferred operator evidence and do not
+block B-07.
+
 ### B-07 — Lexical / hybrid search
 
 | | |
 |--|--|
-| **Status** | **listed; superseded before execution** — archived [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md); resumes after B-06d completion or NO-GO |
+| **Status** | **ready / live** — active handoff: [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md); prior superseded head preserved at [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md) |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | B-04, S-02, S-03, and completed B-06 for the hybrid path |
 | **Blocks** | F-06 live search; B-08 retrieval composition; B-12 isolation closeout |
@@ -898,8 +904,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | B-05b | **completed; Commander-accepted** — [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md) (2026-10-09) |
 | B-05c | **completed; Commander-accepted** — archived [`../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md`](../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md) (2026-10-11) |
 | B-06 | **completed; Commander-reviewed** — [`../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md) (2026-10-11; independent clean gate 140/140) |
-| B-06d | **Implementer ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Researcher and Architect archived; scoped ADR exception accepted) |
-| B-07 | **listed; superseded before execution** — [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md) |
+| B-06d | **completed offline; operator live smoke deferred** — [`../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md) |
+| B-07 | **ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

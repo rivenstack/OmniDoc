@@ -47,8 +47,11 @@ import com.omnidoc.api.domain.PortResult;
 import com.omnidoc.api.domain.RetrievalModels.EmbedChunks;
 import com.omnidoc.api.domain.RetrievalModels.EmbedTexts;
 import com.omnidoc.api.domain.RetrievalModels.EmbeddingBatch;
+import com.omnidoc.api.domain.RetrievalModels.SearchFilters;
 import com.omnidoc.api.domain.RetrievalModels.SearchResults;
 import com.omnidoc.api.domain.RetrievalModels.VectorSearch;
+import com.omnidoc.api.domain.NotesModels.UpdateNote;
+import com.omnidoc.api.domain.NotesModels.VersionToken;
 import com.omnidoc.api.domain.RuntimeMode;
 import com.omnidoc.api.persistence.TenantRlsSession;
 import com.omnidoc.api.projection.ProseMirrorMarkdownProjector;
@@ -211,7 +214,7 @@ class RetrievalVectorSearchIT {
 			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
 			queryVector,
 			5,
-			new com.omnidoc.api.domain.RetrievalModels.SearchFilters(java.util.Map.of()))));
+			new SearchFilters(java.util.Map.of()))));
 		assertThat(scopedToA.hits()).isNotEmpty();
 		assertThat(scopedToA.hits()).allMatch(hit -> hit.noteId().equals(alpha.id()));
 
@@ -220,10 +223,49 @@ class RetrievalVectorSearchIT {
 			new AclScope(new WorkspaceId(WORKSPACE_A_2), java.util.Set.of("owner")),
 			queryVector,
 			5,
-			new com.omnidoc.api.domain.RetrievalModels.SearchFilters(java.util.Map.of()))));
+			new SearchFilters(java.util.Map.of()))));
 		assertThat(scopedToA2.hits()).isNotEmpty();
 		assertThat(scopedToA2.hits()).allMatch(hit -> hit.noteId().equals(sibling.id()));
 		assertThat(scopedToA.hits()).noneMatch(hit -> hit.noteId().equals(foreign.id()));
+	}
+
+	@Test
+	void similaritySearchDefaultsToMockTupleAndAllowsExplicitTupleSelection() {
+		Note kept = createChunkedNote(actorA(), WORKSPACE_A, "Mock tuple", "alpha alpha mock tuple");
+		Note relabeled = createChunkedNote(actorA(), WORKSPACE_A, "Other tuple", "alpha alpha other tuple");
+
+		embedAll(actorA(), kept);
+		embedAll(actorA(), relabeled);
+		migratorJdbc().update(
+			"UPDATE embeddings SET embedding_model_id = ? WHERE note_id = ?",
+			"avalai:text-embedding-v4:1024",
+			relabeled.id().value());
+
+		float[] queryVector = success(embeddingPort.embedTexts(new EmbedTexts(
+			actorA(),
+			List.of("alpha alpha"),
+			MockEmbeddingAdapter.MODEL_ID,
+			RuntimeMode.MOCK))).embeddings().getFirst().vector();
+
+		SearchResults defaultTuple = success(vectorSearchPort.similaritySearch(new VectorSearch(
+			actorA(),
+			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
+			queryVector,
+			5,
+			new SearchFilters(java.util.Map.of()))));
+		assertThat(defaultTuple.hits()).extracting(hit -> hit.noteId().value()).contains(kept.id().value());
+		assertThat(defaultTuple.hits()).extracting(hit -> hit.noteId().value()).doesNotContain(relabeled.id().value());
+
+		SearchResults explicitTuple = success(vectorSearchPort.similaritySearch(new VectorSearch(
+			actorA(),
+			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
+			queryVector,
+			5,
+			new SearchFilters(java.util.Map.of(
+				JdbcVectorSearchAdapter.FILTER_EMBEDDING_MODEL_ID, "avalai:text-embedding-v4:1024",
+				JdbcVectorSearchAdapter.FILTER_EMBEDDING_DIMENSIONS, String.valueOf(queryVector.length))))));
+		assertThat(explicitTuple.hits()).extracting(hit -> hit.noteId().value()).contains(relabeled.id().value());
+		assertThat(explicitTuple.hits()).extracting(hit -> hit.noteId().value()).doesNotContain(kept.id().value());
 	}
 
 	@Test
@@ -242,7 +284,7 @@ class RetrievalVectorSearchIT {
 			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
 			queryVector,
 			5,
-			new com.omnidoc.api.domain.RetrievalModels.SearchFilters(java.util.Map.of()))));
+			new SearchFilters(java.util.Map.of()))));
 		assertThat(beforeDelete.hits()).isNotEmpty();
 
 		success(notesPort.softDelete(new DeleteNote(actorA(), new WorkspaceId(WORKSPACE_A), note.id())));
@@ -251,7 +293,7 @@ class RetrievalVectorSearchIT {
 			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
 			queryVector,
 			5,
-			new com.omnidoc.api.domain.RetrievalModels.SearchFilters(java.util.Map.of()))));
+			new SearchFilters(java.util.Map.of()))));
 		assertThat(afterSoftDelete.hits()).isEmpty();
 
 		success(notesPort.purge(new DeleteNote(actorA(), new WorkspaceId(WORKSPACE_A), note.id())));
@@ -259,6 +301,61 @@ class RetrievalVectorSearchIT {
 			"SELECT COUNT(*) FROM embeddings WHERE note_id = ?",
 			Integer.class,
 			note.id().value())).isZero();
+	}
+
+	@Test
+	void staleVersionEmbeddingsDoNotSurfaceThroughSearch() {
+		Note note = createChunkedNote(actorA(), WORKSPACE_A, "Versioned", "pgvector BYOK original body");
+		embedAll(actorA(), note);
+
+		success(notesPort.update(new UpdateNote(
+			actorA(),
+			new WorkspaceId(WORKSPACE_A),
+			note.id(),
+			new NoteFields("Versioned", bodyJson("completely different updated body")),
+			new VersionToken(note.versionId().value()))));
+
+		float[] queryVector = success(embeddingPort.embedTexts(new EmbedTexts(
+			actorA(),
+			List.of("original body"),
+			MockEmbeddingAdapter.MODEL_ID,
+			RuntimeMode.MOCK))).embeddings().getFirst().vector();
+
+		SearchResults searchResults = success(vectorSearchPort.similaritySearch(new VectorSearch(
+			actorA(),
+			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
+			queryVector,
+			5,
+			new SearchFilters(java.util.Map.of()))));
+
+		assertThat(searchResults.hits()).isEmpty();
+	}
+
+	@Test
+	void similaritySearchRejectsZeroAndMismatchedVectors() {
+		assertThat(failure(vectorSearchPort.similaritySearch(new VectorSearch(
+			actorA(),
+			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
+			new float[] {0.0f, 0.0f, 0.0f},
+			5,
+			new SearchFilters(java.util.Map.of())))).code()).isEqualTo(PortFailure.Code.VALIDATION);
+
+		assertThat(failure(vectorSearchPort.similaritySearch(new VectorSearch(
+			actorA(),
+			new AclScope(new WorkspaceId(WORKSPACE_A), java.util.Set.of("owner")),
+			new float[] {1.0f, 0.0f, 0.0f},
+			5,
+			new SearchFilters(java.util.Map.of(
+				JdbcVectorSearchAdapter.FILTER_EMBEDDING_DIMENSIONS, "16"))))).code()).isEqualTo(PortFailure.Code.VALIDATION);
+	}
+
+	@Test
+	void appRoleFailsClosedWithoutTenantGuc() {
+		Note note = createChunkedNote(actorA(), WORKSPACE_A, "RLS note", "tenant scoped embedding row");
+		embedAll(actorA(), note);
+
+		Integer visibleRows = appJdbc.queryForObject("SELECT COUNT(*) FROM embeddings", Integer.class);
+		assertThat(visibleRows).isZero();
 	}
 
 	private static Note createChunkedNote(TenantActor actor, String workspaceId, String title, String bodyText) {

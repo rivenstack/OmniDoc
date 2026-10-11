@@ -260,6 +260,13 @@ Program of record:
   Implementer lane. The backend head is now **B-06d Implementer ready**;
   actual account/terms/payment, balance, external key and route checks
   remain live-smoke gates. Normal API/CI stay mock-only; B-07 is deferred.
+- **2026-10-11:** B-06d Implementer completed the offline slice and archived
+  the bounded probe plus runbook. The checked-in run stayed
+  `blocked-before-io`, so no AvalAI network call was made and actual
+  account/terms/payment, balance, external key, route, charge, and live
+  retrieval observations remain deferred operator evidence. Commander
+  consumed that offline proof as sufficient to satisfy the user-imposed
+  sequencing gate and reopened **B-07** as the live backend lane head.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -314,8 +321,8 @@ Program of record:
 | B-05b IngestionPort implement | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-09 | `docs/handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md` |
 | B-05c Ingestion test closeout + guided verification | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-11 | `docs/handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md` |
 | B-06 pgvector + mock embed adapter | backend | Implementer (back-end programmer) | **completed; Commander-reviewed** 2026-10-11 | `docs/handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md` |
-| B-06d AvalAI development embedding-provider PoC | backend | Implementer (back-end programmer; after Researcher and Architect) | **Implementer ready** 2026-10-11; scoped ADR exception accepted, account/key/route checks open | `docs/handoffs/active/lane-backend.md` |
-| B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **listed; superseded before execution** 2026-10-11 | `docs/handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md` |
+| B-06d AvalAI development embedding-provider PoC | backend | Implementer (back-end programmer; after Researcher and Architect) | **completed offline** 2026-10-11; operator live smoke remains deferred on account/key/route checks | `docs/handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md` |
+| B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **ready / live** 2026-10-11 | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -332,12 +339,11 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Collections (folders/tags) API contract** remains missing from S-02.
   The decision to sequence that contract change ahead of later frontend
   organize work is still open
-- **B-06d AvalAI development-provider PoC** is Implementer-ready under
-  the accepted fixture-only ADR exception. Researcher evidence remains a
-  dated snapshot; actual account/terms/payment, balance, route and key
-  checks precede any live request. The development key stays outside
-  the repository. No live test or product activation is claimed
-- **B-07** is preserved but deferred until B-06d completes or returns NO-GO
+- **B-06d AvalAI development-provider PoC** is implemented offline under the
+  accepted fixture-only ADR exception. Researcher evidence remains a dated
+  snapshot; actual account/terms/payment, balance, route, charge, key, and
+  live retrieval checks remain deferred operator evidence. The development key
+  stays outside the repository. No live test or product activation is claimed
 - **`packages/ui` suite is green again.** The `login.test.tsx` note assertion
   was a deliberate change, not a regression: `@user` decided 2026-09-25 that the
   disabled social sign-in buttons stay **unannotated** (the account-creation

@@ -218,6 +218,12 @@
   `RechunkOutbox` is fine for note-write tests, but purge-path tests must delete
   corpus rows or the note/version FK chain will fail before the product path is
   actually exercised.
+- **2026-10-11 (B-06d):** for a test-only local Spring AI probe, prefer the
+  library module (`spring-ai-openai`) and manual model construction over the Boot
+  starter; the starter can auto-configure live clients into unrelated app tests.
+  Also keep `TenantRlsSession`, `JdbcTemplate`, and the transaction manager on the
+  same `DataSource` instance or tenant GUC writes will miss the actual SQL
+  connection.
 - **2026-09-23 (F-01 remake):** shadcn v4 config is `style: base-nova`
   (Base UI variants) + `iconLibrary: tabler`. Run `shadcn add` from
   `packages/ui` (framework "Manual") so files and deps land in the library,

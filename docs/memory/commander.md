@@ -182,6 +182,12 @@
   ADR acceptance trail before Implementer assignment. Open implementation
   offline-first; keep actual account, secret, route and charge checks as
   separate live-smoke gates, with ordinary product modes still mock-only.
+- 2026-10-11: when a bounded pre-CX provider probe is implemented and its
+  checked-in run fails closed before network I/O only because operator-owned
+  live gates are absent, Commander may consume the offline slice for lane
+  sequencing and reopen the next listed backend task. Keep the live smoke as a
+  separate deferred gate unless the program of record explicitly requires its
+  result.
 
 ## Phase-Boundary Stewardship
 
