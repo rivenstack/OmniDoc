@@ -54,6 +54,19 @@ Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
 4. **Tests** — organize blocks (`packages/ui`, 18) and cursor-chain/loader tests
    (`apps/web`, 10).
 
+## Post-completion fix (2026-10-11)
+
+`@user` reported the Inbox rows had **no separators** and read as one compact
+block. Cause: the new `packages/ui/src/organize/` directory was never added to
+the `@source` list in `packages/ui/src/styles/globals.css`, so Tailwind emitted
+none of its utilities (`divide-y`, `divide-border`, `border-y`,
+`focus-visible:ring-inset`) — verified against the pre-fix bundle CSS (zero
+occurrences) and the rebuilt CSS (rules present). Fixed by registering the
+directory; `packages/ui/src/styles/globals.test.ts` now fails when a source
+directory that renders classes is unregistered. Re-verified in a real browser at
+1280px and 390px (dark). Row density was reviewed with `@user` and **kept as
+is** (12px vertical padding, 14px title, 12px meta, 4px gap).
+
 ## Soft-stops that remain
 
 - **Collections** — S-02 has no `collections`/`tags` operation and `Note`
