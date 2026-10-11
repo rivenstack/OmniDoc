@@ -267,6 +267,19 @@ Program of record:
   retrieval observations remain deferred operator evidence. Commander
   consumed that offline proof as sufficient to satisfy the user-imposed
   sequencing gate and reopened **B-07** as the live backend lane head.
+- **2026-10-11:** **B-07 completed and Commander-validated PASS.** Commander
+  reread the archived implementation contract, evaluation doc, search adapter
+  and controller, and the focused retrieval/search HTTP tests, then reran the
+  focused B-07 validation command plus `cd /home/kenzo/RivenStack/omni-note/apps/api && ./gradlew clean test`.
+  The full backend gate passed at **156 tests, 0 failures, 0 errors, 0
+  skipped**. Checked-in retrieval evidence remains bounded to the mock
+  embedding path and records architecture §7 metrics plus zero isolation
+  failures. The backend lane now awaits explicit Commander sequencing;
+  **B-08 remains closed**.
+- **2026-10-11:** Commander consumed the post-B-07 hold state and opened
+  **B-08** as the live backend slice. The backend lane no longer idles on a
+  repeat evaluation hold; it now assigns the mock ask adapter + citation
+  assembler on the frozen S-02 ask/SSE contract.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -322,7 +335,8 @@ Program of record:
 | B-05c Ingestion test closeout + guided verification | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-11 | `docs/handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md` |
 | B-06 pgvector + mock embed adapter | backend | Implementer (back-end programmer) | **completed; Commander-reviewed** 2026-10-11 | `docs/handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md` |
 | B-06d AvalAI development embedding-provider PoC | backend | Implementer (back-end programmer; after Researcher and Architect) | **completed offline** 2026-10-11; operator live smoke remains deferred on account/key/route checks | `docs/handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md` |
-| B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **ready / live** 2026-10-11 | `docs/handoffs/active/lane-backend.md` |
+| B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **completed; Commander-validated PASS** 2026-10-11 — B-08 opened afterward | `docs/handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md` |
+| B-08 Ask port mock adapter + citation assembler | backend | Implementer (back-end programmer) | **ready** — live backend lane head; mock ask + citation assembly on frozen S-02 ask/SSE contract | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).

@@ -188,6 +188,10 @@
   sequencing and reopen the next listed backend task. Keep the live smoke as a
   separate deferred gate unless the program of record explicitly requires its
   result.
+- 2026-10-11: after Commander has already validated a backend slice PASS and no
+  listed dependency still blocks the next track, do not leave the lane on a
+  second post-pass hold just because a later Commander session re-read the same
+  evidence. Archive the duplicate hold and open the next dependency-ready slice.
 
 ## Phase-Boundary Stewardship
 

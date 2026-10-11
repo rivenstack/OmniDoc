@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-14 completed in frontend head; B-07 live in the backend head; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-14 completed in frontend head; B-07 completed and accepted; B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -770,7 +770,7 @@ block B-07.
 
 | | |
 |--|--|
-| **Status** | **ready / live** — active handoff: [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md); prior superseded head preserved at [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md) |
+| **Status** | **completed; Commander-validated PASS** 2026-10-11 — implementation archived at [`../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md); consumed return archived at [`../handoffs/archive/H-2026-10-11-P1-B07-RETURN-implementer-commander.md`](../handoffs/archive/H-2026-10-11-P1-B07-RETURN-implementer-commander.md); Commander has now advanced the backend lane to [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) for B-08 |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | B-04, S-02, S-03, and completed B-06 for the hybrid path |
 | **Blocks** | F-06 live search; B-08 retrieval composition; B-12 isolation closeout |
