@@ -280,6 +280,22 @@ Program of record:
   **B-08** as the live backend slice. The backend lane no longer idles on a
   repeat evaluation hold; it now assigns the mock ask adapter + citation
   assembler on the frozen S-02 ask/SSE contract.
+- **2026-10-11:** **F-05 (organize) completed on the frontend lane** (branch
+  `F05-organize`) — resumed out of sequence at `@user` direction after the lane
+  jumped F-04 → F-12/F-13/F-14. Inbox and Notes are server-first lists over
+  `listNotes` with URL-based cursor pagination (`?cursor=…`, bounded at 20
+  pages, only server-issued cursors); rows are keyboard-operable links with
+  `bdi`-isolated titles, and empty / loading / transport-error states share one
+  block set. The **Collections sub-slice stays soft-stopped**: S-02 has no
+  `collections`/`tags` operation and `Note` carries no folder/tag field, so the
+  route states the gap instead of forking a client-side model, and the contract
+  change remains a Commander/`@user` decision. Verified live against the local
+  Java API + Postgres (20-row page, `Load more`, `First page`, stale-cursor
+  fallback to the server cursor, empty state); the temporary verify actor was
+  removed afterwards. Gate: ui 451 / web 87 tests, typecheck, lint, and
+  `web:build` green (`--skip-nx-cache`). Known pre-existing flake recorded, not
+  a defect: `ui:test` failed twice in 18 full-suite runs on the untouched
+  `src/shell/login.test.tsx` `aria-busy` assertion (18/18 in isolation).
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -318,7 +334,7 @@ Program of record:
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
-| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **listed** — soft-stopped on S-02 collections gap | `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md` |
+| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists over `listNotes` + honest Collections placeholder; the folders/tags sub-slice still needs the S-02 contract change | `docs/handoffs/active/lane-frontend.md` |
 | F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 per live lane head; next frontend assignment awaits Commander sequencing | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |

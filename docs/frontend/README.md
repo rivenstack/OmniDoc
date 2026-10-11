@@ -284,7 +284,7 @@ You can contribute via ordinary PRs without running agents.
 | `docs/api/` | Canonical API contracts once authorized (directory may not exist yet; follow the API-contract skill when creating it) |
 | [`AGENTS.md`](../../AGENTS.md) | Agent operating contract |
 | [`.cursor/skills/api-contract-change/SKILL.md`](../../.cursor/skills/api-contract-change/SKILL.md) | How API contract changes must be done |
-| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired; **F-02 shell** (2026-09-23) in `app/(app)`; **F-03 session identity + sign-in** (2026-09-24) in `app/lib/identity` and `app/sign-in`. **F-04 capture is next.** Live UI plan: [`docs/design/now.md`](../design/now.md) |
+| `apps/web/` | UI application root (ADR-0001 §1 + ADR-0002) — scaffolded by S-01a; F-01 tokens and providers wired; **F-02 shell** (2026-09-23) in `app/(app)`; **F-03 session identity + sign-in** (2026-09-24) in `app/lib/identity` and `app/sign-in`; **F-04 capture** (2026-09-25) in `app/lib/notes` + `packages/ui/src/capture`; **F-05 organize** (2026-10-11) in `packages/ui/src/organize` + the `inbox` / `notes` / `collections` routes. Live UI plan: [`docs/design/now.md`](../design/now.md) |
 | `apps/api/` | JVM Gradle module (ADR-0005 `accepted`) — owned by S-01b. **Not** a Node app |
 | `packages/ui/` | UI package: shadcn v4 `base-nova` primitives on Base UI, Mintlify token layer (2026-09-23). Plan: [`docs/design/now.md`](../design/now.md) |
 | `packages/contracts/`, `packages/mocks/` | FE packages (ADR-0002) — scaffolded by S-01a; real content in S-02 / S-03 |

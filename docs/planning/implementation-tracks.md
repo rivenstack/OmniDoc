@@ -373,7 +373,7 @@ Depends: F-02, S-02 notes, and S-03 fixtures for data.
 
 | | |
 |--|--|
-| **Status** | **listed** — **superseded before execution** 2026-09-27 (F-12 took the lane head; no F-05 work was written — the branch was empty). Collections sub-slice stays soft-stopped pending an S-02 contract change |
+| **Status** | **completed** 2026-10-11 (branch `F05-organize`) — Inbox and Notes are server-first lists over `listNotes` with URL-based server cursors; rows are keyboard-operable links with `bdi`-isolated titles; empty / loading / transport-error / generic-denial states share one block set. **Collections sub-slice stays soft-stopped** pending the S-02 contract change and renders as an honest gap statement. Live head: [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
 
 **Short description:** inbox as the unfiled home; light optional
 folders/tags; no structure required to capture.
@@ -898,7 +898,7 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
 | F-14 | **completed** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (Outcome 2026-10-02; next FE assignment awaits Commander sequencing) |
-| F-05 | **superseded before execution** (2026-09-27) — archived [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
+| F-05 | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists + honest Collections placeholder; folders/tags still need the S-02 contract change. Live head: [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md); original ticket archived at [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |
 | B-05 (implementer, pre-split) | **superseded** — [`../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md`](../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md) |
 | B-05b | **completed; Commander-accepted** — [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md) (2026-10-09) |

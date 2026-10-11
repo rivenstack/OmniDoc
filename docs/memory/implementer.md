@@ -698,3 +698,28 @@
   and runtime-role RLS in separate Testcontainers databases. This preserves the
   required "new tables begin empty" observation while still allowing seeded
   tenant rows for fail-closed and direct-DML security checks.
+- **2026-10-11 (F-05):** keep `next/link` out of `@omnidoc/ui` by injecting a
+  link **component** through a block prop (`OrganizeLink`). Rows and pagination
+  need different components — rows navigate normally, pagination passes
+  `scroll={false}` so the list grows without throwing the reader to the top —
+  and the default plain anchor keeps the block testable in jsdom. Do not wrap
+  the injected component in `Button render={<X/>}`: pass `buttonVariants()`
+  classes instead, or the merged props are the component's problem, not the
+  layout's.
+- **2026-10-11 (F-05):** cursor pagination that must survive reload, sharing and
+  no-JS belongs in the URL as repeated `cursor` params, walked server-side. Bind
+  the chain (`MAX_LIST_PAGE_CHAIN`) before it becomes N requests, and treat a
+  URL cursor the server no longer returns as stale: render the pages it still
+  vouches for and offer the **server's** next cursor — never replay or mint one.
+  Every "Load more"/"First page" href must be built from the chain that actually
+  rendered, not from the chain that was requested.
+- **2026-10-11 (F-05):** live-verifying a frontend slice against the local stack
+  needs a session, and this box has no bcrypt tooling. Generate the hash with
+  the Gradle-cached `spring-security-crypto` jar plus the JDK in
+  `~/.gradle/jdks/eclipse_adoptium-21-*` (bank JRE `java` cannot run the
+  single-file launcher), seed tenant → actor → workspace → membership as the
+  **migrator** role, then sign in with `GET /api/v1/session` (singular) for the
+  `XSRF-TOKEN` cookie and `POST /api/v1/session` with the `X-XSRF-TOKEN` header.
+  Clean up in FK order: embeddings → chunks → chunk_sets → ingestion_jobs (+
+  payloads) → note_versions → notes → membership → workspace → actor → tenant.
+  `docker exec` needs `-i` for a psql heredoc, or the SQL silently never runs.

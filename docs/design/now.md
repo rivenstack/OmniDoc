@@ -1,7 +1,7 @@
 # Now — UI plan
 
 **Living page.** Edit this during the build. Keep it short.
-**Updated:** 2026-09-24
+**Updated:** 2026-10-11
 
 Choose here. Do not wait for a finished mock to review.
 
@@ -32,7 +32,28 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-14 markdown & editor tables — active 2026-10-02 (branch `BL20-editor-rich-table`).**
+**F-05 organize — completed 2026-10-11 (branch `F05-organize`).** Inbox and
+Notes are real, server-first lists over `listNotes`, and Collections is an
+honest placeholder rather than an invented model. Blocks live in
+`packages/ui/src/organize/`: `NoteList` (quiet rows — title + meta line,
+hairline dividers, no cards — with `bdi`-isolated UGC titles that truncate
+without widening ~390px, an `Updated <time>` line, and a `Sample` badge only
+when the server says `corpusOwnership: sample`), the four list states
+(`NoteListEmpty` with one primary `New note`, `NoteListSkeleton` announced once
+via `role="status"`, `NoteListUnavailable` for "we could not ask",
+`NoteListDenied` for the generic workspace denial), `UnfiledNotice`, and
+`CollectionsUnavailable`. App wiring: `apps/web/app/lib/notes/notes-pages.ts`
+walks the server's cursor chain and `note-list-loader.ts` resolves the
+workspace server-side; the routes are `inbox`, `notes` (+ a shared skeleton
+`loading.tsx`) and `collections`. Pagination is URL-based (`?cursor=…`, bounded
+at 20 pages): links are shareable, reloadable and work without JavaScript, and
+only server-issued cursors are ever followed — a stale cursor falls back to the
+page the server still vouches for and offers the server's own cursor.
+`@omnidoc/ui` keeps no `next/link` dependency: the app injects
+`NoteRowLink` / `NotePaginationLink` (`scroll={false}`) through
+`packages/ui`'s `OrganizeLink` prop.
+
+**F-14 markdown & editor tables — completed 2026-10-02 (branch `BL20-editor-rich-table`).**
 Table support across TipTap Normal mode, CodeMirror Markdown live preview, Text mode, and the bidirectional ProseMirror JSON ↔ Markdown bridge (`markdown-bridge.ts`). Interactive size popover + default 3x3 table toolbar insertion button; floating selection bubble table context controls; Mintlify table token styling with accessible keyboard horizontal scroll containment (`quality/ui-qa-checklist.md` §6.4).
 
 Markdown mode renders a table as an **interactive block widget** (`cm-live-table*`), reviewed 2026-10-03 against Obsidian: a header line plus a delimiter row render as a table as soon as the delimiter row is closed, body rows are edited in place as markdown source, and a row/column **helper toolbar** sits above the table (insert/delete row, insert/delete column, delete table) beside `Tab`/`Enter` cell navigation. Tables are detected by scanning lines rather than the GFM syntax tree, because a user typing a table never has a syntax-tree-valid one on screen. The shared grammar lives in `packages/ui/src/markdown/table.ts` and is used by the preview, the ProseMirror bridge and the persistence normalizer, so a lenient table in the editor is still a table after a save and reload.
@@ -146,6 +167,16 @@ not binding. Cross-lane gates (S-03, B-07, B-08, B-09) still apply.
 
 **Open choices**
 
+**F-05 (organize): closed 2026-10-11.** `@user` chose the row direction —
+*quiet Mintlify rows* (title + meta line, hairline dividers, no cards) — from
+the offered directions. Bound and **not** choices, built without asking: the
+four list states on the existing `Empty`/`Skeleton` patterns with one primary
+`New note` CTA, the `Load more` outline pill plus muted `First page` link,
+list semantics, keyboard-operable link rows, `bdi`-isolated titles,
+URL-based cursor pagination, and the generic denial copy. The Collections
+sub-slice is **not** a look decision — it is blocked on the S-02 contract and
+renders as the honest gap statement.
+
 **F-04 (capture / TipTap): closed 2026-09-25.** `@user` chose to build from
 per-block options rather than supplying a reference. Options chosen: document-
 first editor shell, static toolbar **plus** a selection bubble, borderless
@@ -240,3 +271,7 @@ reference, so it uses the stock `Empty` primitive and is open to review.
 | 2026-10-01 | **Capture modes revised (`@user`): three modes plus a lock.** *Reading* is removed — every mode renders live, so a separate preview mode duplicated Normal/Markdown; the fourth control is now a **lock button** beside the mode menu, which makes the whole note read-only (TipTap `setEditable(false)`; CodeMirror `EditorState.readOnly` + `EditorView.editable`; toolbar and selection bubble hidden; title and import disabled). Two findings from the same pass: markdown folding was unfolding the first line on every mode switch, because a freshly opened surface parks the caret at position 0 — unfolding is now gated on **focus and the lock**, so an unfocused or locked note renders as a finished document; and the Markdown preview still printed source for block constructs, so it now draws bullets, ordered numbers, task checkboxes, the fenced code block (muted, monospace, fences folded) and `---` as a rule, with markers swallowing the space that follows them (`## Hello` → `Hello`, not ` Hello`). Defects fixed while verifying: the surface re-derived its markdown source on **every server echo** (a save revalidates `/notes`), silently replacing what the user had typed — it now seeds once per note; line insets needed compound selectors (`.cm-line.cm-live-*`) because CodeMirror's base theme owns `.cm-line` padding; and marker widgets needed `text-indent: 0`, since `text-indent` inherits from the hanging-indent line and painted glyphs outside their boxes. |
 | 2026-10-02 | **Markdown & editor tables (F-14) architecture and UI choices (`@user`):** (1) Interactive size popover (matrix picker) plus default 3x3 table insertion button in the toolbar; (2) Contextual table manipulation controls (add row before/after, add col before/after, delete row/col/table) in the floating selection bubble when selection is within a table; (3) Pinned `@tiptap/extension-table*` at 3.31.3; (4) Bidirectional JSON ↔ Markdown bridge converts GFM tables without loss; (5) CodeMirror Markdown mode live preview formats tables and unfolds raw pipes when cursor touches the row. |
 | 2026-10-03 | **F-14 review — Markdown-mode tables (`@user` report, all verified in a browser against the local stack).** The table widget is now **permanent and editable in place**, not a preview that unfolds: (1) the block is found by **scanning lines** (`findTableBlocks`), never by looking for a GFM `Table` node in the syntax tree — a syntax-tree-valid table is not what a user typing one ever has on screen, so `\| Head 1 \| Head 2 \| Head 3 \|` + `\| --- \|` renders as a three-column table the moment the picture stops moving; (2) the *only* deferral is a delimiter row narrower than its header that still sits on the last line with the caret at its end (still being typed), and an idle timer then pads that row — which also makes the stored markdown valid GFM; (3) cells show and accept **markdown source**, so `**bold**`, `` `code` ``, `~~strike~~` and links are typed as characters and render in place when the cell is left; a heavy-tabbed cell whose delimiter row is short is padded, never truncated; (4) a helper toolbar above the table (insert/delete row, insert/delete column, delete table) acts on the focused cell, claiming the first cell if none is focused, and `Tab`/`Enter`/arrow keys navigate cells with `Tab` off the last cell growing a row; (5) **a literal pipe is escaped as `\|` in cells, including inside a code span** — GFM requires the escape there, the editor's reader honours it, and the bridge serializer carries it out through a private-use sentinel, because otherwise a pipe in a cell silently adds a column and drops the tail of the row on the next read; (6) `normalizeMarkdownTables` pads and escapes tables at the **bridge boundary**, so a lenient table in the editor is still a table in Normal mode and after a reload. Two defects found while verifying: writes from the widget had to move **out of CodeMirror's update cycle** (a `focusout` arrives during the update that moved focus, and `EditorView.dispatch` then throws and the edit is lost), and the note-selection mode is now **remembered across the new-note → saved-note remount** — the first save swaps the route (and therefore unmounts the surface), which used to drop a writer out of Markdown mode mid-table. |
+| 2026-10-11 | **F-05 rows chosen by `@user`: quiet Mintlify rows** — title + meta line, hairline dividers, no cards. States, empty-state CTA and pagination affordances were bound (not choices) and built on the existing `Empty`/`Skeleton`/`Button` patterns. |
+| 2026-10-11 | **F-05 pagination is URL-based server cursors** (`?cursor=…`, repeated, bounded at 20 pages). Links stay shareable, reloadable and JavaScript-optional; only server-issued cursors are followed, and a stale cursor falls back to the pages the server still vouches for plus the server's own next cursor. No client cache, no client-made cursor. |
+| 2026-10-11 | **F-05 lists do not claim indexing state.** Contract `Note`/`NotePage` carry no per-note indexing field, so rows show only what the server returns (title, updated time, and a `Sample` label when `corpusOwnership` says so). Per-file indexing status stays F-04's import rows, where the contract does return it. |
+| 2026-10-11 | **F-05 Collections stays honest.** S-02 has no `collections`/`tags` operation and `Note` carries no folder/tag field, so the Collections route states the gap and Inbox/Notes share one sentence (`UNFILED_NOTICE`) that today they show the same unfiled set. No client-side folder/tag model was forked; the contract change is escalated to Commander/`@user`. |
