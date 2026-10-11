@@ -57,6 +57,7 @@ Version pins in this file come from
 | Voyage embeddings | Opt-out of store/train for zero-day | Files API 30d | Dashboard opt-out (paid method required) | Same | High | H |
 | Cohere | SaaS logs ~30d; ZDR enterprise | Enterprise commitments page | Contact for ZDR | Same | High | H |
 | **OpenRouter** (Wave C, 2026-09-14) | OR default: no prompt/completion store; **upstream** training/retention still apply | OR: metadata always; content opt-in. Upstream often ~30d abuse | Enterprise in-region / ZDR filters exist; `@user` = no ZDR sales | **Two kinds:** OmniDoc vault key → OR API; vs **OR-upstream-BYOK** (keys in OR; 5% fee above allowance) | High as OpenAI-compatible gateway behind ports; **not accepted** | H |
+| **AvalAI B-06d development probe** (2026-10-11; [detail](./17-avalai-development-provider-poc.md)) | AvalAI policy says no API body-content collection/use; upstream route terms **unresolved** | AvalAI keeps billing/safety metadata; upstream content/abuse retention and region **unresolved** | No route/account ZDR or residency guarantee verified | Development operator key via local secret only after Architect GO; customer content excluded | OpenAI-shaped `/v1/embeddings`; Spring AI adapter fit **inference**, not tested | H provider API / M fit / unresolved privacy |
 
 ## 6. Auth / identity
 

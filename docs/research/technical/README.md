@@ -3,9 +3,9 @@
 **Owner:** `/researcher`  
 **Phase / Task:** 0 / 0.2 (baseline); **0.8 Wave C** amends `05`, `07`,
 matrix, shortlist, optional `09`; **R-BE** adds `10`–`15`; **B-05a**
-adds `16`  
+adds `16`; **B-06d** adds `17`
 **Research date:** 2026-09-13; Wave C access **2026-09-14**; R-BE
-**2026-09-15**; B-05a **2026-10-06**  
+**2026-09-15**; B-05a **2026-10-06**; B-06d **2026-10-11**
 **Version pins:** [`../version-ledger.md`](../version-ledger.md) —
 Java/Spring rows verified 2026-09-15; B-05a library pins 2026-10-06;
 FE/data 2026-09-14; re-verify before each Phase Check  
@@ -38,6 +38,7 @@ vendor, or provider is selected here.
 | [14-python-sidecar-policy.md](./14-python-sidecar-policy.md) | When a Python sidecar could be justified (R-BE) |
 | [15-java-test-obs-migrate.md](./15-java-test-obs-migrate.md) | Logging, tests, Flyway/JDBC, OpenAPI handshake (R-BE) |
 | [16-ingestion-chunking-jobs.md](./16-ingestion-chunking-jobs.md) | Java-fit chunking + ingestion job runners; citation-stable chunks (B-05a) |
+| [17-avalai-development-provider-poc.md](./17-avalai-development-provider-poc.md) | AvalAI API, models, price/privacy gaps and S-03-only development PoC shortlist (B-06d) |
 
 ## Project Constraints Applied
 

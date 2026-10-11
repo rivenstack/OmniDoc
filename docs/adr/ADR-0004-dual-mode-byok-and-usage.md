@@ -18,6 +18,11 @@
 > shipping. Cookbook/wizard chrome is Designer-owned later; this ADR
 > owns ports and invariants only.
 
+> **B-06d scoped amendment accepted 2026-10-11 by `@user`.** The exception
+> at the end of this ADR authorizes only the local S-03 synthetic-fixture
+> embedding probe described there. The ordinary product runtime remains
+> mock-first; production AI and customer content remain gated.
+
 ---
 
 ## Context
@@ -203,3 +208,49 @@ applies when proxied — market that honestly (REC-17).
 - `docs/research/ux/08-design-facing-recommendations.md` (REC-13…19)
 - `architecture.md` §5.3, §5.6, §5.9–§5.11, §6
 - `docs/adr/ADR-0001-frontend-and-platform-stack.md` §5
+
+---
+
+## Accepted B-06d local fixture exception (2026-10-11; scoped)
+
+**Decision.** Permit one pre-CX, locally invoked, development-only
+AvalAI `text-embedding-v4` / 1024-dimensional embedding probe using exactly
+the checked-in S-03 synthetic corpus and a frozen derived query set, under
+`architecture.md` §5.3.1. This is an explicit exception to
+this ADR's §1 live-mode timing **and** ADR-0001 §5's mock-first timing,
+not acceptance of production AI, a new product runtime mode, an operator
+gateway replacement, customer content, or Ask/chat use. It expires when
+B-06d closes; any further live provider test needs its own gate.
+
+The runner is outside application startup/HTTP/worker wiring and uses only
+`operator_free_tier` + `EMBED` behind `EmbeddingPort` and a runner-local
+mode policy. Normal application modes remain mock-only until the standing
+CX/production gates close. An explicit one-run opt-in, local external
+`AVALAI_API_KEY`, fixed model/endpoint, S-03 manifest check, disposable
+database, outbound mode stamp, bounded request budget, redacted logs, and
+zero forbidden retrieval hits are mandatory. No key or customer text is
+stored in the repository. A failed or missing gate yields `mode_forbidden`
+before network I/O, with no fallback. The user separately decides current
+AvalAI account/terms/payment eligibility before supplying a key or running
+the smoke; unresolved upstream retention and region keep customer content
+and production use closed.
+
+**Why amend:** Accepted ADR-0001 §5 and this ADR's §1 state that `mock`
+is default until CX validation and label the operator live path after
+that gate. Although §3 allows a direct embedding provider behind the port,
+it does not authorize a pre-CX live call. A local synthetic-fixture
+exception must therefore be explicit and accepted rather than inferred
+from provider fit. Alternatives
+considered: remain entirely offline (cannot measure routed compatibility or
+retrieval), or wire a live application adapter (widens the pre-CX exposure).
+The separate runner keeps the reversible experiment bounded.
+
+**Acceptance record:** `@user` accepted the Architect B-06d decision and
+this bounded ADR exception on 2026-10-11, and authorized Commander to
+open the Implementer lane. This records approval of the fixture-only
+development experiment, not a claim that the current AvalAI account,
+terms, payment eligibility, balance, or routed behavior has been checked.
+The Implementer must verify those live-smoke preconditions and receive
+the key only through the external local mechanism. The exception ends
+when B-06d closes; the normal ADR-0001 §5 and ADR-0004 §1 timing gates
+then continue to govern product live modes.

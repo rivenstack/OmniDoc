@@ -74,3 +74,16 @@
   policy only — do not reopen as a B-05 recommendation
 - Embeddings/pgvector writes are B-06 handoff points after stable
   chunks; do not select embed stacks inside ingestion research
+- For embedding gateways, use the dedicated embeddings reference over
+  generated per-model chat examples; verify the routed model, dimensions,
+  input cap, charge and availability with a bounded fixture-only probe.
+- A pgvector `vector` column caps at 2000 dimensions; shortlist checks
+  must include returned dimensions and model-specific index/isolation fit.
+  A gateway privacy statement does not establish upstream retention or
+  residency for a routed model.
+- B-06d user chose AvalAI `text-embedding-v4` (Alibaba Qwen3-series) at
+  1024 dimensions as the preferred development-probe model, valuing
+  retrieval quality over the absolute cheapest input token price. Gemini
+  001 is a fallback research option, and direct Cloudflare Qwen is outside
+  this probe. The live Researcher report records the unresolved routed
+  1024-vs-8192 input token cap and fixture-only validation gate.

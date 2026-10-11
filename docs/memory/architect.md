@@ -58,3 +58,7 @@
   same-version policy bumps are reject-or-replace, never silent remap
 - User-authorized exceptions to Architect "must not touch" write paths
   must be named explicitly in the handoff Outcome
+- A pre-CX provider experiment needs an explicit accepted ADR exception,
+  even when it uses only synthetic fixtures and an existing embed port;
+  a conditional architecture GO and provider documentation do not open
+  a live runtime mode. Keep fixture probes disposable and model-scoped.

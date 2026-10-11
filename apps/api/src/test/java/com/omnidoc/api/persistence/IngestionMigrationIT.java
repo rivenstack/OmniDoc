@@ -23,7 +23,7 @@ import org.testcontainers.utility.DockerImageName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** B-05c V1→V4 / populated V3→V4 and runtime-role security matrix. */
+/** B-06 V1→V5 / populated V3→V5 and runtime-role security matrix. */
 @Testcontainers(disabledWithoutDocker = true)
 class IngestionMigrationIT {
 
@@ -35,7 +35,7 @@ class IngestionMigrationIT {
 	private static final String UPGRADE_DB = "omnidoc_upgrade";
 	private static final String RLS_DB = "omnidoc_rls";
 	private static final List<String> INGESTION_TABLES = List.of(
-		"ingestion_jobs", "ingestion_job_payloads", "chunk_sets", "chunks");
+		"ingestion_jobs", "ingestion_job_payloads", "chunk_sets", "chunks", "embeddings");
 
 	@Container
 	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
@@ -71,9 +71,9 @@ class IngestionMigrationIT {
 	}
 
 	@Test
-	void freshV1ToV4CreatesEmptyAdditiveTables() {
+	void freshV1ToV5CreatesEmptyAdditiveTables() {
 		JdbcTemplate jdbc = migratorJdbc(FRESH_DB);
-		assertThat(flyway(FRESH_DB).info().current().getVersion().getVersion()).isEqualTo("4");
+		assertThat(flyway(FRESH_DB).info().current().getVersion().getVersion()).isEqualTo("5");
 		for (String table : INGESTION_TABLES) {
 			assertThat(jdbc.queryForObject("SELECT count(*) FROM " + table, Integer.class))
 				.as(table)
@@ -82,9 +82,9 @@ class IngestionMigrationIT {
 	}
 
 	@Test
-	void populatedV3ToV4PreservesCorpusAndStartsNewTablesEmpty() {
+	void populatedV3ToV5PreservesCorpusAndStartsNewTablesEmpty() {
 		JdbcTemplate jdbc = migratorJdbc(UPGRADE_DB);
-		assertThat(flyway(UPGRADE_DB).info().current().getVersion().getVersion()).isEqualTo("4");
+		assertThat(flyway(UPGRADE_DB).info().current().getVersion().getVersion()).isEqualTo("5");
 		assertThat(jdbc.queryForObject("SELECT email FROM actors WHERE actor_id='actor-existing'", String.class))
 			.isEqualTo("existing@example.test");
 		assertThat(jdbc.queryForObject("SELECT title FROM notes WHERE note_id='note-existing'", String.class))
@@ -240,6 +240,7 @@ class IngestionMigrationIT {
 				statement.execute("INSERT INTO ingestion_job_payloads (job_id,tenant_id,bytes) VALUES ('job-" + suffix + "','tenant-" + suffix + "',decode('74657374','hex'))");
 				statement.execute("INSERT INTO chunk_sets (version_id,tenant_id,projector_id,chunker_id,params_hash,projection_sha256,chunk_count) VALUES ('version-" + suffix + "','tenant-" + suffix + "','pm-md-v1','omni-blockpack-v1','params','sha',1)");
 				statement.execute("INSERT INTO chunks (chunk_id,tenant_id,workspace_id,note_id,version_id,ordinal,start_block,end_block,start_offset,end_offset,text,text_sha256) VALUES ('chunk-" + suffix + "','tenant-" + suffix + "','ws-" + suffix + "','note-" + suffix + "','version-" + suffix + "',0,0,0,0,4,'test','sha')");
+				statement.execute("INSERT INTO embeddings (chunk_id,tenant_id,workspace_id,note_id,version_id,embedding_model_id,dimensions,embedding) VALUES ('chunk-" + suffix + "','tenant-" + suffix + "','ws-" + suffix + "','note-" + suffix + "','version-" + suffix + "','mock-embeddings-v1',16,'[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]'::vector)");
 			}
 			connection.commit();
 		}

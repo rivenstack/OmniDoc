@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — frontend lane continues independently; B-05c live (BE, opened 2026-10-09) | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-14 completed in frontend head; B-06d Implementer ready (BE, scoped ADR exception accepted 2026-10-11) | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -525,7 +525,7 @@ card and still needs a reference.
 
 | | |
 |--|--|
-| **Status** | **ready** — scheduled following `@user` approval of BL-20 promotion (2026-10-02) |
+| **Status** | **completed** 2026-10-02 per frontend lane Outcome; scheduled following `@user` approval of BL-20 promotion |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), F-13 (multi-mode capture), Architect pin for `@tiptap/extension-table*` |
 | **Blocks** | F-05, Phase 2 CX gate |
@@ -670,7 +670,7 @@ or worker topology. Out of scope: B-06+ embed/search/Ask; mocks rewrite.
 
 | | |
 |--|--|
-| **Status** | **ready** — live on [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Commander-opened 2026-10-09) |
+| **Status** | **completed; Commander-accepted 2026-10-11** — archived [`../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md`](../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md); independent clean gate 136/136 |
 | **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
 | **Depends on** | **B-05b completed** |
 | **Blocks** | B-06 |
@@ -705,13 +705,76 @@ expected observation. Commander validates.
 
 ### B-06 — pgvector + mock embed adapter
 
+| | |
+|--|--|
+| **Status** | **completed; Commander-reviewed 2026-10-11** — archived [`../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md); independent clean gate 140/140 |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | B-02, B-05b, B-05c (completed) |
+| **Blocks** | B-07 hybrid path; B-08 retrieval path; conditional B-06d |
+| **Write path** | `apps/api/**` |
+
 Depends: B-02, B-05b, B-05c. Hash/pseudo-vectors; `embedding_model_id` + dims
 recorded; **tenant filter mandatory** on similarity. Zero cross-tenant
 hits tolerated.
 
+### B-06d — AvalAI development-provider PoC (conditional)
+
+| | |
+|--|--|
+| **Status** | **Implementer ready / live** — Researcher and Architect archived; `@user` accepted the bounded ADR-0004 pre-CX exception on 2026-10-11 for AvalAI `text-embedding-v4` at 1024 dimensions; account/key/route checks remain before live smoke; live head: [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| **Lane / agent** | `backend` — sequential owners (exactly one live owner at a time): `/researcher` → `/architect` → `/implementer` |
+| **Depends on** | B-06 completed; official-docs input supplied; Researcher must verify canonical provider identity and evidence; then Architect fit/ADR disposition; `@user` supplies a development key outside the repository only after GO |
+| **Blocks** | B-07 by explicit `@user` sequencing until B-06d completes or returns NO-GO |
+| **Write path** | Researcher: bounded provider evidence under `docs/research/technical/**` (+ ledger/matrix when applicable). Architect: `architecture.md` and an ADR amendment only if material. Implementer: `apps/api/**` plus an opt-in local verification runbook; exact paths belong in the live handoff |
+
+**Purpose:** evaluate and, only on GO, add a development-only AvalAI embedding
+adapter or provider probe so B-06/B-07 retrieval behavior can be inspected with
+real model output. This is not production activation, does not replace the
+deterministic mock acceptance path, and does not change the accepted OpenRouter
+labelled-live decision by implication.
+
+**Owner sequence:**
+
+1. **Researcher** verifies the supplied official docs and current evidence:
+   canonical provider/operator identity; OpenAI/Spring-AI compatibility;
+   embedding endpoint and model ids/dimensions; rate limits, pricing and
+   availability; retention/training/data-processing terms; key scope and
+   revocation; regions; terms/licensing; and whether fixture content may be
+   submitted safely. Marketing claims are not acceptance evidence.
+2. **Architect** decides whether the safe PoC shape is an offline/provider probe
+   or a narrowly opt-in local adapter behind the existing ports and exact runtime
+   modes (`mock | operator_free_tier | customer_key`). Architect records whether
+   ADR-0004 needs amendment. No new runtime mode and no silent fallback.
+3. **Implementer**, after the accepted scoped exception, implements the
+   bounded PoC offline first. Live smoke additionally needs verified account
+   conditions and `@user`'s key through the external local secret/env mechanism. Provider SDK/types
+   stay in the adapter; no key, response payload, or note body enters source,
+   fixtures, logs, errors, or handoffs.
+
+**Acceptance:** default tests and CI remain offline and deterministic; any live
+smoke is explicit/opt-in and uses only the approved S-03 fixture corpus plus a
+versioned query/relevance set that B-07 can reuse; Recall@K/rank results compare
+the real candidate with the deterministic B-06 baseline; model id and dimensions
+are stored and incompatible vectors never mix; tenant/ACL filters remain enforced
+in retrieval; live failures never fall through to another mode; and removing the
+adapter leaves the B-06 mock/vector path and B-07 contract unchanged. Ask/chat
+use remains outside this task (B-08 and the production-AI gate still apply).
+
 ### B-07 — Lexical / hybrid search
 
-Depends: B-04. Same tenant/ACL rules as vector path.
+| | |
+|--|--|
+| **Status** | **listed; superseded before execution** — archived [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md); resumes after B-06d completion or NO-GO |
+| **Lane / agent** | `backend` / `/implementer` (human: back-end programmer) |
+| **Depends on** | B-04, S-02, S-03, and completed B-06 for the hybrid path |
+| **Blocks** | F-06 live search; B-08 retrieval composition; B-12 isolation closeout |
+| **Write path** | `apps/api/**`; `docs/quality/b07-retrieval-evaluation.md`; backend lane handoff/archive |
+
+Implement PostgreSQL lexical retrieval plus deterministic hybrid composition
+behind the existing `SearchPort` and frozen S-02 endpoints. Same tenant/ACL,
+soft-delete/purge, and untrusted-content rules as the vector path. Architecture
+§7 evaluation evidence (Recall@K plus zero isolation failures) is part of the
+slice; no live embedding/LLM provider is required or authorized.
 
 ### B-08 — Ask port mock adapter + citation assembler
 
@@ -828,12 +891,15 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-12 | **ready** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-09-27) |
+| F-14 | **completed** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (Outcome 2026-10-02; next FE assignment awaits Commander sequencing) |
 | F-05 | **superseded before execution** (2026-09-27) — archived [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |
 | B-05 (implementer, pre-split) | **superseded** — [`../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md`](../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md) |
 | B-05b | **completed; Commander-accepted** — [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md) (2026-10-09) |
-| B-05c | **ready** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (opened 2026-10-09) |
+| B-05c | **completed; Commander-accepted** — archived [`../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md`](../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md) (2026-10-11) |
+| B-06 | **completed; Commander-reviewed** — [`../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md) (2026-10-11; independent clean gate 140/140) |
+| B-06d | **Implementer ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (Researcher and Architect archived; scoped ADR exception accepted) |
+| B-07 | **listed; superseded before execution** — [`../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md`](../handoffs/archive/H-2026-10-11-P1-B07-superseded-before-execution.md) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

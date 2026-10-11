@@ -213,6 +213,11 @@
   Postman need an explicit migrator seed (`apps/api/load/seed-local-fixture.sql`)
   because Flyway ships schema without actors. After closeout soft-stop the lane
   for Commander **S-03** (before B-05); do not open either from Implementer.
+- **2026-10-11 (B-06):** focused backend tests that instantiate `JdbcNotesAdapter`
+  still need a real purge cleanup hook when chunk/vector rows exist. A no-op
+  `RechunkOutbox` is fine for note-write tests, but purge-path tests must delete
+  corpus rows or the note/version FK chain will fail before the product path is
+  actually exercised.
 - **2026-09-23 (F-01 remake):** shadcn v4 config is `style: base-nova`
   (Base UI variants) + `iconLibrary: tabler`. Run `shadcn add` from
   `packages/ui` (framework "Manual") so files and deps land in the library,
