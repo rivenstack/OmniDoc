@@ -181,9 +181,9 @@ describe("readCursors", () => {
 
 describe("pageHref", () => {
   it("is the base path with no cursors, and repeats the parameter otherwise", () => {
-    expect(pageHref("/inbox", [])).toBe("/inbox");
-    expect(pageHref("/inbox", ["c1", "c2"])).toBe(
-      "/inbox?cursor=c1&cursor=c2",
+    expect(pageHref("/notes", [])).toBe("/notes");
+    expect(pageHref("/notes", ["c1", "c2"])).toBe(
+      "/notes?cursor=c1&cursor=c2",
     );
   });
 

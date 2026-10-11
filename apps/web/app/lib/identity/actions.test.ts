@@ -149,7 +149,7 @@ describe("signInAction", () => {
     ]) {
       await expect(
         signInAction(null, formData({ ...credentials, next: hostile })),
-      ).rejects.toThrow(new RedirectError("/inbox"));
+      ).rejects.toThrow(new RedirectError("/notes"));
     }
   });
 });

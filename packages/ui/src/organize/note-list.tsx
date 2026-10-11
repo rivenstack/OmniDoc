@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 /**
  * Organize block — `NoteList` (F-05).
  *
- * Inbox and Notes are the same block over the same port (`listNotes`, S-02):
+ * The note list is one block over one port (`listNotes`, S-02):
  * a real `ul`/`li` list whose rows are links into the capture route. The look
  * `@user` chose on 2026-10-11 is *quiet Mintlify rows* — title + meta line,
  * hairline dividers, no cards — logged in `docs/design/now.md`.

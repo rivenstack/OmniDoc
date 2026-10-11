@@ -9,7 +9,6 @@ import {
   NoteListEmpty,
   NoteListUnavailable,
   PageHeader,
-  UnfiledNotice,
   type OrganizeNote,
 } from "@omnidoc/ui";
 import { loadNotesListForRoute } from "../../lib/notes/note-list-loader";
@@ -31,11 +30,13 @@ function noteHref(note: OrganizeNote): string {
 /**
  * Notes — every note in the workspace (F-05, `system-ux.md` §1).
  *
- * Same block and same port as Inbox. `system-ux.md` §1 keeps the two
- * destinations distinct, and today they show the same set, because Collections
- * does not exist yet — `UnfiledNotice` says exactly that instead of the UI
- * pretending to a filing model it cannot honour. `NoteListEmpty` is shared too:
- * capture still needs a title and a body only.
+ * The list is server-first: the workspace is resolved from the session and the
+ * pages are walked through the notes port on the server, so nothing renders
+ * before membership is re-checked. `NoteListEmpty` is shared with capture: a
+ * note still needs a title and a body only.
+ *
+ * Inbox and Collections left the shell on 2026-10-12, so this is the single
+ * note list — there is no second destination to be distinct from.
  */
 export default async function NotesPage({
   searchParams,
@@ -65,7 +66,6 @@ export default async function NotesPage({
   return (
     <ContentRegion>
       <PageHeader title="Notes" description="All notes in this workspace." />
-      <UnfiledNotice />
       {outcome.notes.length === 0 ? (
         <NoteListEmpty description="Notes in this workspace appear here. Capture one with a title and a body to start.">
           <Button render={<Link href="/notes/new" />}>New note</Button>

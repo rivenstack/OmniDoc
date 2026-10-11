@@ -121,16 +121,16 @@ describe("NoteList", () => {
 
   it("offers Load more from the server cursor and First page for older pages", () => {
     renderList({
-      loadMoreHref: "/inbox?cursor=c1",
-      firstPageHref: "/inbox",
+      loadMoreHref: "/notes?cursor=c1",
+      firstPageHref: "/notes",
     });
 
     expect(
       screen.getByRole("link", { name: "Load more" }).getAttribute("href"),
-    ).toBe("/inbox?cursor=c1");
+    ).toBe("/notes?cursor=c1");
     expect(
       screen.getByRole("link", { name: "First page" }).getAttribute("href"),
-    ).toBe("/inbox");
+    ).toBe("/notes");
   });
 
   it("omits pagination controls when the server returned no next cursor", () => {

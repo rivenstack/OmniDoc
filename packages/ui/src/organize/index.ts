@@ -15,9 +15,3 @@ export {
   type NoteListSkeletonProps,
   type NoteListStateProps,
 } from "./note-list-states";
-export {
-  CollectionsUnavailable,
-  UNFILED_NOTICE,
-  UnfiledNotice,
-  type CollectionsUnavailableProps,
-} from "./collections-gap";

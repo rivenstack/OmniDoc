@@ -49,8 +49,8 @@ export default async function NotePage({
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button render={<Link href="/inbox" />} variant="outline">
-              Back to Inbox
+            <Button render={<Link href="/notes" />} variant="outline">
+              Back to notes
             </Button>
           </EmptyContent>
         </Empty>

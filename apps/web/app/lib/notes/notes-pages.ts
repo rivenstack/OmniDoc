@@ -3,17 +3,13 @@
  *
  * `listNotes` (S-02) is cursor-paginated: the first response carries
  * `nextCursor`, and the next page is asked for by passing that cursor back.
- * The two F-05 risks in the work ticket shape this module:
+ * The F-05 risk in the work ticket shapes this module:
  *
  * - *"pagination cursors must come from the server; do not synthesize a cursor
  *   client-side"* — so a URL the user shares is a chain of cursors **the server
  *   issued**, and if the server no longer agrees with a cursor in the URL (the
  *   corpus changed since the link was made) the walk stops at the last page the
  *   server still vouches for and offers the server's own cursor instead.
- * - *"Inbox (unfiled) and Notes (all) are the same set"* — this module does not
- *   try to subtract one list from the other, because there is no field to
- *   subtract by. The honesty lives in the copy
- *   (`UNFILED_NOTICE`, `packages/ui/src/organize`).
  *
  * No framework imports: the port stays testable with a plain mocked `fetch`,
  * and the route-facing session/workspace resolution lives in

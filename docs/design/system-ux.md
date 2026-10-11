@@ -26,9 +26,7 @@ the build, not here.
 | --- | --- |
 | New note | Capture must be possible without choosing a folder or tag first |
 | Editor modes | Three editing modes for notes — Normal (WYSIWYG rich text), Markdown (Obsidian-style live preview), Text (raw markdown source) — plus a separate lock control that makes any mode read-only. The modes map to Obsidian's editing model: Markdown is its Live Preview, Text is its source mode, and the lock is its read-only state. Reading is a render path, not a mode |
-| Inbox | Default home for unfiled notes |
-| Notes | All notes, distinct from Inbox |
-| Collections | Optional light folders or tags. Not required to capture. No graph in v1 |
+| Notes | All notes in the workspace |
 | Search | Its own operation, not Ask |
 | Ask | Its own operation, not Search |
 | Workspace switcher | A selector. The server decides membership |
@@ -40,6 +38,14 @@ the build, not here.
 
 Rearranging these is allowed. Dropping one is a contract change: offer
 the option, wait for the user, then edit this table.
+
+**Collections (folders/tags) — dropped 2026-10-12 (`@user`).** Inbox and
+Collections left this table: with no collections/folders contract there is
+nothing to file, so an "unfiled" Inbox and an "all notes" Notes were the same
+list under two names. The shell carries one note list (Notes). The capability is
+kept for a later contract decision as `BL-26`
+([`../planning/feature-backlog.md`](../planning/feature-backlog.md)); it is not
+a current item here.
 
 ## 2. Behaviors that bind other systems
 

@@ -42,7 +42,7 @@ export const REQUESTED_PATH_HEADER = "x-omnidoc-requested-path";
 export const SIGN_IN_PATH = "/sign-in";
 
 /** Where an authenticated user lands when no usable destination was requested. */
-export const DEFAULT_AUTHENTICATED_PATH = "/inbox";
+export const DEFAULT_AUTHENTICATED_PATH = "/notes";
 
 /** Build the sign-in URL, optionally remembering where the user was headed. */
 export function signInHref(nextPath?: string): string {

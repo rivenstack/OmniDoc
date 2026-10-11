@@ -1,6 +1,4 @@
 import {
-  IconFolder,
-  IconInbox,
   IconMessageChatbot,
   IconNotes,
   IconPlus,
@@ -19,17 +17,24 @@ export type NavDestination = {
   children?: { href: string; label: string }[];
 };
 
-const inboxDestination: NavDestination = {
-  href: "/inbox",
-  label: "Inbox",
-  description: "Unfiled notes land here.",
-  icon: IconInbox,
-};
 const notesDestination: NavDestination = {
   href: "/notes",
   label: "Notes",
   description: "All notes in this workspace.",
   icon: IconNotes,
+};
+const searchDestination: NavDestination = {
+  href: "/search",
+  label: "Search",
+  description: "Search is its own operation, separate from Ask.",
+  icon: IconSearch,
+};
+const askDestination: NavDestination = {
+  href: "/ask",
+  label: "Ask",
+  description:
+    "Answers are cited. Refusal and partial are successful outcomes, not errors.",
+  icon: IconMessageChatbot,
 };
 
 /**
@@ -37,35 +42,22 @@ const notesDestination: NavDestination = {
  *
  * These are the information/actions the shell must expose; placement (icon
  * rail, contextual panel, top bar, palette, mobile tab bar) is a build detail.
- * Routes are stub pages in this slice — capture (F-04), organize (F-05),
- * retrieve (F-06) and ask (F-07) replace their bodies later. Collections is the
- * only destination with nested children in v1.
+ *
+ * Inbox and Collections left the shell on 2026-10-12 (`@user`; a
+ * `system-ux.md` §1 contract change). With no collections/folders contract
+ * there is nothing to file, so Inbox and Notes would be the same list under two
+ * names — the shell does not advertise a distinction it cannot honour.
+ * Collections is kept for reconsideration as `BL-26`
+ * (`docs/planning/feature-backlog.md`).
+ *
+ * No destination has nested children any more. `children` stays on the type
+ * because the collapsible sub-menu in `nav-main.tsx` remains how the shell
+ * renders one should a future destination need it.
  */
-export const collectionsDestination: NavDestination = {
-  href: "/collections",
-  label: "Collections",
-  description: "Optional light folders and tags. Not required to capture.",
-  icon: IconFolder,
-  children: [{ href: "/collections", label: "All collections" }],
-};
-
 export const allDestinations: NavDestination[] = [
-  inboxDestination,
   notesDestination,
-  collectionsDestination,
-  {
-    href: "/search",
-    label: "Search",
-    description: "Search is its own operation, separate from Ask.",
-    icon: IconSearch,
-  },
-  {
-    href: "/ask",
-    label: "Ask",
-    description:
-      "Answers are cited. Refusal and partial are successful outcomes, not errors.",
-    icon: IconMessageChatbot,
-  },
+  searchDestination,
+  askDestination,
 ];
 
 export const newNoteHref = "/notes/new";
@@ -76,13 +68,15 @@ export const newNoteDestination: NavDestination = {
   icon: IconPlus,
 };
 
-/** Destinations shown in the mobile tab bar (capture first, no gestures). */
+/**
+ * Destinations shown in the mobile tab bar. The capture action is always
+ * present, so a note can be started from any screen.
+ */
 export const mobileTabDestinations: NavDestination[] = [
-  inboxDestination,
   notesDestination,
   newNoteDestination,
-  allDestinations[3],
-  allDestinations[4],
+  searchDestination,
+  askDestination,
 ];
 
 export function isDestinationActive(pathname: string, href: string): boolean {

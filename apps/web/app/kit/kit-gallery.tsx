@@ -245,7 +245,7 @@ export function KitGallery() {
             </EmptyMedia>
             <EmptyTitle>No notes yet</EmptyTitle>
             <EmptyDescription>
-              Capture a thought and it lands in your Inbox.
+              Capture a thought and it lands in your notes.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

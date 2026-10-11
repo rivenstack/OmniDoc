@@ -2,13 +2,10 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { WORKSPACE_FORBIDDEN_MESSAGE } from "../shell/denials";
 import {
-  CollectionsUnavailable,
   NoteListDenied,
   NoteListEmpty,
   NoteListSkeleton,
   NoteListUnavailable,
-  UNFILED_NOTICE,
-  UnfiledNotice,
 } from "./index";
 
 afterEach(cleanup);
@@ -63,34 +60,5 @@ describe("NoteListSkeleton", () => {
     expect(container.querySelector("ul")?.getAttribute("aria-hidden")).toBe(
       "true",
     );
-  });
-});
-
-describe("UnfiledNotice", () => {
-  it("says why Inbox and Notes match today instead of faking a difference", () => {
-    render(<UnfiledNotice />);
-
-    expect(screen.getByText(UNFILED_NOTICE)).toBeTruthy();
-    expect(screen.getByText(/every note is unfiled/i)).toBeTruthy();
-    expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.queryByText(/folder tree|create collection/i)).toBeNull();
-  });
-});
-
-describe("CollectionsUnavailable", () => {
-  it("states the gap and offers no fake folders or tags model", () => {
-    render(
-      <CollectionsUnavailable>
-        <a href="/notes">Browse notes</a>
-      </CollectionsUnavailable>,
-    );
-
-    expect(screen.getByText(/collections aren.t available yet/i)).toBeTruthy();
-    expect(screen.getByText(/nothing can be filed yet/i)).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Browse notes" })).toBeTruthy();
-
-    expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.queryByRole("tree")).toBeNull();
-    expect(screen.queryByText(/new collection/i)).toBeNull();
   });
 });

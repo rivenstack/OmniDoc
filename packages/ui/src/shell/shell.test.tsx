@@ -50,11 +50,11 @@ describe("SkipLink", () => {
 
 describe("PageHeader", () => {
   it("marks a focusable heading for route-change focus", () => {
-    render(<PageHeader title="Inbox" description="Unfiled notes." />);
-    const heading = screen.getByRole("heading", { name: "Inbox", level: 1 });
+    render(<PageHeader title="Notes" description="All notes in this workspace." />);
+    const heading = screen.getByRole("heading", { name: "Notes", level: 1 });
     expect(heading.getAttribute("data-slot")).toBe("page-heading");
     expect(heading.getAttribute("tabindex")).toBe("-1");
-    expect(screen.getByText("Unfiled notes.")).toBeTruthy();
+    expect(screen.getByText("All notes in this workspace.")).toBeTruthy();
   });
 });
 
@@ -63,14 +63,14 @@ describe("MobileTabBar", () => {
     render(
       <MobileTabBar
         items={[
-          { href: "/inbox", label: "Inbox", active: true },
+          { href: "/notes", label: "Notes", active: true },
           { href: "/ask", label: "Ask" },
         ]}
       />,
     );
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Inbox" }).getAttribute("aria-current"),
+      screen.getByRole("link", { name: "Notes" }).getAttribute("aria-current"),
     ).toBe("page");
     expect(
       screen.getByRole("link", { name: "Ask" }).getAttribute("aria-current"),
@@ -179,7 +179,7 @@ describe("CommandPalette", () => {
         groups={[
           {
             heading: "Navigate",
-            actions: [{ id: "inbox", label: "Inbox" }],
+            actions: [{ id: "notes", label: "Notes" }],
           },
           {
             heading: "Actions",
@@ -190,7 +190,7 @@ describe("CommandPalette", () => {
     );
 
     expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(screen.getByText("Inbox")).toBeTruthy();
+    expect(screen.getByText("Notes")).toBeTruthy();
     expect(screen.getByText("New note")).toBeTruthy();
     expect(screen.getByText("⌘N")).toBeTruthy();
   });

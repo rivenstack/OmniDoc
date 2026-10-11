@@ -51,20 +51,20 @@ describe("authenticatedDestination", () => {
   });
 
   it("falls back to the default landing page", () => {
-    expect(authenticatedDestination(undefined)).toBe("/inbox");
-    expect(authenticatedDestination("https://evil.example")).toBe("/inbox");
+    expect(authenticatedDestination(undefined)).toBe("/notes");
+    expect(authenticatedDestination("https://evil.example")).toBe("/notes");
   });
 
   it("refuses a destination that is sign-in itself, which would bounce back", () => {
     // Every spelling of the sign-in route: a bare path, a query, a hash, and
     // the trailing-slash form Next redirects to it.
-    expect(authenticatedDestination("/sign-in")).toBe("/inbox");
-    expect(authenticatedDestination("/sign-in?next=/notes/new")).toBe("/inbox");
-    expect(authenticatedDestination("/sign-in#form")).toBe("/inbox");
-    expect(authenticatedDestination("/sign-in/")).toBe("/inbox");
+    expect(authenticatedDestination("/sign-in")).toBe("/notes");
+    expect(authenticatedDestination("/sign-in?next=/notes/new")).toBe("/notes");
+    expect(authenticatedDestination("/sign-in#form")).toBe("/notes");
+    expect(authenticatedDestination("/sign-in/")).toBe("/notes");
   });
 
-  it("keeps the root, which the shell itself forwards to the inbox", () => {
+  it("keeps the root, which the shell itself forwards to the notes list", () => {
     expect(authenticatedDestination("/")).toBe("/");
   });
 });

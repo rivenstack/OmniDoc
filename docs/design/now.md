@@ -106,7 +106,7 @@ table is the map, not the archive.
 | F-02 app shell | 2026-09-23 | Sidebar, slim top bar, mobile tab bar, command palette, skip link |
 | F-03 auth / session UI | 2026-09-24 | Identity port, three-state session entry, sign-in block |
 | F-04 capture | 2026-09-25 | Notes port, save cycle, import status, capture blocks |
-| F-05 organize | 2026-10-11 | Inbox/Notes server-first lists with URL-based server cursors; honest Collections gap statement; quiet rows (no cards) |
+| F-05 organize | 2026-10-11 | Notes server-first list with URL-based server cursors and quiet rows (no cards). *Updated 2026-10-12:* Inbox and Collections were removed from the shell; Collections stays recorded as `BL-26` |
 | F-06 retrieve | 2026-10-11 | `/search` over the frozen S-02 search contract: one search port (hybrid default), URL-held `?q=`/`?corpus=`, snippet-led rows rendered verbatim, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot |
 | F-12 markdown render | 2026-09-27 | `packages/ui/src/markdown/` sanitized render path |
 | F-13 multi-mode capture | 2026-10-01 | Three modes + lock, CodeMirror live preview, JSON ↔ markdown bridge |
@@ -132,9 +132,10 @@ table is the map, not the archive.
   four list states on the existing `Empty`/`Skeleton` patterns with one primary
   `New note` CTA, the `Load more` outline pill plus muted `First page` link,
   list semantics, keyboard-operable link rows, `bdi`-isolated titles,
-  URL-based cursor pagination, and the generic denial copy. The Collections
-  sub-slice is **not** a look decision — it is blocked on the S-02 contract and
-  renders as the honest gap statement.
+  URL-based cursor pagination, and the generic denial copy. Collections was
+  never a look decision — it was blocked on the S-02 contract, and on
+  2026-10-12 `@user` removed Inbox and Collections from the shell altogether
+  (see the decision log); the capability is recorded as `BL-26` in the backlog.
 - **F-07 answer-prose look:** no reference yet. F-12 shipped behaviour-only.
 - **Sample vs Mine:** `Workspace` carries no sample marker — F-09 plus a
   contract change.
@@ -235,3 +236,4 @@ table is the map, not the archive.
 | 2026-10-11 | **F-06 keeps its state in the URL** (`?q=`, `?corpus=`): shareable, reloadable, JavaScript-optional, with one authority for what is being searched. Typing debounces (300 ms) into `router.replace(..., { scroll: false })`; the results region is a Suspense boundary *inside* the page so the field, the chips, and focus survive every search instead of a route-level `loading.tsx` unmounting them. |
 | 2026-10-11 | **F-06 states are six, not two.** Idle (no query), zero matches, degraded (`degraded: true` → incomplete-results notice inside the single announced count), generic denial, rejected request (400), and unreachable service. A `null` `corpusOwnership` from the API is *absent*, not a fifth state: it renders an unlabelled row, because guessing `mine` would be inventing data. |
 | 2026-10-11 | **Local indexing/corpus gap observed (not a UI fix):** every note in the local dev database has `corpus_ownership` NULL, so Sample/Mine both return nothing while All returns the hits. That is the server's honest answer — `mine` means `corpus_ownership = 'mine'`, not "yours" — so labelling notes at creation is a backend/seed concern, not something the search client may infer. |
+| 2026-10-12 | **Inbox and Collections removed from the shell (`@user`; `system-ux.md` §1 contract edit).** With no collections/folders contract there is nothing to file, so an "unfiled" Inbox and an "all notes" Notes were the same list under two names. The shell now carries one note list (Notes), plus Search, Ask and New note; the `/inbox` and `/collections` routes, the `UnfiledNotice`/`CollectionsUnavailable` gap blocks, and the post-sign-in default landing were all repointed to `/notes`. The capability is **not declined** — F-05's collections sub-slice (with its backend needs: S-02 contract, Flyway + RLS migration, Java port/adapter, frontend) is recorded as `BL-26` in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) for a later decision. |

@@ -68,12 +68,12 @@ function WorkspaceUnavailable() {
  * destinations; the footer is the account dropdown.
  *
  * Deviations from the upstream block, both deliberate:
- * - Upstream's second group (`NavProjects`) has no honest analog in this
- *   slice. It is a list of user-owned containers with per-row View/Share/
- *   Delete actions; no such data or actions exist yet (`@omnidoc/contracts`
- *   carries no collection shape, and F-05 organize owns that surface).
- *   Rendering it would mean inventing fixtures and menu items that cannot
- *   act, so it is omitted rather than faked.
+ * - Upstream's second group (`NavProjects`) has no honest analog. It is a list
+ *   of user-owned containers with per-row View/Share/Delete actions; no such
+ *   data or actions exist (`@omnidoc/contracts` carries no collection shape,
+ *   and the collections capability is unscheduled — `BL-26`). Rendering it
+ *   would mean inventing fixtures and menu items that cannot act, so it is
+ *   omitted rather than faked.
  * - Upstream's `page.tsx` demo (breadcrumb header over placeholder tiles) is
  *   demo content, not the sidebar block. The shell keeps its own top bar and
  *   `ContentRegion` (`docs/design/now.md`, F-02 references).

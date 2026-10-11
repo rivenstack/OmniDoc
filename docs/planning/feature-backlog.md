@@ -158,6 +158,22 @@ to surface only once the corpus is real.
 
 ---
 
+## 6. Organize — collections (folders & tags)
+
+`system-ux.md` §1 makes Collections *"optional light folders or tags. Not
+required to capture."* F-05 built the Inbox/Notes lists and rendered Collections
+as an honest gap statement rather than forking a client-side model; on
+**2026-10-12** `@user` removed **both Inbox and Collections from the shell** and
+recorded only the collections capability here. So this section is the whole of
+the Collections story now: nothing in the product shows it, and the build work
+(and its backend needs) is listed below for a later contract decision.
+
+| ID | Item | Why it is unscheduled | Suggested necessity | State |
+|---|---|---|---|---|
+| BL-26 | **Collections sub-slice (folders / tags)** — F-05's soft-stopped organize sub-slice: a collections/tags model, assigning a note to one, listing notes by collection, and the UI (index, per-note picker, filter) | **F-05's sub-slice was soft-stopped on a missing contract, and the honest placeholder it shipped was then removed** (`@user`, 2026-10-12): Inbox and Collections left the shell because, with no filing model, Inbox and Notes were the same list under two names. It stays unscheduled because it is a **contract change with real backend work**, and `@user` will decide later whether to author that contract and implement it. Evidence of the gap: `docs/api/openapi.yaml` (frozen S-02) has **no `collections`/`tags` operation** and no folder/tag field on `Note`; `packages/contracts` mirrors that; `context.md` "Collections has no contract surface" (found 2026-09-25 closing F-04); `docs/planning/implementation-tracks.md` F-05 row; archived F-05 head `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`. **Backend needs, in order:** (1) **S-02 contract authorship** — `collections` (or `tags`) create/list/rename/delete, assign/unassign `noteId`, and the `Note` payload carrying its collection/tag (or a note→collection relation read), with denial semantics matching the existing generic denial; (2) **Flyway migration** — `collections` plus a note↔collection relation, tenant/workspace-scoped with an **RLS policy** per the shared-schema + RLS defense-in-depth rule (B-02 pattern, `architecture.md` §2); (3) **Java port + adapter** (`CollectionPort` + JDBC adapter, ADR-0005) with ArchUnit boundary tests; (4) **frontend** — collections index route, per-note picker, optional filter, and the honest-gap copy this removal deleted. If collections become a search facet, the S-02 search contract is involved too (see §5) | **Medium.** Organization is *available, optional, and simple* by design (D-01 organize journey), and the product is fully usable without it — capture, notes, search and ask all stand alone. It turns necessary when the corpus outgrows a flat list plus search as the way to re-find a note. It is the largest remaining "design contract with no build task" in organize | `proposed` |
+
+---
+
 ## Not in this file
 
 Do not duplicate these here — they have canonical homes and duplicating them
@@ -186,6 +202,7 @@ without new evidence. A `BL-*` row that changes state must gain a line here.
 | 2026-10-01 | BL-21, BL-22, BL-24 | **Option A.2 verified and adopted** (`@user`). BL-21 expanded to power-user editor modes (Text source + Markdown live preview); BL-22 confirmed for bidirectional JSON ↔ Markdown sync; BL-24 added for 4-mode switcher + toolbar adapter. | `@user` |
 | 2026-10-02 | BL-20 | Triaged **`scheduled`** as **`F-14`** (Markdown / rich tables across TipTap, CodeMirror live preview, and bridge) | `@user` |
 | 2026-10-12 | BL-25 | Recorded as `proposed` — title-aware retrieval (index note titles so a title match is found). Section 5 (**Retrieval & search**) created for it, since §3 is scoped to defects/enablers and excludes new capabilities. Surfaced during the F-06 retrieve review; no triage yet | `@user` (request) |
+| 2026-10-12 | BL-26 | Recorded as `proposed` — F-05's **collections sub-slice** (folders/tags) with its **backend needs** (S-02 contract authorship, Flyway migration + RLS, Java port/adapter, frontend). Section 6 (**Organize — collections**) created for it, since §3 excludes new capabilities. `@user` will decide later whether to author the contract and implement it. **Same change:** Inbox and Collections were **removed from the shell** (`@user`) as a `system-ux.md` §1 contract edit — with no filing model the two lists were identical, so the shell stopped advertising a distinction it could not honour | `@user` (request) |
 
 ---
 

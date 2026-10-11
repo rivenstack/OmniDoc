@@ -77,7 +77,7 @@ describe("resolveSignInGate", () => {
 
     await expect(resolveSignInGate(undefined)).resolves.toEqual({
       status: "redirect",
-      destination: "/inbox",
+      destination: "/notes",
     });
   });
 
@@ -90,7 +90,7 @@ describe("resolveSignInGate", () => {
 
     await expect(resolveSignInGate("/sign-in/")).resolves.toEqual({
       status: "redirect",
-      destination: "/inbox",
+      destination: "/notes",
     });
   });
 
@@ -101,7 +101,7 @@ describe("resolveSignInGate", () => {
       throw new Error("connection refused");
     });
 
-    await expect(resolveSignInGate("/inbox")).resolves.toEqual({
+    await expect(resolveSignInGate("/notes")).resolves.toEqual({
       status: "form",
     });
   });
@@ -109,7 +109,7 @@ describe("resolveSignInGate", () => {
   it("shows the form to a visitor with no cookie at all", async () => {
     stubSession(() => json({}, 401));
 
-    await expect(resolveSignInGate("/inbox")).resolves.toEqual({
+    await expect(resolveSignInGate("/notes")).resolves.toEqual({
       status: "form",
     });
   });

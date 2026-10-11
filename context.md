@@ -346,6 +346,24 @@ Program of record:
   database has `corpus_ownership` NULL, so Sample/Mine return nothing while All
   returns the hits; labelling notes at creation is backend/seed work, and the
   client must not infer ownership.
+- **2026-10-12:** **Inbox and Collections removed from the shell; the
+  collections sub-slice recorded as `BL-26`.** `@user` directed a
+  `system-ux.md` §1 contract change: with no collections/folders contract there
+  is nothing to file, so an "unfiled" Inbox and an "all notes" Notes were the
+  same list under two names, and the shell was advertising a distinction it
+  could not honour. The shell now carries **New note, Notes, Search, Ask**
+  (sidebar, mobile tab bar, and command palette); the `/inbox` and
+  `/collections` routes, the `UnfiledNotice` / `CollectionsUnavailable` gap
+  blocks, and the Collections sub-menu were removed; the app root and the
+  post-sign-in default landing (`DEFAULT_AUTHENTICATED_PATH`) moved to `/notes`;
+  the `proxy.ts` matcher dropped both routes. F-05's collections sub-slice is
+  **not declined** — it is recorded as **`BL-26`** in
+  `docs/planning/feature-backlog.md` (`proposed`) with its **backend needs**
+  named: S-02 contract authorship (`collections`/`tags` operation + a folder/tag
+  field on `Note`), a Flyway migration with an RLS policy, and a Java
+  port/adapter (ADR-0005). `@user` will decide later whether to author the
+  contract and implement it. Gate: `ui` + `web` typecheck / lint / test green
+  (`--skip-nx-cache`).
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -384,7 +402,7 @@ Program of record:
 | F-02 App shell + honest workspace switcher | frontend | Implementer (front-end programmer) | **completed** 2026-09-23 — nested sidebar, slim top bar, bottom tab bar, centered content, skip link + route focus, Cmd/Ctrl+K palette; shell blocks in `packages/ui/src/shell` | `docs/handoffs/archive/H-2026-09-23-P1-F02-user-implementer.md` |
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
-| F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists over `listNotes` + honest Collections placeholder; the folders/tags sub-slice still needs the S-02 contract change; completed head archived on lane rotation | `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md` |
+| F-05 Organize (notes list) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — server-first notes list over `listNotes` with URL-based server cursors; **updated 2026-10-12**: Inbox and Collections removed from the shell (no collections contract ⇒ identical lists); collections sub-slice recorded with backend needs as `BL-26` | `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md` |
 | F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F06-retrieve`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/active/lane-frontend.md` |
 | F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 (`@user`-verified) — three capture modes + lock, CodeMirror 6 live preview, JSON↔markdown bridge (commits `3c170f9`/`fe5a97f`); reconciled to `completed` 2026-10-11 via the F-15 governance stream | `docs/planning/implementation-tracks.md` |
 | F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 — tables across all modes; archived 2026-10-10 via the F-15 governance stream | `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md` |
@@ -419,9 +437,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-05 and F-06 hit it too**
 - AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05c
 - DevOps I-* have no human owner yet
-- **Collections (folders/tags) API contract** remains missing from S-02.
-  The decision to sequence that contract change ahead of later frontend
-  organize work is still open
+- **Collections (folders/tags) API contract** remains missing from S-02;
+  recorded as **`BL-26`** (`proposed`, 2026-10-12) in
+  `docs/planning/feature-backlog.md` with its backend needs (contract,
+  Flyway + RLS migration, Java port/adapter). The decision to sequence that
+  contract change ahead of later frontend organize work is still open. There
+  is no Collections or Inbox surface in the shell (removed 2026-10-12)
 - **B-06d AvalAI development-provider PoC** is implemented offline under the
   accepted fixture-only ADR exception. Researcher evidence remains a dated
   snapshot; actual account/terms/payment, balance, route, charge, key, and
@@ -433,12 +454,12 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   group keeps its note). Fixed in `3802d9b`; verified 277/277 ui tests
 - **Collections has no contract surface** (found 2026-09-25 closing F-04).
   `docs/api/openapi.yaml` has no `collections`/`tags` operation and `Note`
-  carries no collection/tag field, so F-05's folders/tags sub-slice is
-  **soft-stopped**. Adding it is a **contract change** (S-02 authorship,
-  backend lane) and needs an `@user`/Commander sequencing decision — a new
-  track (the program of record lists no backend collections item) or an S-02
-  extension. Until then Inbox (unfiled) and Notes (all) are the same set; the
-  UI must not fabricate a difference
+  carries no collection/tag field. F-05's folders/tags sub-slice is recorded as
+  **`BL-26`** (`proposed`) in `docs/planning/feature-backlog.md` (2026-10-12)
+  with its backend needs. Adding it is a **contract change** (S-02 authorship,
+  backend lane) and needs an `@user`/Commander decision — a new track (the
+  program of record lists no backend collections item) or an S-02 extension.
+  No client-side folder/tag model exists; the shell shows one notes list
 
 ## Open Gates
 
@@ -471,10 +492,10 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Production AI / provider activation** — open until CX-first mock
   validation
 - UT-1…UT-22 — unrun hypotheses (0.8b added UT-15…22)
-- **Collections (folders/tags) API contract** — missing from S-02; F-05's
-  folders/tags sub-slice is soft-stopped. Needs an `@user`/Commander
-  sequencing decision (contract change; a new backend track or an S-02
-  extension)
+- **Collections (folders/tags) API contract** — missing from S-02; recorded as
+  **`BL-26`** (`proposed`, 2026-10-12) with its backend needs. Needs an
+  `@user`/Commander sequencing decision (contract change; a new backend track or
+  an S-02 extension)
 - Exact AWS Free-plan service graph / credit-burn PoC — I-03 (unassigned)
 - DevOps I-* human split — later
 

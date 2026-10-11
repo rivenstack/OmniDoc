@@ -10,7 +10,7 @@ human_owner: front-end-programmer
 from: implementer
 to: commander
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-12
 branch: F06-retrieve
 blocked_on: "Commander sequencing of the next frontend slice (F-07 is the next in sequence and this lane was forbidden to open it) plus the @user visual pass on /search"
 ---
@@ -50,8 +50,11 @@ Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
    Phase 2, not ahead of F-07.
 3. **F-15 stays deferred** (`listed`, Commander-resequenced) and its
    implementation phases must not start from this head.
-4. **F-05's Collections sub-slice is still soft-stopped** on the missing S-02
-   collections/tags contract — unchanged by F-06.
+4. **F-05's Collections sub-slice is recorded, not scheduled** — S-02 has no
+   `collections`/`tags` operation. `@user` removed Inbox and Collections from
+   the shell on 2026-10-12 and recorded the sub-slice (with its backend needs)
+   as `BL-26` in [`../../planning/feature-backlog.md`](../../planning/feature-backlog.md);
+   it stays `proposed` until `@user` decides whether to author the contract.
 
 ## Open items for Commander / `@user`
 
@@ -60,7 +63,7 @@ Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
 | **Visual/mobile pass on `/search`** | `@user` | The implementer session has no browser. Render path is verified through the real server; light/dark, focus rings and ~390px are **not** visually verified. |
 | Next frontend slice (F-07?) | Commander | F-07 needs S-03 and **B-08 or ask fixtures**; B-08 is the live backend slice. |
 | Local corpus labelling | Commander / backend | Every note in the local dev DB has `corpus_ownership` NULL, so **Sample and Mine both return nothing while All returns the hits**. That is the server's honest answer; the client must not infer ownership. Labelling notes at creation is backend/seed work. |
-| Collections contract | Commander / `@user` | Unchanged from F-05: S-02 has no `collections`/`tags` operation. |
+| Collections contract | Commander / `@user` | S-02 has no `collections`/`tags` operation; the sub-slice is `BL-26` (`proposed`) in `feature-backlog.md`, and Inbox/Collections were removed from the shell on 2026-10-12. |
 | `web → mocks` import exception | Commander / `@user` | Still unauthorized; needed before in-app MSW/F-11. |
 | Suite load sensitivity | Commander / Phase Check | Fixed at its source this slice (`login.test.tsx`'s no-op `settle()`, `@user`-authorized). The remaining lesson is that the `ui` suite has no explicit worker cap: `packages/ui/vitest.config.ts` sets none, so a future slice that adds many jsdom test files can rediscover the same failure mode. Not changed here — outside the ticket. |
 

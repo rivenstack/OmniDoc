@@ -16,8 +16,9 @@ import type { ReactNode } from "react";
  *   `scroll={false}` keeps the reader where they are instead of throwing them
  *   back to the top of a list that just grew.
  *
- * Both are client components: they arrive as props from server components, and
- * `Button`'s `render` prop (the Collections route) needs a client reference.
+ * Both are client components: the list block receives them as props rather than
+ * importing `next/link` itself, and the wrappers stay reusable inside
+ * interactive compositions (such as a `Button`'s `render` prop).
  */
 export type OrganizeNavLinkProps = {
   href: string;

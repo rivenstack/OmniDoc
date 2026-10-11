@@ -1,7 +1,7 @@
 /**
  * Organize list loader (server-only, not a Server Action).
  *
- * The route-facing half of the Inbox/Notes lists: it resolves the workspace the
+ * The route-facing half of the notes list: it resolves the workspace the
  * session may list **server-side** and then walks the cursor chain through
  * `notes-pages.ts`. Kept separate from that module so the walk stays testable
  * without `next/headers`, mirroring how `note-loader.ts` sits beside the notes

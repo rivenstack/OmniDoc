@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -48,8 +48,10 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
   (retrieve: one search port over the frozen S-02 search contract plus the
   `/search` screen — server snippets, real Sample/Mine filter, honest
   degraded notice, pivot to Ask; opened 2026-10-11 after the F-15 stream
-  was reconciled). F-05 is **completed and archived**; its Collections
-  sub-slice remains soft-stopped on the contract gap. **F-15's editor
+  was reconciled). F-05 is **completed and archived**; its collections
+  sub-slice is recorded as `BL-26` (`proposed`) in
+  [`../planning/feature-backlog.md`](../planning/feature-backlog.md), and
+  Inbox/Collections left the shell on 2026-10-12. **F-15's editor
   redesign is deferred** (`listed`, governance G-1…G-4 complete) — do not
   exit this head into editor phases.
 - Backend: `docs/handoffs/active/lane-backend.md` → **B-08 ready**.
@@ -78,7 +80,7 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-08 is the live backend slice and B-12 remains unopened |
 | **F-06 retrieve deps** | **met** (S-02 search + B-07 completed) | `/search` port + screen dependency-ready; tests inject through the port (no `web → mocks` import) |
 | **F-15** (editor redesign) | **governance merged; superseded-before-execution** (2026-10-11) | Parallel stream's rewrite of `lane-frontend.md` reconciled into `develop`; F-15 returns to `listed` (G-1…G-4 complete); F-06 takes the head; archive `H-2026-10-10-P1-F15-superseded-before-execution.md` |
-| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05's folders/tags sub-slice stays soft-stopped, and F-05 is now back to `listed` — the remediation is unchanged: an `@user`/Commander sequencing decision (contract change). |
+| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05 is **completed**; its collections sub-slice is `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and Inbox/Collections were removed from the shell the same day. Remediation unchanged: an `@user`/Commander decision on whether to author the contract. |
 | **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. Java `pm-md-v1` is corpus SoT for chunking (B-05b); FE bridge remains editor tooling only. |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
@@ -200,8 +202,9 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
    the F-15 stream was reconciled; F-05 completed and archived). Scope: one
    search port over the frozen S-02 search contract plus the `/search`
    screen. Dependency-ready: S-02 search and B-07 are completed. The
-   **Collections** (folders/tags) sub-slice stays soft-stopped on the
-   missing S-02 contract.
+   **Collections** (folders/tags) sub-slice is **not scheduled** — it is
+   `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and
+   Inbox/Collections were removed from the shell the same day.
 2. **F-15 (Obsidian-parity editor redesign) is reconciled and deferred.**
    Governance G-1…G-4 (editor pins, wikilink deferral, mode-contract sync,
    F-13/F-14 reconciliation) merged to `develop`; the ready handoff was
@@ -215,10 +218,10 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
    route, charge, and live retrieval observations remain a separate
    deferred operator gate. No product live mode or production AI activation
    follows from the accepted exception or from the accepted B-07 slice.
-5. **Open decision for `@user`:** whether to sequence a **Collections
-   contract change** (a new backend track or an S-02 extension) before
-   F-06+, since F-05's folders/tags work cannot be built against the frozen
-   contract.
+5. **Open decision for `@user`:** whether to author and sequence the
+   **Collections contract change** (a new backend track or an S-02 extension).
+   F-05 is completed; the sub-slice is recorded as `BL-26` (`proposed`) with
+   its backend needs, and nothing in the product shows Collections.
 6. Each F-* step: structure from `system-ux.md`, references from `@user`,
    integration details per the tracks file.
 7. Update `context.md` when lane statuses change.
@@ -242,8 +245,9 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 - RTL locale remains deferred
 - UT-* remain unrun
 - DevOps I-* unassigned
-- **Collections contract** — open; F-05 folders/tags soft-stopped until
-  `@user`/Commander sequences the contract change
+- **Collections contract** — open; the sub-slice is `BL-26` (`proposed`,
+  2026-10-12) in `feature-backlog.md`, and Inbox/Collections are not in the
+  shell; `@user` decides whether to author the contract
 - **F-15 editor redesign** — deferred (`listed`, governance complete);
   editor phases A–H are not assigned to any live head
 
