@@ -2,7 +2,8 @@
 
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
-**Last verified:** 2026-10-06 (B-05a ingestion/chunking library pins);
+**Last verified:** 2026-10-11 (B-06d AvalAI model/API evidence);
+2026-10-06 (B-05a ingestion/chunking library pins);
 2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
 **Status:** Evidence ledger; ADR-accepted pins are binding where an ADR cites them
 
@@ -159,6 +160,19 @@ ADR-0003.
 | `@anthropic-ai/sdk` | 0.125.0 | 2026-09-10 | 2026-09-14 | CORS is not available for ZDR orgs — backend proxy only. |
 | `@google/genai` | 2.22.0 | 2026-09-10 | 2026-09-14 | |
 | `voyageai` | 0.4.0 | 2026-06-15 | 2026-09-14 | |
+
+## B-06d AvalAI model/API snapshot (access 2026-10-11)
+
+These are exact **model IDs and dated catalogue observations**, not immutable model-version identifiers or acceptance of a provider. They do not replace the Spring AI **2.0.1** adapter pin above. See [B-06d research](./technical/17-avalai-development-provider-poc.md) for conflicts and gates. None was live-tested.
+
+| AvalAI route/model | Documented pin on 2026-10-11 | Primary source / status |
+|---|---|---|
+| `POST https://api.avalai.ir/v1/embeddings` | Bearer; OpenAI-shaped `model` + `input`, float vectors, `usage` | [AvalAI embedding API](https://docs.avalai.ir/en/api-reference/embeddings), undated page, read 2026-10-11 |
+| `gemini-embedding-001` | $0.15 / 1M input; current model page $0 output versus 2025 announcement $0.075 output (**unresolved bill**); 2048 input tokens; Basic 3 RPM / 40k TPM; 768 output dimensions and separate retrieval task types if selected later | [AvalAI model detail](https://docs.avalai.ir/en/models/gemini-embedding-001), [embedding RAG example](https://docs.avalai.ir/en/api-reference/embeddings), [older announcement](https://docs.avalai.ir/en/news/2025-09-18-gemini-native-api-embedding-support-performance-improvements), [Google specification](https://ai.google.dev/gemini-api/docs/embeddings), read 2026-10-11; fallback research option, not live-tested |
+| `text-embedding-3-small` | $0.02 / 1M input tokens; 1536 dimensions; 8191 input tokens; Basic 3 RPM / 40k TPM | [AvalAI model detail](https://docs.avalai.ir/en/models/text-embedding-3-small), undated dynamic data, read 2026-10-11 |
+| `text-embedding-v4` | **User-preferred B-06d development probe:** $0.07 / 1M input tokens, $0 output on AvalAI model page; request 1024 dimensions (Alibaba default; AvalAI pass-through untested), Basic 3 RPM / 40k TPM; routed input cap **conflicting/unknown** (AvalAI table 1024, Alibaba upstream 8192) | [AvalAI model detail](https://docs.avalai.ir/en/models/text-embedding-v4), [embedding API table](https://docs.avalai.ir/en/api-reference/embeddings), [Alibaba specification](https://www.alibabacloud.com/help/en/model-studio/embedding), read 2026-10-11; no live test |
+| `text-embedding-3-large` | $0.13 / 1M input tokens; 3072 default (too large for current pgvector `vector`); 1024 via documented `dimensions` request | [AvalAI embedding API](https://docs.avalai.ir/en/api-reference/embeddings), [OpenAI guide](https://developers.openai.com/api/docs/guides/embeddings), read 2026-10-11 |
+| Direct Cloudflare Workers AI `@cf/qwen/qwen3-embedding-0.6b` | $0.0118 / 1M input tokens; 1024 dimensions; direct route with query/document inputs. **This is not an AvalAI price or verified AvalAI alias.** | [Cloudflare model detail](https://developers.cloudflare.com/workers-ai/models/qwen3-embedding-0.6b/), [pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/), [AvalAI current list](https://docs.avalai.ir/en/api-reference/embeddings), read 2026-10-11; Architect scope decision required |
 
 ## Provider / Free Tier policy pins (Wave C — access 2026-09-14)
 

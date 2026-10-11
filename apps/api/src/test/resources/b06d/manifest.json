@@ -1,0 +1,134 @@
+{
+  "corpusVersion": "s-03-v1",
+  "evaluationVersion": "b-06d-v1",
+  "projectionPolicy": {
+    "projectorId": "pm-md-v1",
+    "chunkerId": "omni-blockpack-v1",
+    "paramsHash": "32663d3adc8d97150c05447bc36b103d2856cd6b4c41e91b7e0b2fb16ce7f4f0"
+  },
+  "budget": {
+    "maxRequests": 100,
+    "maxInputTokens": 50000
+  },
+  "actor": {
+    "tenantId": "tenant_alex",
+    "actorId": "actor_alex",
+    "workspaceId": "ws_mine"
+  },
+  "sourceHashes": {
+    "packages/mocks/src/fixtures.ts": "306693f33fbbba4924d742e9b600ffa7b861ca4015772b02881ea3d9ec205567",
+    "classpath:b05c/projection/rich-formatting.json": "aec0533ec19ebdeb3db3fe2a2006e775a89a7609d63dc0020effa0327ac0e8df"
+  },
+  "notes": [
+    {
+      "id": "ws_mine_launch",
+      "versionId": "ws_mine_launch_v1",
+      "tenantId": "tenant_alex",
+      "actorId": "actor_alex",
+      "workspaceId": "ws_mine",
+      "title": "Launch checklist",
+      "corpusOwnership": "mine",
+      "bodyText": "The launch review is on Tuesday. Alex owns the checklist.",
+      "bodyJsonResource": null
+    },
+    {
+      "id": "ws_mine_conflict",
+      "versionId": "ws_mine_conflict_v1",
+      "tenantId": "tenant_alex",
+      "actorId": "actor_alex",
+      "workspaceId": "ws_mine",
+      "title": "Launch review — competing draft",
+      "corpusOwnership": "mine",
+      "bodyText": "The launch review is on Thursday. This draft disagrees with the checklist.",
+      "bodyJsonResource": null
+    },
+    {
+      "id": "ws_mine_indexing",
+      "versionId": "ws_mine_indexing_v1",
+      "tenantId": "tenant_alex",
+      "actorId": "actor_alex",
+      "workspaceId": "ws_mine",
+      "title": "Indexing guide",
+      "corpusOwnership": "mine",
+      "bodyText": "Imported notes become searchable when indexing is ready.",
+      "bodyJsonResource": null
+    },
+    {
+      "id": "ws_mine_formatting",
+      "versionId": "ws_mine_formatting_v1",
+      "tenantId": "tenant_alex",
+      "actorId": "actor_alex",
+      "workspaceId": "ws_mine",
+      "title": "Research \"notes within ‘notes’\" — pgvector / BYOK: Research \"notes within ‘notes’\" — pgvector / BYOK: Research \"notes within ‘notes’\" — pgvector / BYOK:",
+      "corpusOwnership": "mine",
+      "bodyText": null,
+      "bodyJsonResource": "b05c/projection/rich-formatting.json"
+    },
+    {
+      "id": "ws_sample_launch",
+      "versionId": "ws_sample_launch_v1",
+      "tenantId": "tenant_sample",
+      "actorId": "actor_sample_guest",
+      "workspaceId": "ws_sample",
+      "title": "Launch checklist",
+      "corpusOwnership": "sample",
+      "bodyText": "The launch review is on Tuesday. Alex owns the checklist.",
+      "bodyJsonResource": null
+    },
+    {
+      "id": "ws_other_private",
+      "versionId": "ws_other_private_v1",
+      "tenantId": "tenant_blair",
+      "actorId": "actor_blair",
+      "workspaceId": "ws_other",
+      "title": "Private launch checklist",
+      "corpusOwnership": "mine",
+      "bodyText": "Blair’s confidential launch review is on Friday.",
+      "bodyJsonResource": null
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "Who owns the launch checklist?",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": ["ws_mine_launch"],
+      "includeInMetrics": true
+    },
+    {
+      "id": "Q2",
+      "text": "When do imported notes become searchable?",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": ["ws_mine_indexing"],
+      "includeInMetrics": true
+    },
+    {
+      "id": "Q3",
+      "text": "Which note discusses pgvector and BYOK?",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": ["ws_mine_formatting"],
+      "includeInMetrics": true
+    },
+    {
+      "id": "Q4",
+      "text": "Do the launch review dates agree?",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": ["ws_mine_launch", "ws_mine_conflict"],
+      "includeInMetrics": true
+    },
+    {
+      "id": "Q5",
+      "text": "Find the release meeting checklist.",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": ["ws_mine_launch"],
+      "includeInMetrics": true
+    },
+    {
+      "id": "NEG1",
+      "text": "What was the revenue last year?",
+      "workspaceId": "ws_mine",
+      "relevantNoteIds": [],
+      "includeInMetrics": false
+    }
+  ]
+}

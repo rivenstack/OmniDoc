@@ -155,6 +155,39 @@
   **B-05c**. B-05c owns the full ingestion verification matrix, API E2E,
   Postman/load artifacts, and guided walkthrough; it may repair proved B-05
   defects but may not redesign §5.2.1 or open B-06.
+- 2026-10-11: when a backend soft-stop returns a completed slice plus a choice
+  between the next listed track and a still-open `@user`-sequenced contract
+  amendment, advance to the listed dependency-ready track unless `@user` has
+  explicitly resequenced the contract change ahead of it. Keep the open gate in
+  `context.md` / `current.md`; do not invent a block.
+- 2026-10-11: B-06's "mock" boundary is intentional and narrow: deterministic
+  pseudo-embeddings replace external model I/O for Phase 1, while PostgreSQL/
+  pgvector persistence, RLS, membership/workspace checks, deletion behavior,
+  and similarity SQL are real. Commander reran the clean backend gate at
+  140 tests with 0 failures/errors/skips and advanced the lane to B-07. When
+  test narration says "real wiring," verify the checked-in object graph: the
+  B-06 purge IT uses a behavior-equivalent test-local `RechunkOutbox` hook,
+  not the concrete `JdbcRechunkOutbox` class.
+- 2026-10-11: `@user` explicitly sequenced **B-06d before B-07** and supplied
+  `https://docs.avalai.ir/fa/`. Archive B-07 as superseded before execution;
+  preserve it unchanged for resumption after B-06d completion or NO-GO. B-06d
+  ownership is strictly sequential: Researcher evidence → Architect decision
+  → Implementer after GO. The model-selection driver is the cheapest
+  embedding model that remains capable enough for meaningful retrieval
+  evaluation, measured with documented cost/limits plus later S-03 Recall@K
+  and rank evidence. Never place the API key in repository files, handoffs,
+  logs, or chat; `@user` configures it outside the repository only after
+  Architect GO. Ask/chat provider selection and B-08 remain separate.
+- A user-accepted, fixture-only pre-CX provider exception belongs in the
+  ADR acceptance trail before Implementer assignment. Open implementation
+  offline-first; keep actual account, secret, route and charge checks as
+  separate live-smoke gates, with ordinary product modes still mock-only.
+- 2026-10-11: when a bounded pre-CX provider probe is implemented and its
+  checked-in run fails closed before network I/O only because operator-owned
+  live gates are absent, Commander may consume the offline slice for lane
+  sequencing and reopen the next listed backend task. Keep the live smoke as a
+  separate deferred gate unless the program of record explicitly requires its
+  result.
 
 ## Phase-Boundary Stewardship
 

@@ -46,6 +46,8 @@ dependencies {
 	implementation("org.commonmark:commonmark:0.30.0")
 	implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
 
+	testImplementation(platform("org.springframework.ai:spring-ai-bom:2.0.1"))
+	testImplementation("org.springframework.ai:spring-ai-openai")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -57,6 +59,15 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	systemProperty("omnidoc.repo.root", projectDir.parentFile.parentFile.absolutePath)
+}
+
+tasks.register<JavaExec>("b06dAvalaiProbe") {
+	group = "verification"
+	description = "Runs the mock baseline and opt-in AvalAI B-06d fixture probe outside the normal test task."
+	dependsOn(tasks.named("testClasses"))
+	classpath = sourceSets.test.get().runtimeClasspath
+	mainClass = "com.omnidoc.api.eval.b06d.B06dAvalaiProbeRunner"
 	systemProperty("omnidoc.repo.root", projectDir.parentFile.parentFile.absolutePath)
 }
 
