@@ -315,6 +315,37 @@ Program of record:
   search port over the frozen contract, `/search` screen with server
   snippets, a real Sample/Mine filter, an honest degraded notice, and a
   pivot to Ask.
+- **2026-10-11:** **F-06 retrieve built and live-verified; frontend lane head
+  cleared.** `/search` is a real screen over the frozen S-02 search contract:
+  one search port (`apps/web/app/lib/search/`, hybrid default — deterministic
+  fusion already includes lexical, so no retrieval-mode toggle), URL-held
+  `?q=`/`?corpus=` state, snippet-led rows rendered verbatim as text (no client
+  highlighting, `bdi`-isolated, `wrap-anywhere`), a real Sample/Mine filter on
+  `corpusOwnership`, a degraded/incomplete notice inside the single announced
+  result count, six honest states (idle / zero-match / degraded / generic denial
+  / validation / unavailable), and a quiet Ask pivot (`/ask` stays F-07's). Look
+  and the snippet-led row were chosen by `@user` 2026-10-11; blocks are new
+  `packages/ui/src/search/**` with injected link components and the directory
+  registered in `styles/globals.css` (F-05 lesson applied). Verified against the
+  local Java API + Postgres with a temporary actor/note fixture (removed
+  afterwards): results, both filter positions, idle, zero-match, degraded,
+  denial, validation, and unavailable all confirmed on rendered HTML; the
+  controlled-replay stub covered the failure states a healthy API cannot
+  produce. **Bug found and fixed during that check:** the port rejected the
+  API's `"corpusOwnership": null` for unlabelled notes and reported the whole
+  answer as *unavailable* — the field is optional, so `null` now reads as
+  absent. Gate: ui 476 / web 114 tests, typecheck, lint, `web:build` green
+  (`--skip-nx-cache`); new search suites 24/24 (ui) and 27/27 (web) in
+  isolation. **One `@user`-authorized change outside the ticket's write paths:**
+  `packages/ui/src/shell/login.test.tsx` (test-only). Adding this slice's suites
+  exposed a pre-existing no-op helper there (`const settle = async () =>
+  Promise.resolve()`), which made its `aria-busy` assertion race React's
+  transition — 6/6 full-suite runs red before the one-line fix, 6/6 green after.
+  **Visual/mobile pass awaits `@user`** — no browser in the implementer
+  session. Observed local-data gap (not a UI fix): every note in the dev
+  database has `corpus_ownership` NULL, so Sample/Mine return nothing while All
+  returns the hits; labelling notes at creation is backend/seed work, and the
+  client must not infer ownership.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -354,7 +385,7 @@ Program of record:
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
 | F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists over `listNotes` + honest Collections placeholder; the folders/tags sub-slice still needs the S-02 contract change; completed head archived on lane rotation | `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md` |
-| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **ready** — live frontend lane head (opened 2026-10-11); search port + `/search` screen over the frozen S-02 search contract; S-02 search + B-07 completed | `docs/handoffs/active/lane-frontend.md` |
+| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F06-retrieve`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/active/lane-frontend.md` |
 | F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 (`@user`-verified) — three capture modes + lock, CodeMirror 6 live preview, JSON↔markdown bridge (commits `3c170f9`/`fe5a97f`); reconciled to `completed` 2026-10-11 via the F-15 governance stream | `docs/planning/implementation-tracks.md` |
 | F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 — tables across all modes; archived 2026-10-10 via the F-15 governance stream | `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md` |
 | F-15 Obsidian-parity editor redesign | frontend | Implementer (front-end programmer) — **deferred** | **listed (deferred)** — governance G-1…G-4 complete 2026-10-10; implementation phases A–H not started; ready handoff archived superseded-before-execution 2026-10-11 | `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md` |

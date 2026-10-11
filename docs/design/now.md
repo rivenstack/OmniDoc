@@ -56,15 +56,17 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-06 retrieve — live 2026-10-11.**
+**F-06 retrieve — built 2026-10-11, live-verified against the local Java API.**
 
-Search is its own operation, separate from Ask (`system-ux.md` §1/§2). The
-slice: one search port over the frozen S-02 search contract plus the `/search`
-screen — server snippets rendered as text (no client-side highlighting), a real
-Sample/Mine filter (`corpusOwnership`), an honest degraded/incomplete notice,
-empty / loading / denied / unavailable states, and a quiet pivot to Ask.
-Ticket: [`lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened
-2026-10-11; dependency-ready — S-02 search + B-07 completed).
+Search is its own operation, separate from Ask (`system-ux.md` §1/§2). Delivered:
+one search port over the frozen S-02 search contract (`hybrid` default —
+deterministic fusion already includes the lexical pass, so there is no
+retrieval-mode toggle) plus the `/search` screen — server snippets rendered as
+text, a real Sample/Mine filter on `corpusOwnership`, an honest degraded notice,
+idle / empty / denied / validation / unavailable states, and a quiet pivot to
+Ask. Ticket: [`lane-frontend.md`](../handoffs/active/lane-frontend.md).
+Visual/mobile pass is **awaiting `@user`** — the implementer session has no
+browser.
 
 **F-15 — Obsidian-parity capture editor redesign (governance complete;
 implementation deferred).**
@@ -105,12 +107,25 @@ table is the map, not the archive.
 | F-03 auth / session UI | 2026-09-24 | Identity port, three-state session entry, sign-in block |
 | F-04 capture | 2026-09-25 | Notes port, save cycle, import status, capture blocks |
 | F-05 organize | 2026-10-11 | Inbox/Notes server-first lists with URL-based server cursors; honest Collections gap statement; quiet rows (no cards) |
+| F-06 retrieve | 2026-10-11 | `/search` over the frozen S-02 search contract: one search port (hybrid default), URL-held `?q=`/`?corpus=`, snippet-led rows rendered verbatim, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot |
 | F-12 markdown render | 2026-09-27 | `packages/ui/src/markdown/` sanitized render path |
 | F-13 multi-mode capture | 2026-10-01 | Three modes + lock, CodeMirror live preview, JSON ↔ markdown bridge |
 | F-14 markdown & editor tables | 2026-10-02 | GFM tables across modes, shared table grammar |
 
 ## Open choices
 
+- **F-06 (retrieve): closed 2026-10-11.** `@user` chose the direction —
+  *reuse the F-05 quiet Mintlify conventions*: the v4 `Field` form family plus
+  `InputGroup` for the query field, organize-style snippet rows (hairline
+  dividers, no cards), and outline pills for the Sample/Mine filter. `@user` also
+  chose **snippet-led rows with no note title**: the frozen S-02 `SearchHit`
+  carries no title, and resolving one through the notes port for the current page
+  was offered and declined, so rows stay snippet-led instead of adding a second
+  request per search. Bound and **not** choices, built without asking: the state
+  set (idle / zero-match / degraded / denied / validation / unavailable) on the
+  existing `Empty`/`Skeleton` conventions, the single announced result count, the
+  verbatim-as-text snippet with no client highlighting, links-as-chips with
+  `aria-current`, URL-held `?q=`/`?corpus=` state, and the quiet Ask pivot.
 - **F-05 (organize): closed 2026-10-11.** `@user` chose the row direction —
   *quiet Mintlify rows* (title + meta line, hairline dividers, no cards) — from
   the offered directions. Bound and **not** choices, built without asking: the
@@ -214,3 +229,9 @@ table is the map, not the archive.
 | 2026-10-11 | **F-05 pagination is URL-based server cursors** (`?cursor=…`, repeated, bounded at 20 pages). Links stay shareable, reloadable and JavaScript-optional; only server-issued cursors are followed, and a stale cursor falls back to the pages the server still vouches for plus the server's own next cursor. No client cache, no client-made cursor. |
 | 2026-10-11 | **F-05 lists do not claim indexing state.** Contract `Note`/`NotePage` carry no per-note indexing field, so rows show only what the server returns (title, updated time, and a `Sample` label when `corpusOwnership` says so). Per-file indexing status stays F-04's import rows, where the contract does return it. |
 | 2026-10-11 | **F-05 Collections stays honest.** S-02 has no `collections`/`tags` operation and `Note` carries no folder/tag field, so the Collections route states the gap and Inbox/Notes share one sentence (`UNFILED_NOTICE`) that today they show the same unfiled set. No client-side folder/tag model was forked; the contract change is escalated to Commander/`@user`. |
+| 2026-10-11 | **F-06 blocks chosen by `@user`: reuse the F-05 quiet conventions** — `Field` + `InputGroup` for the query field, organize-style snippet rows, outline pill chips for Sample/Mine. No new visual language; the search blocks are the same list/state grammar organize already established. |
+| 2026-10-11 | **F-06 rows are snippet-led, with no note title** (`@user`). The frozen S-02 `SearchHit` carries `chunkId`/`noteId`/`versionId`/`score`/`snippet`/`corpusOwnership` and no title; resolving one through the notes port for the current page was offered and declined, so the row is the server's excerpt verbatim. No contract fork, no second request per search. |
+| 2026-10-11 | **F-06 snippets are printed as text, never re-highlighted.** B-07 returns a whitespace-flattened plain-text window with `...` markers and no highlight boundaries, so any client-side emphasis would be inventing match positions. `bdi` isolates the excerpt as UGC and `wrap-anywhere` keeps a pasted token from widening the page at ~390px. |
+| 2026-10-11 | **F-06 keeps its state in the URL** (`?q=`, `?corpus=`): shareable, reloadable, JavaScript-optional, with one authority for what is being searched. Typing debounces (300 ms) into `router.replace(..., { scroll: false })`; the results region is a Suspense boundary *inside* the page so the field, the chips, and focus survive every search instead of a route-level `loading.tsx` unmounting them. |
+| 2026-10-11 | **F-06 states are six, not two.** Idle (no query), zero matches, degraded (`degraded: true` → incomplete-results notice inside the single announced count), generic denial, rejected request (400), and unreachable service. A `null` `corpusOwnership` from the API is *absent*, not a fifth state: it renders an unlabelled row, because guessing `mine` would be inventing data. |
+| 2026-10-11 | **Local indexing/corpus gap observed (not a UI fix):** every note in the local dev database has `corpus_ownership` NULL, so Sample/Mine both return nothing while All returns the hits. That is the server's honest answer — `mine` means `corpus_ownership = 'mine'`, not "yours" — so labelling notes at creation is a backend/seed concern, not something the search client may infer. |

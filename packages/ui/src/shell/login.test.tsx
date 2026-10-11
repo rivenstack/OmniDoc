@@ -16,8 +16,6 @@ import {
 
 afterEach(cleanup);
 
-const settle = async () => Promise.resolve();
-
 function renderLogin(props: Partial<LoginFormProps> = {}) {
   const action = props.action ?? (async () => null);
   return render(<LoginForm action={action} {...props} />);
@@ -228,7 +226,14 @@ describe("LoginForm — submission", () => {
 
     // Resolve so the pending state does not leak into the next test.
     finish(null);
-    await waitFor(() => settle());
-    expect(form().getAttribute("aria-busy")).toBe("false");
+    // Wait for the *condition*, not for a microtask. The previous helper here
+    // was `async () => Promise.resolve()`, which `waitFor` resolves on its first
+    // tick without waiting for anything — so the assertion below it raced React's
+    // transition and failed under CPU contention (six of six full-suite runs
+    // once the search suites were added). `waitFor` retries a real assertion
+    // until the transition has flushed.
+    await waitFor(() =>
+      expect(form().getAttribute("aria-busy")).toBe("false"),
+    );
   });
 });

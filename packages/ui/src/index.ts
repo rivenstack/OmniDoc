@@ -17,4 +17,5 @@ export * from "./lib";
 export * from "./markdown";
 export * from "./organize";
 export * from "./providers";
+export * from "./search";
 export * from "./shell";

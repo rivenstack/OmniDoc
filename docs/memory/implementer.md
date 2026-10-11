@@ -734,3 +734,67 @@
   Clean up in FK order: embeddings → chunks → chunk_sets → ingestion_jobs (+
   payloads) → note_versions → notes → membership → workspace → actor → tenant.
   `docker exec` needs `-i` for a psql heredoc, or the SQL silently never runs.
+- **2026-10-11 (F-06, the expensive one): an optional contract field arriving as
+  JSON `null` is not malformed data — and rejecting it turned every real search
+  into "the service is unreachable".** `SearchHit.corpusOwnership` is optional
+  in S-02, and `SearchController` maps the domain `Optional` with
+  `.orElse(null)`, so the wire carries `"corpusOwnership": null` whenever the
+  row has no ownership. The port's validator treated `null` as an invalid enum,
+  returned `unavailable`, and the UI said "we could not ask" for a response the
+  server had sent. Every note in the dev database has `corpus_ownership` NULL,
+  so it failed 100% of the time — and **no unit test caught it**, because the
+  fixtures I wrote used the tidy shape I expected rather than the shape the API
+  emits. Rules that follow: (1) for an optional field, `null` and absence both
+  mean *the server did not say* — normalize, do not guess and do not discard;
+  (2) a *present but undefined* value is still a hard failure, so keep the two
+  cases separate; (3) when writing port tests, capture a **real response body**
+  from the running API for the fixture instead of hand-writing the shape.
+- **2026-10-11 (F-06): a healthy API cannot prove your failure states.** To see
+  the generic denial, `400`, and transport-unavailable branches on a real render
+  path, point a second app instance at a small stub origin
+  (`OMNIDOC_API_ORIGIN=http://127.0.0.1:<port>`, a `python3` http.server that
+  answers only the two identity reads the shell needs and then returns a chosen
+  status for the search POST, selected by a file). That is controlled-replay
+  evidence for the states a working backend will never produce, and it caught
+  nothing *only* because the port fix above had already landed.
+- **2026-10-11 (F-06): keep the search screen's state in the URL and the
+  results in a Suspense boundary inside the page.** A route-level `loading.tsx`
+  replaces the whole page body, so a debounced as-you-type search unmounts the
+  focused input and drops the reader to the top on every keystroke. `?q=`/
+  `?corpus=` also makes the view shareable, reloadable, and JavaScript-optional,
+  and leaves exactly one authority for what is being searched. Debounce the
+  navigation (`router.replace(href, { scroll: false })`) and keep the
+  "does this draft differ from the committed query?" decision in a pure module
+  (`search-navigation.ts`) — this project's `web` vitest suite is Node-only, so
+  a decision that lives inside a client component cannot be tested without
+  pulling in a DOM environment for one assertion.
+- **2026-10-11 (F-06): registering the new `packages/ui/src/search` directory in
+  `styles/globals.css` is part of the change, not a follow-up.** The F-05 lesson
+  and its guard (`src/styles/globals.test.ts`) already cover this; the search
+  blocks would have rendered with missing dividers and focus rings otherwise.
+- **2026-10-11 (F-06): a helper named `settle` that resolves immediately makes
+  every assertion after it unguarded — and adding test files is enough to expose
+  it.** `packages/ui/src/shell/login.test.tsx` had
+  `const settle = async () => Promise.resolve();` used once as
+  `await waitFor(() => settle())`. `waitFor` resolves on the first tick when the
+  callback never throws, so the `aria-busy === "false"` assertion on the next
+  line raced React's `useActionState` transition; it passed on an idle machine
+  and failed 6/6 full-suite runs once four more jsdom test files joined the run.
+  `waitFor` must wrap a **real assertion**
+  (`await waitFor(() => expect(...).toBe("false"))`), never a no-op. Two
+  corollaries: (1) when a shared suite goes red after you add tests, check
+  whether you added *load* before assuming your code broke something — measure
+  by running the suite with `--exclude` over your new paths (green without them,
+  red with them ⇒ contention) and with `--maxWorkers=2` (green ⇒ contention);
+  (2) `packages/ui/vitest.config.ts` sets no worker cap, and vitest creates a
+  jsdom environment **per test file**, so the number of test files is the knob
+  that moves this suite's load. Consolidating related block suites into one file
+  (as `organize/` and `search/` now do) keeps the environment count down without
+  losing a single assertion — verify by comparing test totals before and after.
+- **2026-10-11 (F-06): a dev server the user already runs may predate the
+  change, and `next start` writes `next-env.d.ts`.** A `next build`/`next start`
+  in this repo flips `apps/web/next-env.d.ts` between `.next/dev/types/...` and
+  `.next/types/...`; that file is generated and should be reverted rather than
+  committed. When the user reports a failure on a port they chose, check
+  `ps -eo pid,cmd | grep next` before assuming your instance is the one they
+  are looking at.
