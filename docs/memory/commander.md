@@ -192,6 +192,30 @@
   listed dependency still blocks the next track, do not leave the lane on a
   second post-pass hold just because a later Commander session re-read the same
   evidence. Archive the duplicate hold and open the next dependency-ready slice.
+- 2026-10-11: reconciled the parallel **F-15 editor-governance stream**
+  (branch `f15-editor-redesign-governance`, docs-only, G-1…G-4) into
+  `develop` by hand (six shared-doc conflicts: `context.md`, `now.md`,
+  `lane-frontend.md`, `current.md`, `implementation-tracks.md`,
+  `version-ledger.md`). When a parallel stream rewrote the lane head but
+  never executed a phase (no code), merge its governance records, archive the
+  ready head **superseded before execution** (`status: blocked` + Outcome),
+  return the track to `listed` with its plan preserved, and re-sequence —
+  F-06 (retrieve) took the head because it was dependency-ready (S-02 search
+  + B-07 PASS) and on the core CX path. A plan-only "ready" head is not
+  execution; never claim its phases shipped.
+- 2026-10-11: a completed lane head the implementer leaves in place ("no next
+  task assigned") must be **archived on rotation** when Commander assigns the
+  next slice — F-05's completed head became
+  `H-2026-10-11-P1-F05-commander-implementer.md`; F-14's was archived by the
+  F-15 stream (`H-2026-10-02-P1-F14-commander-implementer.md`). Never rewrite
+  a `lane-*.md` path while its consumed head is unarchived.
+- 2026-10-11: stranded worktree loose end (recorded, not merged):
+  `frontend_plan_tasks` (worktree at `acaa031`) holds the F-13 plan-sync
+  commit plus an F-12 implementer→implementer return archive
+  (`H-2026-09-27-P1-F12-implementer-implementer.md`) that is not on
+  `develop`; `markdown_table_plan` and `fix_new_note_autosave` are fully
+  contained in `develop`. Cherry-picking the F-12 return archive is a
+  separate decision — do not fold it into a lane reconciliation silently.
 
 ## Phase-Boundary Stewardship
 
