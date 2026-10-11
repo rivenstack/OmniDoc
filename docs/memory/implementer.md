@@ -218,6 +218,10 @@
   `RechunkOutbox` is fine for note-write tests, but purge-path tests must delete
   corpus rows or the note/version FK chain will fail before the product path is
   actually exercised.
+- **2026-10-11 (B-07):** in PostgreSQL via Spring `JdbcTemplate`, a nullable
+  predicate shaped like `? IS NULL OR column = ?` can fail with an untyped-null
+  `DataAccessException`. For optional filters in retrieval SQL, build the clause
+  only when the filter is present instead of binding a bare nullable parameter.
 - **2026-10-11 (B-06d):** for a test-only local Spring AI probe, prefer the
   library module (`spring-ai-openai`) and manual model construction over the Boot
   starter; the starter can auto-configure live clients into unrelated app tests.

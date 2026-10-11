@@ -23,7 +23,7 @@ import org.testcontainers.utility.DockerImageName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** B-06 V1→V5 / populated V3→V5 and runtime-role security matrix. */
+/** B-06/B-07 V1→V6 / populated V3→V6 and runtime-role security matrix. */
 @Testcontainers(disabledWithoutDocker = true)
 class IngestionMigrationIT {
 
@@ -71,9 +71,9 @@ class IngestionMigrationIT {
 	}
 
 	@Test
-	void freshV1ToV5CreatesEmptyAdditiveTables() {
+	void freshV1ToV6CreatesEmptyAdditiveTables() {
 		JdbcTemplate jdbc = migratorJdbc(FRESH_DB);
-		assertThat(flyway(FRESH_DB).info().current().getVersion().getVersion()).isEqualTo("5");
+		assertThat(flyway(FRESH_DB).info().current().getVersion().getVersion()).isEqualTo("6");
 		for (String table : INGESTION_TABLES) {
 			assertThat(jdbc.queryForObject("SELECT count(*) FROM " + table, Integer.class))
 				.as(table)
@@ -82,9 +82,9 @@ class IngestionMigrationIT {
 	}
 
 	@Test
-	void populatedV3ToV5PreservesCorpusAndStartsNewTablesEmpty() {
+	void populatedV3ToV6PreservesCorpusAndStartsNewTablesEmpty() {
 		JdbcTemplate jdbc = migratorJdbc(UPGRADE_DB);
-		assertThat(flyway(UPGRADE_DB).info().current().getVersion().getVersion()).isEqualTo("5");
+		assertThat(flyway(UPGRADE_DB).info().current().getVersion().getVersion()).isEqualTo("6");
 		assertThat(jdbc.queryForObject("SELECT email FROM actors WHERE actor_id='actor-existing'", String.class))
 			.isEqualTo("existing@example.test");
 		assertThat(jdbc.queryForObject("SELECT title FROM notes WHERE note_id='note-existing'", String.class))

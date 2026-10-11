@@ -29,6 +29,7 @@ import com.omnidoc.api.adapters.ingestion.parser.ImportParser;
 import com.omnidoc.api.adapters.ingestion.parser.TikaImportParser;
 import com.omnidoc.api.adapters.notes.JdbcNotesAdapter;
 import com.omnidoc.api.adapters.notes.RechunkOutbox;
+import com.omnidoc.api.adapters.retrieval.JdbcSearchAdapter;
 import com.omnidoc.api.adapters.retrieval.JdbcVectorSearchAdapter;
 import com.omnidoc.api.adapters.retrieval.MockEmbeddingAdapter;
 import com.omnidoc.api.adapters.retrieval.MockRuntimeModeAdapter;
@@ -37,6 +38,7 @@ import com.omnidoc.api.application.port.IdentityPort;
 import com.omnidoc.api.application.port.IngestionPort;
 import com.omnidoc.api.application.port.NotesPort;
 import com.omnidoc.api.application.port.RuntimeModePort;
+import com.omnidoc.api.application.port.SearchPort;
 import com.omnidoc.api.application.port.VectorSearchPort;
 import com.omnidoc.api.chunking.BlockPackChunker;
 import com.omnidoc.api.persistence.TenantRlsSession;
@@ -186,6 +188,21 @@ public class LocalPersistenceConfig {
 		TenantRlsSession tenantRlsSession,
 		TransactionTemplate transactionTemplate) {
 		return new JdbcVectorSearchAdapter(jdbcTemplate, tenantRlsSession, transactionTemplate);
+	}
+
+	@Bean
+	SearchPort searchPort(
+		JdbcTemplate jdbcTemplate,
+		TenantRlsSession tenantRlsSession,
+		TransactionTemplate transactionTemplate,
+		EmbeddingPort embeddingPort,
+		VectorSearchPort vectorSearchPort) {
+		return new JdbcSearchAdapter(
+			jdbcTemplate,
+			tenantRlsSession,
+			transactionTemplate,
+			embeddingPort,
+			vectorSearchPort);
 	}
 
 	@Bean
