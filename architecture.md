@@ -440,6 +440,131 @@ policy tuple. No embedding columns or writes in B-05b; B-06 adds
 | **Production** | Dual-mode path after CX / production-AI gate: `operator_free_tier` via OpenRouter (or swap) gateway adapter, or `customer_key` via vault (§5.9); Assistants/`vector_stores` forbidden as corpus SoT (ADR-0001 §5, ADR-0004) |
 | **Failures** | `timeout`, `quota_exhausted` (**must distinguish** `operator_free_tier` vs `customer_key`), `unavailable`, `invalid_model`, `mode_forbidden` |
 
+#### 5.3.1 B-06d AvalAI fixture probe design lock (2026-10-11; conditional)
+
+**Disposition: `GO_WITH_CONDITIONS` for one local, development-only
+`text-embedding-v4` / 1024-dimensional experiment. No live call or
+Implementer assignment is authorized by this design alone.** Researcher
+evidence is in `docs/research/technical/17-avalai-development-provider-poc.md`.
+AvalAI's catalogue and Alibaba's upstream specification document the route
+and adjustable dimensions, but neither establishes this account's routed
+behavior, terms, charge, input cap, or OmniDoc retrieval quality. The user's
+1024-dimensional choice is the only candidate in B-06d; 2048 and Gemini are
+not automatic fallbacks. The proposed ADR-0004 exception must be accepted by
+`@user`, and the user must separately decide account/terms/payment eligibility
+before any live request.
+
+**Shape and ownership.** Use an explicitly invoked local evaluation runner,
+not an application-startup adapter, HTTP endpoint, background job, or UI path.
+Its AvalAI client implements the existing `EmbeddingPort` on the evaluation
+classpath, with Spring AI 2.0.x preferred if it passes `dimensions=1024` and
+parses the routed response; use adapter-local `RestClient` only if the
+compatibility check fails. No provider type crosses the port. The runner
+instantiates a probe-only `RuntimeModePort` policy that authorizes exactly
+`operator_free_tier` + `EMBED` + the fixed S-03 fixture actor when all local
+gates are true; normal application wiring continues to use the mock-only
+policy. The probe must call `resolveMode`, `assertModeAllowed`, and
+`stampOutbound` before every request and record the mode/model/dimensions
+without a key or body. `mock` remains the normal default; `customer_key` and
+`ASK` always fail closed in the runner. No new runtime mode, provider/model
+substitution, or retry into another mode is permitted. A missing opt-in,
+secret, fixture manifest match, account decision, or accepted ADR exception
+returns `mode_forbidden` before network I/O.
+
+**Local secret and content boundary.** An operator creates a local,
+untracked, permission-0600 secret file outside the repository and sources it
+into the shell as `AVALAI_API_KEY` only for the one runner process; the runner
+accepts no key argument or checked-in `.env`. Require a separate explicit
+opt-in variable, a local-only profile, and a fixed endpoint allowlist
+(`https://api.avalai.ir/v1/embeddings`); all three are required. Disable HTTP
+body/header wire logging, redact provider errors, and never persist the key,
+request text, returned vectors, or raw response in logs, reports, fixtures,
+or handoffs. Only checked-in S-03 synthetic notes and versioned S-03-derived
+queries may be submitted. Build a manifest of exact fixture IDs, versions,
+projection policy, content hashes, and maximum request count before network
+I/O; reject any unknown ID/hash or modified fixture. No user/customer note,
+arbitrary input, import, or application database can reach this runner.
+Use bounded one-input requests and an explicit request/token budget; abort
+on 400/401/403/404, 429, 5xx, timeout, malformed output, or budget breach,
+with no silent retry, truncation, or model change. A deliberate, separately
+bounded 429 retry test may be run only after the main smoke passes.
+
+**Storage and retrieval isolation.** Run all Flyway migrations through V5 against a disposable
+Postgres/pgvector evaluation database populated solely from the approved
+S-03 projection; never point the runner at the normal local/product database.
+The V5 `embeddings` primary key is `chunk_id`, so mock and v4 vectors cannot
+coexist for one chunk there. Use separate fresh disposable databases for the
+mock baseline and v4 run, with identical fixture/projection/actor inputs;
+preserve the normal B-06 mock DB and its deterministic tests. No migration is
+required for this single-candidate PoC. The evaluation must use the existing
+tenant GUC, RLS, membership and workspace/ACL search path. The B-06 search
+adapter currently hard-codes 16 dimensions and filters only by dimension:
+Implementer may make its model selection explicit and fail closed for an
+authorized `(embedding_model_id, dimensions)` pair, while retaining the
+existing mock tuple as default. Every similarity SQL query must filter both
+the exact model ID and dimensions *before* ranking, verify the query vector
+length and all finite values, and keep tenant, workspace, membership, ACL,
+soft-delete and RLS checks. Exclude chunks whose version is no longer the
+note's current searchable version; B-06's current SQL does not yet make
+that check. For this probe the tuple is
+`(avalai:text-embedding-v4:1024, 1024)`; the provider response must identify
+`text-embedding-v4` exactly or the run stops. Use cosine distance (`<=>`)
+for both runs; record an all-zero/nonfinite-vector failure. If response
+identity is absent or an alias is returned, stop for Architect review rather
+than treating the catalogue ID as proof of model identity. Never compare a
+mock query vector with v4 documents or vice versa. Re-embedding a model or
+dimension change means a new, full disposable run of both document and query
+vectors; rollback drops that database and removes the probe wiring. No
+production vector or B-07 contract changes follow from the experiment.
+
+**Pre-registered evaluation.** The following `s-03-v1/b-06d-v1` query
+set and relevant *note/version* IDs are frozen here before any live response.
+Implementer must materialize the same versioned manifest under its later
+allowed evaluation path, with S-03 fixture hashes and the B-05 Java
+projection/chunk policy, before network I/O. No post-result relabelling.
+
+| ID | Exact query text (actor in `ws_mine`) | Relevant note/version IDs |
+|---|---|---|
+| Q1 | `Who owns the launch checklist?` | `ws_mine_launch` / `ws_mine_launch_v1` |
+| Q2 | `When do imported notes become searchable?` | `ws_mine_indexing` / `ws_mine_indexing_v1` |
+| Q3 | `Which note discusses pgvector and BYOK?` | `ws_mine_formatting` / `ws_mine_formatting_v1` |
+| Q4 | `Do the launch review dates agree?` | `ws_mine_launch` / `ws_mine_launch_v1` **and** `ws_mine_conflict` / `ws_mine_conflict_v1` |
+| Q5 | `Find the release meeting checklist.` | `ws_mine_launch` / `ws_mine_launch_v1` |
+
+Add negative cases using only S-03-derived content/state: `What was the
+revenue last year?` has no relevant note; `ws_empty` has no hits; a
+`ws_mine` query cannot return `ws_sample` or `ws_other_private`; deleted
+and stale versions must be excluded after a local fixture-state mutation.
+Map ranked chunks to their note/version once so multiple chunks from the
+same note do not inflate Recall@K. Report standard per-query and macro
+Recall@1, Recall@3 and MRR for **both** runs, excluding no-evidence queries
+from those denominators. V4 passes the core gate only when Q1, Q2, Q3 and
+Q5 yield their relevant note in top 1 for at least 3 of those 4 queries,
+Q2 and Q3 are both top 1, Q4 returns *both* relevant notes in top 3,
+every core query has all its relevant notes in top 3, and macro MRR is at
+least 0.9. MRR uses the first relevant note per query. Zero forbidden
+tenant/workspace/ACL, deleted, or stale-version hits is mandatory in each
+run. These are a small PoC acceptance gate, not a production-quality
+claim; preserve the corpus unchanged for B-07 and report any mock-to-v4
+regressions even if v4 passes.
+
+**Route checks and stop conditions.** Before full embedding, confirm the
+account exposes the exact model, current price/limits and key scope. Check
+the token count of every B-05-projected fixture chunk against the more
+restrictive AvalAI-listed 1024-token input figure; character caps are not
+token caps. Submit the smallest fixture first, then one input per call,
+record returned `usage.prompt_tokens`, accepted/rejected lengths, latency,
+model ID, 1024 values, finiteness, nonzero norm and observed account charge
+or honest `unavailable`. Do not truncate or silently split a fixture. If
+token accounting cannot establish that the full frozen corpus fits the
+*routed* limit, or a required chunk is rejected, stop without a quality
+claim and return to Architect. Validate key revocation locally when the
+account controls allow it; do not assume documented controls exist. Any
+forbidden hit, content/secret leak, unexpected charge, model reroute, or
+unexplained response shape is immediate NO-GO for the probe. The result
+returns to Commander; customer data, production activation and Ask/chat
+remain separately gated.
+
 ### 5.4 Vector search
 
 | | |

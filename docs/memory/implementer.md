@@ -213,6 +213,21 @@
   Postman need an explicit migrator seed (`apps/api/load/seed-local-fixture.sql`)
   because Flyway ships schema without actors. After closeout soft-stop the lane
   for Commander **S-03** (before B-05); do not open either from Implementer.
+- **2026-10-11 (B-06):** focused backend tests that instantiate `JdbcNotesAdapter`
+  still need a real purge cleanup hook when chunk/vector rows exist. A no-op
+  `RechunkOutbox` is fine for note-write tests, but purge-path tests must delete
+  corpus rows or the note/version FK chain will fail before the product path is
+  actually exercised.
+- **2026-10-11 (B-07):** in PostgreSQL via Spring `JdbcTemplate`, a nullable
+  predicate shaped like `? IS NULL OR column = ?` can fail with an untyped-null
+  `DataAccessException`. For optional filters in retrieval SQL, build the clause
+  only when the filter is present instead of binding a bare nullable parameter.
+- **2026-10-11 (B-06d):** for a test-only local Spring AI probe, prefer the
+  library module (`spring-ai-openai`) and manual model construction over the Boot
+  starter; the starter can auto-configure live clients into unrelated app tests.
+  Also keep `TenantRlsSession`, `JdbcTemplate`, and the transaction manager on the
+  same `DataSource` instance or tenant GUC writes will miss the actual SQL
+  connection.
 - **2026-09-23 (F-01 remake):** shadcn v4 config is `style: base-nova`
   (Base UI variants) + `iconLibrary: tabler`. Run `shadcn add` from
   `packages/ui` (framework "Manual") so files and deps land in the library,

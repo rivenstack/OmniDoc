@@ -226,7 +226,60 @@ Program of record:
   inspected the additive V4/RLS/worker/HTTP path and independently reran
   `cd apps/api && ./gradlew clean test`: **100 tests, 0 failures, 0 errors,
   0 skipped**. The backend lane advanced to **B-05c** (test closeout +
-  guided verification); B-06 remains closed until B-05c is accepted
+  guided verification); B-06 remained closed pending Commander acceptance of
+  B-05c
+- **2026-10-11:** B-05c **completed and Commander-accepted**. Commander
+  reviewed the verification archive and independently reran
+  `cd apps/api && ./gradlew clean test`: **136 tests, 0 failures, 0 errors,
+  0 skipped**. The backend lane advanced to **B-06** (pgvector + mock embed
+  adapter). Collections sequencing remains an open `@user` / Commander
+  decision, but no explicit resequencing moved it ahead of B-06
+- **2026-10-11:** B-06 **completed and Commander-reviewed**. Deterministic
+  mock embeddings now feed real PostgreSQL/pgvector persistence and tenant/
+  workspace-scoped vector search; live modes still fail closed. Commander
+  independently reran `cd apps/api && ./gradlew clean test`: **140 tests, 0
+  failures, 0 errors, 0 skipped**, including the four Docker-backed B-06
+  retrieval IT cases. The backend lane initially advanced to B-07.
+- **2026-10-11:** `@user` explicitly resequenced **B-06d before B-07** and
+  supplied the AvalAI developer-documentation starting point
+  `https://docs.avalai.ir/fa/`. B-07 was superseded before execution and
+  preserved as the next normal slice. B-06d is live with `/researcher`; the
+  sequential gates remain Researcher evidence → Architect decision →
+  Implementer only after GO and a locally configured key outside the repo
+- **2026-10-11:** B-06d Researcher evidence was archived and Commander
+  reviewed its `GO_WITH_CONDITIONS` disposition. The later user choice of
+  AvalAI `text-embedding-v4` at 1024 dimensions supersedes the archived
+  handoff's earlier preferred model. Backend lane now assigns **B-06d
+  Architect** to decide the bounded development probe, ADR-0004 fit,
+  secret/model isolation and evaluation gates. No Implementer or live
+  provider work is open. AvalAI account/terms/payment eligibility remains
+  a user decision before any live smoke
+- **2026-10-11:** B-06d Architect returned `GO_WITH_CONDITIONS` for a
+  local S-03-only AvalAI `text-embedding-v4` / 1024 probe. `@user`
+  accepted the bounded pre-CX ADR-0004 exception and authorized the
+  Implementer lane. The backend head is now **B-06d Implementer ready**;
+  actual account/terms/payment, balance, external key and route checks
+  remain live-smoke gates. Normal API/CI stay mock-only; B-07 is deferred.
+- **2026-10-11:** B-06d Implementer completed the offline slice and archived
+  the bounded probe plus runbook. The checked-in run stayed
+  `blocked-before-io`, so no AvalAI network call was made and actual
+  account/terms/payment, balance, external key, route, charge, and live
+  retrieval observations remain deferred operator evidence. Commander
+  consumed that offline proof as sufficient to satisfy the user-imposed
+  sequencing gate and reopened **B-07** as the live backend lane head.
+- **2026-10-11:** **B-07 completed and Commander-validated PASS.** Commander
+  reread the archived implementation contract, evaluation doc, search adapter
+  and controller, and the focused retrieval/search HTTP tests, then reran the
+  focused B-07 validation command plus `cd /home/kenzo/RivenStack/omni-note/apps/api && ./gradlew clean test`.
+  The full backend gate passed at **156 tests, 0 failures, 0 errors, 0
+  skipped**. Checked-in retrieval evidence remains bounded to the mock
+  embedding path and records architecture §7 metrics plus zero isolation
+  failures. The backend lane now awaits explicit Commander sequencing;
+  **B-08 remains closed**.
+- **2026-10-11:** Commander consumed the post-B-07 hold state and opened
+  **B-08** as the live backend slice. The backend lane no longer idles on a
+  repeat evaluation hold; it now assigns the mock ask adapter + citation
+  assembler on the frozen S-02 ask/SSE contract.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -239,7 +292,7 @@ Program of record:
 | ADR-0001 §2 | TipTap 3.31.3; ProseMirror JSON SoT |
 | ADR-0001 §3 | PostgreSQL 18; shared schema + app scope + RLS DiD |
 | ADR-0001 §4 | pgvector in Postgres |
-| ADR-0001 §5 + ADR-0004 | Mocks first; OpenRouter operator free-tier gateway; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT |
+| ADR-0001 §5 + ADR-0004 | Mocks first; OpenRouter operator free-tier gateway; customer BYOK v1; dual-mode; usage port; no Assistants/`vector_stores` SoT. One accepted B-06d local synthetic-fixture exception; no product activation |
 | ADR-0001 §6 | Identity **port** stays; Better Auth **library** superseded by Spring Security sessions (ADR-0005) |
 | ADR-0001 §7 | AWS Free-plan topology class: EC2 and/or ECS + RDS Postgres + pgvector; 6-month window in-scope; VPS fallback only if AWS cannot cover; Railway/Render not default |
 | ADR-0002 | Nx 23.2.1, pnpm 12.4.1, Node 24 for **frontend** graph. `apps/api` = JVM Gradle beside Nx; TS `packages/domain` not backend SoT; ArchUnit for Java |
@@ -266,7 +319,7 @@ Program of record:
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
 | F-05 Organize (inbox, notes list, collections) | frontend | Implementer (front-end programmer) | **listed** — soft-stopped on S-02 collections gap | `docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md` |
-| F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **ready** 2026-10-02 — table extensions, popover/bubble toolbar affordances, live preview, bridge | `docs/handoffs/active/lane-frontend.md` |
+| F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 per live lane head; next frontend assignment awaits Commander sequencing | `docs/handoffs/active/lane-frontend.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -279,7 +332,11 @@ Program of record:
 | B-05 (pre-split implementer) | backend | Implementer (back-end programmer) | **superseded** 2026-10-06 | `docs/handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md` |
 | B-05a Ingestion/chunking research + design | backend | Researcher → Architect (sequential) | **completed** (Commander-accepted 2026-10-06; no ADR-0006) | `docs/handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md` |
 | B-05b IngestionPort implement | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-09 | `docs/handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md` |
-| B-05c Ingestion test closeout + guided verification | backend | Implementer (back-end programmer) | **ready** 2026-10-09 | `docs/handoffs/active/lane-backend.md` |
+| B-05c Ingestion test closeout + guided verification | backend | Implementer (back-end programmer) | **completed; Commander-accepted** 2026-10-11 | `docs/handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md` |
+| B-06 pgvector + mock embed adapter | backend | Implementer (back-end programmer) | **completed; Commander-reviewed** 2026-10-11 | `docs/handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md` |
+| B-06d AvalAI development embedding-provider PoC | backend | Implementer (back-end programmer; after Researcher and Architect) | **completed offline** 2026-10-11; operator live smoke remains deferred on account/key/route checks | `docs/handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md` |
+| B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **completed; Commander-validated PASS** 2026-10-11 — B-08 opened afterward | `docs/handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md` |
+| B-08 Ask port mock adapter + citation assembler | backend | Implementer (back-end programmer) | **ready** — live backend lane head; mock ask + citation assembly on frozen S-02 ask/SSE contract | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -293,7 +350,14 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   development/test import exception before in-app MSW wiring. `@user` chose 2026-09-24 (Option A) to leave that sub-slice **soft-stopped**: the port targets the live API and tests inject through the port, so no fixture authority was created on the FE. Granting the exception needs `packages/mocks` tags + `eslint.config.mjs` — outside the frontend lane's write paths, so it stays open and **F-05 hits it too**
 - AWS deploy and live OpenRouter are I-* / Phase 3–4 — not F-02/B-05c
 - DevOps I-* have no human owner yet
-- **B-06** is gated on Commander acceptance of B-05c
+- **Collections (folders/tags) API contract** remains missing from S-02.
+  The decision to sequence that contract change ahead of later frontend
+  organize work is still open
+- **B-06d AvalAI development-provider PoC** is implemented offline under the
+  accepted fixture-only ADR exception. Researcher evidence remains a dated
+  snapshot; actual account/terms/payment, balance, route, charge, key, and
+  live retrieval checks remain deferred operator evidence. The development key
+  stays outside the repository. No live test or product activation is claimed
 - **`packages/ui` suite is green again.** The `login.test.tsx` note assertion
   was a deliberate change, not a regression: `@user` decided 2026-09-25 that the
   disabled social sign-in buttons stay **unannotated** (the account-creation
@@ -350,8 +414,9 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (F-14 markdown & editor tables, `lane: frontend`, human: front-end
-  programmer)
+  `/implementer` (F-14 markdown & editor tables completed per live Outcome;
+  next assignment pending Commander sequencing, `lane: frontend`, human:
+  front-end programmer)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (B-05c ingestion test closeout + guided verification,
-  `lane: backend`; human: back-end programmer; B-06 remains closed)
+  `/implementer` (B-06d AvalAI local S-03 embedding probe,
+  `lane: backend`; human: back-end programmer)
