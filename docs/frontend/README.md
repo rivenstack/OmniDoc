@@ -322,6 +322,15 @@ or any provider SDK. That boundary is enforced in CI by
 Do not create scaffolding until an implementation handoff authorizes it;
 package manager is **pnpm 12.4.1**.
 
+**Adding a directory under `packages/ui/src/`:** register it in
+`packages/ui/src/styles/globals.css` with `@source "../<dir>";`. Tailwind
+v4 auto-detects sources from the consuming app and ignores
+`node_modules`, where this package is consumed through a pnpm symlink —
+so an unregistered directory gets **no** utilities emitted, silently
+(the styles simply never apply and no test fails). `@source not` lines
+keep its test files out of the bundle. `src/styles/globals.test.ts`
+fails when a directory containing `className=`/`cn(` is not registered.
+
 ---
 
 ## How a human works inside the handoff system

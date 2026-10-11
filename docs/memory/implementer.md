@@ -698,6 +698,17 @@
   and runtime-role RLS in separate Testcontainers databases. This preserves the
   required "new tables begin empty" observation while still allowing seeded
   tenant rows for fail-closed and direct-DML security checks.
+- **2026-10-11 (F-05):** adding a directory under `packages/ui/src/` is **not**
+  enough to make its Tailwind classes exist. `packages/ui/src/styles/globals.css`
+  registers each source directory explicitly (`@source "../<dir>";`) because
+  Tailwind v4 detects sources from the consuming app and ignores `node_modules`,
+  where this package is consumed through a pnpm symlink. An unregistered
+  directory fails **silently**: the block renders with whatever utilities other
+  directories already generated, so separators and borders are simply missing
+  and no unit test notices. This is exactly the F-05 note-list defect
+  (`divide-y`/`divide-border`/`border-y` never emitted). `src/styles/globals.test.ts`
+  now guards it. When a style "does not apply" in a shared package, check the
+  generated CSS for the selector before touching the component.
 - **2026-10-11 (F-05):** keep `next/link` out of `@omnidoc/ui` by injecting a
   link **component** through a block prop (`OrganizeLink`). Rows and pagination
   need different components — rows navigate normally, pagination passes
