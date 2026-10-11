@@ -11,8 +11,31 @@ Choose here. Do not wait for a finished mock to review.
 | --- | --- |
 | What must the API and data honor? | [`system-ux.md`](./system-ux.md) |
 | What are we building now? | This file |
+| How should the editor behave? | **Obsidian.** Shipped-artifact analysis is the behavior source — the [F-15 plan](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md) §0.1 records the REA evidence |
 | How should it look? | **Mintlify** design language — values in `packages/ui/src/styles/tokens.css` |
 | Old visual spec | Other files in `docs/design/` — history only (D-01) |
+
+## Why the editor plan was rewritten (2026-10-10)
+
+The first Obsidian-*like* editor (F-13, then F-14) was built from memory and
+review passes. It delivered the modes, the lock, and tables, but it accumulated
+bugs: extensions were assembled inline and rebuilt on every mode change, one
+1,722-line module mixed live preview with table widgets and tools, two toolbars
+drifted apart, and the table preview rescanned the whole document on every
+keystroke.
+
+**F-15 rebuilds it on evidence instead of memory.** Obsidian 1.14.4 was
+analyzed statically from its shipped bundle with the reverse-engineering
+tooling (evidence `ev_c7f5023c…`, authority `shipped-artifact`), so each
+behavior — the extension / `Compartment` model, the live-preview `StateField` +
+`ViewPlugin` pair, `atomicRanges`, the settings that shape editing — is
+reproduced deliberately with modern, permissively-licensed building blocks on
+current library versions. No Obsidian code, CSS, or assets are copied.
+
+F-15 **supersedes-in-part the CM6 internals** delivered by F-13/F-14. Their
+user-facing behavior — three modes + lock, GFM tables, live-preview folding —
+is preserved, and the existing `cm-editor.test.tsx` / `table-preview.test.tsx`
+suites are the regression net.
 
 ## Stable vs flexible
 
@@ -24,6 +47,7 @@ Choose here. Do not wait for a finished mock to review.
 | Sample vs Mine; no zero-retention claim | How those labels are drawn |
 | shadcn/Base UI as the component source (ADR-0003) | Which primitive, until a screen needs one |
 | Token **roles** (`--primary` = primary action, `--muted` = muted surface) | Token **values** — swapping them re-skins the app without touching screens |
+| **Obsidian-parity editing behavior** (from REA evidence) | Which library or primitive implements a behavior, until a phase needs one |
 
 The design language is a token layer, not a hardcoded spec. A new look
 (Google-like, Anthropic-like, whatever you pick from references) is a
@@ -32,168 +56,79 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-05 organize — completed 2026-10-11 (branch `F05-organize`).** Inbox and
-Notes are real, server-first lists over `listNotes`, and Collections is an
-honest placeholder rather than an invented model. Blocks live in
-`packages/ui/src/organize/`: `NoteList` (quiet rows — title + meta line,
-hairline dividers, no cards — with `bdi`-isolated UGC titles that truncate
-without widening ~390px, an `Updated <time>` line, and a `Sample` badge only
-when the server says `corpusOwnership: sample`), the four list states
-(`NoteListEmpty` with one primary `New note`, `NoteListSkeleton` announced once
-via `role="status"`, `NoteListUnavailable` for "we could not ask",
-`NoteListDenied` for the generic workspace denial), `UnfiledNotice`, and
-`CollectionsUnavailable`. App wiring: `apps/web/app/lib/notes/notes-pages.ts`
-walks the server's cursor chain and `note-list-loader.ts` resolves the
-workspace server-side; the routes are `inbox`, `notes` (+ a shared skeleton
-`loading.tsx`) and `collections`. Pagination is URL-based (`?cursor=…`, bounded
-at 20 pages): links are shareable, reloadable and work without JavaScript, and
-only server-issued cursors are ever followed — a stale cursor falls back to the
-page the server still vouches for and offers the server's own cursor.
-`@omnidoc/ui` keeps no `next/link` dependency: the app injects
-`NoteRowLink` / `NotePaginationLink` (`scroll={false}`) through
-`packages/ui`'s `OrganizeLink` prop.
+**F-06 retrieve — live 2026-10-11.**
 
-**F-14 markdown & editor tables — completed 2026-10-02 (branch `BL20-editor-rich-table`).**
-Table support across TipTap Normal mode, CodeMirror Markdown live preview, Text mode, and the bidirectional ProseMirror JSON ↔ Markdown bridge (`markdown-bridge.ts`). Interactive size popover + default 3x3 table toolbar insertion button; floating selection bubble table context controls; Mintlify table token styling with accessible keyboard horizontal scroll containment (`quality/ui-qa-checklist.md` §6.4).
+Search is its own operation, separate from Ask (`system-ux.md` §1/§2). The
+slice: one search port over the frozen S-02 search contract plus the `/search`
+screen — server snippets rendered as text (no client-side highlighting), a real
+Sample/Mine filter (`corpusOwnership`), an honest degraded/incomplete notice,
+empty / loading / denied / unavailable states, and a quiet pivot to Ask.
+Ticket: [`lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened
+2026-10-11; dependency-ready — S-02 search + B-07 completed).
 
-Markdown mode renders a table as an **interactive block widget** (`cm-live-table*`), reviewed 2026-10-03 against Obsidian: a header line plus a delimiter row render as a table as soon as the delimiter row is closed, body rows are edited in place as markdown source, and a row/column **helper toolbar** sits above the table (insert/delete row, insert/delete column, delete table) beside `Tab`/`Enter` cell navigation. Tables are detected by scanning lines rather than the GFM syntax tree, because a user typing a table never has a syntax-tree-valid one on screen. The shared grammar lives in `packages/ui/src/markdown/table.ts` and is used by the preview, the ProseMirror bridge and the persistence normalizer, so a lenient table in the editor is still a table after a save and reload.
+**F-15 — Obsidian-parity capture editor redesign (governance complete;
+implementation deferred).**
 
-**F-12 markdown render pipeline — landed 2026-09-27 (branch `F12-markdown-render`, uncommitted; Commander validation pending).**
-Behaviour-only, by `@user` decision, and installed on the **accepted** ADR-0003 §4 pins
-(`react-markdown` 10.1.0 + `remark-gfm` 4.0.1 + `rehype-sanitize` 6.0.0). `packages/ui/src/markdown/`
-holds the single sanitized render path — `Markdown` + `markdownSanitizeSchema` — so note and citation
-previews and answer prose all route through one sanitized pipeline instead of each inventing one. It
-carries **no** typography, colour, or spacing: the answer-prose look is the F-07 answer card's job and
-still needs a reference. What it does fix is behaviour and accessibility — keyboard-reachable overflow
-for code and tables, `bdi` isolation for code tokens and link text, and `lang`/`dir` left to the single
-locale source. Nothing renders it yet, so the look decision is **untouched**, not deferred.
+Plan of record:
+[`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md).
+Governance tasks G-1…G-4 completed 2026-10-10 (editor pins, wikilink deferral,
+F-13/F-14 reconciliation, mode-contract sync) and are merged to `develop`.
+Phases A–H have **not** started: the ready handoff was archived
+superseded-before-execution (2026-10-11) and F-15 stays `listed` for Commander
+resequencing — do not start editor phases from the F-06 head.
 
-**F-04 capture — foundation landed 2026-09-25 (branch `F04-capture-tiptap`); no visual block built yet.** The parts that are behaviour, not look, are in: `apps/web/app/lib/notes/notes-api.ts` (notes port over the S-02 contract; a `409` is reported as a conflict with no retry and no merge), `apps/web/app/lib/api/transport.ts` (server-side HTTP transport shared by the ports), and `packages/ui/src/capture/` (`save-state.ts` / `capture-store.ts` for the save cycle, `import-status.ts` for the per-file indexing vocabulary). Editor pins `@tiptap/*` 3.31.3 + `zustand` 5.0.15 are installed in `packages/ui`, and TipTap was verified to render under this repo's jsdom setup with `immediatelyRender: false`. **Every visual block below still needs a reference.**
+One markdown editing engine — an extension factory parameterised by an
+`EditorSettings` object plus `Compartment`s, and a live-preview `StateField` /
+viewport-scoped `ViewPlugin` pair with `atomicRanges` — driving **one
+formatting surface**: a command registry that both the TipTap and CodeMirror
+adapters implement, so the same affordances work identically in Normal,
+Markdown, and Text. Phases A–H land one bite-sized task per commit, each green
+before the next begins.
 
-**F-04 capture — blocks built 2026-09-25 (branch `F04-capture-tiptap`, uncommitted pending `@user` review).**
-Review pass 2026-09-25: the shell now reserves bottom clearance for the fixed
-`MobileTabBar` (`apps/web/app/(app)/shell.tsx`), which fixes the bottom of
-**every** page being covered on small viewports — a shell defect F-04 surfaced
-rather than caused. Toolbar separators are centred. See the lane head for the
-measurements.
-Review pass 2026-09-25 (second): the formatting row is **sticky** under the
-shell's `h-14` top bar (`sticky top-14 z-20`, opaque `bg-background` wrapper so
-the `bg-muted/30` panel keeps its look while covering what scrolls beneath it),
-per `@user`. The inline selection bubble now measures the toolbar's real bottom
-edge instead of assuming the top bar, so it drops below the selection rather
-than landing on the row it duplicates; the body's tab stops carry
-`scroll-margin` so focus never hides behind the sticky chrome (QA 1.2).
-`/notes/new` lands directly in the editor and `/notes/[noteId]` resolves through
-the notes port. Blocks live in `packages/ui/src/capture/`: `CaptureSurface`
-(document-first, no card), `NoteTitleField` (borderless), `FormattingToolbar`
-(static row) + `SelectionToolbar` (bubble), `SaveIndicator` (text only),
-`ImportDropzone` (drop zone + per-file rows), `SaveProblemBanner` (inline, above
-the editor). `New note` lands with a title and body only — nothing reaches the
-server until one of them has content.
+**Preserved, not rebuilt:** three capture modes + lock, GFM tables,
+live-preview folding, the JSON ↔ markdown bridge, and ProseMirror JSON as the
+durable source of truth.
 
-Verified live against the local Java API: a note is created from a blank
-draft; the stored body is **ProseMirror JSON** (bold mark and `codeBlock` node
-confirmed in Postgres, 5 versions recorded); a real `409` from a second tab
-produces the conflict banner with the local edits preserved and autosave
-stopped; "Keep my edits" re-saves on top of the server's version and resolves;
-code blocks carry `tabindex=0` with `overflow-x: auto`.
+**Gated (not in this slice):** `[[wikilink]]` autocomplete (literal text in v1),
+vim mode, and math / mermaid widgets — each needs an explicit `@user` yes plus
+a ledger pin before any install.
 
-Three things F-04 does **not** close, all recorded as gaps rather than
-silently dropped:
+## Delivered slices
 
-- **CodeMirror 6 for fenced code** (ADR-0001 §2) is **not built**. StarterKit's
-  code block ships now; the CodeMirror node view is a follow-up slice. F-04's
-  acceptance asks only that code blocks render monospaced and stay
-  keyboard-scrollable, which they do.
-- **Tables supported in F-14.** `@tiptap/extension-table` (plus row, cell, header at 3.31.3) are pinned and registered; tables render with accessible horizontal scroll containers (`quality/ui-qa-checklist.md` §6.4).
-- **Import is blocked on the backend, and the UI says so.** `POST
-  /api/v1/ingestion-jobs` has **no controller** — `apps/api` currently has only
-  `IngestionPort` and the domain models — so every dropped file lands as
-  `Failed` with the honest reason ("Indexing failed. This file is not
-  searchable.") and the incomplete-index notice fires. Verified live, not
-  assumed: the route answers `403` (Spring security, i.e. no handler behind it)
-  rather than `404` only because the filter chain runs first. B-05 owns the
-  controller.
-- **MSW is still not wired** (`web → mocks` remains unauthorized). Tests inject
-  through the notes port instead, so no second fixture authority was created.
+Status detail lives in [`context.md`](../../context.md) and the handoffs. This
+table is the map, not the archive.
 
-**F-03 session identity — done 2026-09-24 (branch `F03-auth-ui`).**
-The shell is session-aware and sign-in is real. `apps/web/app/lib/identity/` is
-the identity **port** (typed over `docs/api/openapi.yaml`); `proxy.ts` sends a
-browser with no session cookie to sign-in and remembers the requested path;
-the `(app)` layout resolves the session server-side — authenticated → shell,
-rejected → sign-in, identity service unreachable → an honest "can't confirm"
-screen. Sign out and workspace selection are server actions, and the account
-menu consumes the contract `Principal`. The **sign-in block**
-(`packages/ui/src/shell/login.tsx`, route `apps/web/app/sign-in/page.tsx`) was
-built from the reference `@user` supplied on 2026-09-24.
+| Slice | Landed | What it left behind |
+| --- | --- | --- |
+| F-01 tokens + primitives | 2026-09-23 | Mintlify token layer, Tabler icons, shadcn v4 `base-nova` sources, `/kit` |
+| F-02 app shell | 2026-09-23 | Sidebar, slim top bar, mobile tab bar, command palette, skip link |
+| F-03 auth / session UI | 2026-09-24 | Identity port, three-state session entry, sign-in block |
+| F-04 capture | 2026-09-25 | Notes port, save cycle, import status, capture blocks |
+| F-05 organize | 2026-10-11 | Inbox/Notes server-first lists with URL-based server cursors; honest Collections gap statement; quiet rows (no cards) |
+| F-12 markdown render | 2026-09-27 | `packages/ui/src/markdown/` sanitized render path |
+| F-13 multi-mode capture | 2026-10-01 | Three modes + lock, CodeMirror live preview, JSON ↔ markdown bridge |
+| F-14 markdown & editor tables | 2026-10-02 | GFM tables across modes, shared table grammar |
 
-**F-04 capture — next in sequence.** Not started. `@user` references per block
-are required before each visual piece (see Open choices).
+## Open choices
 
-**F-02 shell — landed 2026-09-23.** The authenticated shell now exists:
-collapsible nested sidebar (workspace switcher at top, nav, Collections
-submenu), slim utility top bar (search entry opens the palette, New note,
-theme toggle, inert F-08 mode slot), centered content region, mobile tab bar,
-skip link, and a `Cmd/Ctrl+K` command palette. `/` lands in Inbox; Inbox,
-Notes, New note, Collections, Search and Ask are reachable stub routes. Shell
-blocks live in `packages/ui/src/shell`; app wiring in `apps/web/app/(app)`.
-F-03 (auth UI) is next in sequence — identity fixtures are ready.
-
-**F-01 remake — done 2026-09-23 (branch `F01-ui-remake`).** The F-01
-primitives were rebuilt on the current shadcn v4 (`base-nova`, Base UI)
-sources, the icon library moved to Tabler, and the token layer was retuned
-to the **Mintlify** design language. `/kit` is the visible proof.
-
-**Landed 2026-09-22:** `/kit` in `apps/web` — primitives on one page.
-Remade 2026-09-23 (below). Run `pnpm --filter @omnidoc/web dev` and open
-`/kit`.
-
-**Landed 2026-09-23 (F-01 remake):** `packages/ui` now carries the shadcn
-v4 `base-nova` component sources (Button, IconButton, Input, Textarea,
-Label, Badge, Card, Separator, Skeleton, Spinner) plus the v4 form family
-(Field/FieldGroup/FieldLabel/FieldError, InputGroup) and Empty. `Button`
-lost its `loading` prop (compose `Spinner` + `disabled`), and `IconButton`
-gained icon size steps. `components.json` is `style: base-nova`,
-`iconLibrary: tabler` in both packages.
-
-**Backend:** unchanged. B-05 stays on the backend lane.
-
-**Sequence:** the old F-01→F-11 order is the plan of record again —
-F-02 shell → F-03 auth → F-04 capture → F-05 organize → F-06 retrieve →
-F-07 ask → F-08 dual-mode → F-09 sample → F-10 a11y → F-11 Playwright.
-The F-* IDs are labels for those steps; the D-01 specs behind them are
-not binding. Cross-lane gates (S-03, B-07, B-08, B-09) still apply.
-
-**Open choices**
-
-**F-05 (organize): closed 2026-10-11.** `@user` chose the row direction —
-*quiet Mintlify rows* (title + meta line, hairline dividers, no cards) — from
-the offered directions. Bound and **not** choices, built without asking: the
-four list states on the existing `Empty`/`Skeleton` patterns with one primary
-`New note` CTA, the `Load more` outline pill plus muted `First page` link,
-list semantics, keyboard-operable link rows, `bdi`-isolated titles,
-URL-based cursor pagination, and the generic denial copy. The Collections
-sub-slice is **not** a look decision — it is blocked on the S-02 contract and
-renders as the honest gap statement.
-
-**F-04 (capture / TipTap): closed 2026-09-25.** `@user` chose to build from
-per-block options rather than supplying a reference. Options chosen: document-
-first editor shell, static toolbar **plus** a selection bubble, borderless
-title, text-only save indicator, drop zone with per-file rows, inline conflict
-banner above the editor. CodeMirror for fenced code was deferred to a follow-up
-slice (see the gaps above). Bound and **not** choices, built without asking:
-save-state semantics, conflict visibility without a client-side winner,
-ProseMirror JSON as the stored body, per-file indexing status, the editor's
-accessible name, and the generic forbidden copy.
-
-**Closed 2026-09-24 (F-03):** the sign-in card and form-field look `@user`
-supplied are built. Three things F-03 could **not** decide remain open:
-`Workspace` in `@omnidoc/contracts` carries no sample marker, so no sample
-corpus can be separated in the switcher yet (F-09 + a contract change); the
-generic forbidden denial has no reachable trigger on any F-03 surface, so its
-copy is unreviewed in situ; and the identity-unavailable entry screen has no
-reference, so it uses the stock `Empty` primitive and is open to review.
+- **F-05 (organize): closed 2026-10-11.** `@user` chose the row direction —
+  *quiet Mintlify rows* (title + meta line, hairline dividers, no cards) — from
+  the offered directions. Bound and **not** choices, built without asking: the
+  four list states on the existing `Empty`/`Skeleton` patterns with one primary
+  `New note` CTA, the `Load more` outline pill plus muted `First page` link,
+  list semantics, keyboard-operable link rows, `bdi`-isolated titles,
+  URL-based cursor pagination, and the generic denial copy. The Collections
+  sub-slice is **not** a look decision — it is blocked on the S-02 contract and
+  renders as the honest gap statement.
+- **F-07 answer-prose look:** no reference yet. F-12 shipped behaviour-only.
+- **Sample vs Mine:** `Workspace` carries no sample marker — F-09 plus a
+  contract change.
+- **Identity-unavailable entry screen:** built from the stock `Empty`
+  primitive; no reference covers it, so it is flagged rather than presented as
+  designed.
+- **Editor settings persistence — resolved 2026-10-10:** prop / component
+  state only in v1; no server or localStorage. Revisit only with a concrete
+  need.
 
 ## Rules for anyone editing this page
 
@@ -204,73 +139,77 @@ reference, so it uses the stock `Empty` primitive and is open to review.
 - If a change belongs in `system-ux.md`, edit that file in the same pass.
 - The F-01→F-11 sequence is the plan of record; the D-01 specs behind
   those IDs are not.
+- **Editor behavior comes from REA evidence, not memory.** A parity claim
+  cites the F-15 plan or the evidence bundle; a preference is not a parity
+  claim.
 
 ## Decisions log
+
+> Entries from 2026-10-01 and 2026-10-02 describe the first Obsidian-*like*
+> editor. They are **superseded-in-part** by F-15 (2026-10-10): the modes, the
+> lock, and the tables they delivered still stand, but the CM6 internals
+> beneath them are rebuilt. Full detail for compressed rows lives in git
+> history and `docs/memory/implementer.md`.
 
 | Date | Choice |
 | --- | --- |
 | 2026-09-22 | D-01 visuals are historical. System contracts live in `system-ux.md`. |
-| 2026-09-22 | F-02 paused before any shell code. |
+| 2026-09-22 | This file is the visible plan — not a second spec, and not the backend lane. |
+| 2026-09-22 | Search: as-you-type is the current preference, not a locked contract. Can change later without a schema change. |
 | 2026-09-22 | Look is stock shadcn until references are supplied and chosen. No language doc yet. |
-| 2026-09-22 | This file is the visible plan. Not a second spec, and not the backend lane. |
-| 2026-09-22 | Search: as-you-type is the current preference. Not a locked contract. Can change later. |
-| 2026-09-22 | Next frontend slice: visible stock-shadcn kit. No shell. |
+| 2026-09-22 | Kit landed at `/kit` (a page, not Storybook — Storybook 10 stays a later gap). |
+| 2026-09-22 | Design language clarified: a swappable token layer. A new look retunes `tokens.css` values; components and screens stay. |
+| 2026-09-23 | Sequence confirmed: the F-01→F-11 order is the plan of record; the D-01 specs behind those IDs are not. |
+| 2026-09-23 | F-02 reopened as the next step. Reference protocol live: the implementer asks for a reference per block and offers options on real choices. |
+| 2026-09-23 | **Design language chosen: Mintlify** (from the popular-web-designs references). White canvas, near-black text, brand green accent, pill controls, border-driven depth. Lands as token values + component shape — not a new spec. |
+| 2026-09-23 | Icon library: **Tabler** (`@tabler/icons-react` 3.48.0) replaces lucide in both `components.json` files and all components. |
+| 2026-09-23 | shadcn config moved to v4 **`base-nova`** (Base UI variants) so `shadcn add` fetches current components; F-01 primitives were re-copied on those sources. |
+| 2026-09-23 | New v4 form/empty family added (`Field`/`FieldGroup`/`FieldLabel`/`FieldError`, `InputGroup`, `Empty`); raw `Label`+`Input` layout is no longer the form pattern. |
+| 2026-09-23 | `Button` has no `loading` prop (compose `Spinner` + `disabled`, the v4 pattern); `IconButton` keeps the label-by-type guarantee. |
+| 2026-09-23 | Fonts: Inter + Geist Mono self-hosted through `next/font` (build-time fetch, no runtime third-party request). The token layer keeps a system fallback stack. |
+| 2026-09-23 | A11y-over-template deviations: focus rings are full-opacity `ring-ring` (upstream `/50` fails 3:1 on white), and status/focus colors are darkened until they pass WCAG contrast. |
+| 2026-09-23 | Phase-check follow-up: destructive tints retuned and error rings/borders made full-opacity, so destructive/invalid states pass contrast too. |
+| 2026-09-23 | Logged deviation: control borders stay whisper-thin (below the 3:1 boundary bar) per the Mintlify look; fields are identified by label + placeholder + a passing focus ring. **User-confirmed 2026-09-23.** |
+| 2026-09-23 | No browser in the implementer session: the visual check is handed to `@user` — `/kit` checked in light and dark, result **"looks good"**. The implementer asks rather than infers. |
+| 2026-09-23 | **F-02 references chosen by `@user`:** nested/collapsible sidebar; slim utility top bar (search entry, New note, theme toggle, inert F-08 mode slot); bottom mobile tab bar; centered content column; `Command` palette (adds `cmdk`); workspace switcher as a sidebar-top dropdown; Storybook **not** added (Vitest instead). |
+| 2026-09-23 | **F-02 shell landed.** Shell blocks live in `packages/ui/src/shell`; app wiring in `apps/web/app/(app)`. Workspace data is a server-layout **placeholder passed as props** (types only, no fetch) — not a fixture authority. |
+| 2026-09-23 | Sidebar settled on the upstream **`sidebar-07`** composition (one `Sidebar collapsible="icon"`), adapted to existing semantic roles with **no** `tokens.css` edit; upstream physical utilities normalized to logical (`ps/pe/ms/me`, `text-start/end`). Migration detail: `docs/memory/implementer.md`. |
+| 2026-09-23 | **Motion is a dependency, not free:** shadcn v4 overlay classes (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`) only work with `tw-animate-css` imported in the Tailwind entry. |
+| 2026-09-23 | **Base UI `nativeButton`:** `Button`/`IconButton` with `render={<Link/>}` must pass `nativeButton={false}` or Base UI warns and drops native semantics. |
+| 2026-09-24 | **F-03 identity wiring landed.** Session identity is a server-side port (`apps/web/app/lib/identity/`) over `POST/GET/DELETE /api/v1/session` + `GET /api/v1/workspaces`, typed by `@omnidoc/contracts`. No client auth library; the browser never talks to the API, so no CORS, and Next relays `JSESSIONID` (httpOnly) + `XSRF-TOKEN`. |
+| 2026-09-24 | **Signed-in entry has three states, not two** — a correctness rule, not a look: authenticated → shell; rejected session → sign-in (with the requested path remembered); identity service unreachable → an honest "can't confirm" screen. |
+| 2026-09-24 | **The account menu shows the contract `actorId`.** `Principal` carries no name or email, and adding one is a contract change — so the F-02 placeholder name was deleted rather than kept alongside it. |
+| 2026-09-24 | **A stale workspace preference falls back to the first server-resolved workspace** instead of dead-ending on the generic denial. That denial stays reserved for a selector the *server* refuses (`system-ux.md` §2). |
+| 2026-09-24 | **Next 16 file convention:** `middleware.ts` → `proxy.ts` (`export function proxy`), per the framework deprecation. Added to `tsconfig.app.json` so the fast typecheck target covers it. |
+| 2026-09-24 | **Sign-in block built from `@user`'s reference.** The pending choice was resolved by a supplied shadcn-style login card, so the block was built rather than guessed. `/sign-in` is a real route. |
+| 2026-09-24 | **Unbacked controls render disabled, with a note — `@user`'s explicit choice over omitting them.** Social sign-in, "Remember this device", password recovery and account creation have no endpoint in `docs/api/openapi.yaml`. Enabling any of them is a contract change, not a frontend tweak. |
+| 2026-09-24 | **No third-party assets in the sign-in block.** The reference loaded its logo and provider icons from `images.shadcnspace.com`; those became a Tabler mark and Tabler brand icons, because a runtime request to a host we do not control is the same problem the self-hosted fonts avoid. |
+| 2026-09-24 | **The sign-in card title is the page `h1`.** `CardTitle` gained an optional `level` (default `3`, so existing cards are untouched) instead of shipping an `h1`→`h3` outline gap or a duplicate hidden heading. |
+| 2026-09-24 | **Two shadcn-registry defects fixed on copy-in (Checkbox):** the registry imports `cn` from an npm package and adds it as a dependency (removed — this project owns its `cn`); and its `disabled:` utilities can never match, because Base UI renders the control as `<span role="checkbox">` where `:disabled` does not apply, so the styling uses the `data-disabled` variant Base UI actually emits. |
+| 2026-09-24 | **The sign-in checkbox is named with `aria-labelledby`, not `htmlFor` alone.** Base UI applies the consumer's `id` to its hidden native input, so an `htmlFor`-only label points at an `aria-hidden` element and leaves the visible control anonymous. |
+| 2026-09-24 | **`bg-white/10` kept as a literal on the sign-in arcs.** The surface above is deliberately inverted (dark in both themes), so a light tint is needed in both; a token like `bg-foreground/10` would vanish into the surface it sits on. |
+| 2026-09-24 | **Two `@user` review fixes.** (1) *The workspace avatar letter vanished on dropdown hover* — `DropdownMenuItem` forces every descendant to `accent-foreground` while highlighted, so `WorkspaceMark` sets its foreground with the important modifier. (2) *Skip link kept* — a required a11y affordance (ui-qa-checklist §1.7); appearing on Tab is its whole purpose, not a bug. |
+| 2026-09-24 | **Two `@user` review fixes to the shell chrome.** (1) *Top-bar separator alignment + spacing* — the primitive's `self-stretch` default beats a definite `h-*` and pins the rule to flex start; the call site hands alignment back to the container. (2) *Trigger glyph* — `SidebarTrigger` advertises the action it performs (collapse/expand pair chosen by the sidebar `side`) with the accessible name left stable as "Toggle Sidebar". |
+| 2026-09-24 | **F-03 closed.** Sign-in, sign-out, three-state session entry and selector semantics are all landed and green. Gaps handed on: no sample marker on `Workspace`; the forbidden denial has no reachable trigger; no real-API sign-in smoke test; visual confirmation is `@user`'s. |
+| 2026-09-25 | **Two `@user` review fixes.** (1) *Sign out did nothing — and neither did the theme-toggle item nor workspace picking.* All three were wired with `onSelect`, which is **Radix's** `DropdownMenu.Item` prop; this project's `base-nova` tier is Base UI, whose `Menu.Item` handler is `onClick`, so the dead prop reached a `<div>` as a native `select` listener that a click never fires. Server-action handlers are **wrapped** (`onClick={() => action()}`) so a click event is never forwarded as an argument it cannot serialise. (2) *The workspace switcher opened straight down over the nav* — it now mirrors `NavUser`'s `side`/`align`. |
+| 2026-09-25 | **Gap — the social sign-in note was missing** (`login.test.tsx` asserted a sentence the block did not render). **Closed 2026-09-25** — `@user` decided the disabled buttons stay unannotated; fixed in `3802d9b`. |
 | 2026-09-25 | Save status gains a fifth state, `error`, for a failed save. A failed save must not render as nothing or as `saved`; it stays distinct from `conflict` because the user's next action differs. |
 | 2026-09-25 | The disabled social sign-in buttons stay **unannotated**. The removed explanation note was intentional: they are placeholders for a later feature, and the button labels carry the message. The account-creation group keeps its note. |
 | 2026-09-25 | F-04: the visual blocks are built from options offered per block, not from a supplied reference. |
 | 2026-09-25 | F-04 options chosen: document-first shell; static toolbar + selection bubble; borderless title; text-only save indicator; drop zone with per-file rows; inline conflict banner. |
-| 2026-09-25 | CodeMirror 6 for fenced code (ADR-0001 §2) deferred to a follow-up slice. StarterKit's code block ships in F-04. |
-| 2026-09-25 | The disabled social sign-in buttons stay **unannotated**, restated for the record: the note was removed deliberately, and the account-creation group keeps its note. |
-| 2026-09-22 | Kit landed at `/kit` (page, not Storybook — Storybook 10 stays a later gap). |
-| 2026-09-22 | Design language clarified: a swappable token layer. New look = retune `tokens.css` values; components and screens stay. |
-| 2026-09-23 | Sequence confirmed: F-01→F-11 order is the plan of record. Task format = title + short description + integration details; UI details stay open. |
-| 2026-09-23 | F-02 (shell) reopened as next step under the new rules. Reference protocol live: implementer asks for a reference per block, offers options on real choices. |
-| 2026-09-23 | **Design language chosen: Mintlify** (from the popular-web-designs references). White canvas, near-black text, brand green accent, pill controls, border-driven depth. Lands as token values + component shape — not a new spec. |
-| 2026-09-23 | Icon library: **Tabler** (`@tabler/icons-react` 3.48.0) replaces lucide in both `components.json` files and all components. |
-| 2026-09-23 | shadcn config moved to v4 **`base-nova`** (Base UI variants) so `shadcn add` fetches current components; F-01 primitives were re-copied on those sources. |
-| 2026-09-23 | New v4 form/empty family added: `Field`/`FieldGroup`/`FieldLabel`/`FieldError`, `InputGroup`, `Empty`. Raw `Label`+`Input` layout is no longer the form pattern. |
-| 2026-09-23 | `Button` has no `loading` prop; compose `Spinner` + `disabled` (v4 pattern). `IconButton` keeps the label-by-type guarantee. |
-| 2026-09-23 | Fonts: Inter + Geist Mono self-hosted through `next/font` (build-time fetch, no runtime third-party request). Token layer keeps a system fallback stack. |
-| 2026-09-23 | A11y-over-template deviations: focus rings are full-opacity `ring-ring` (upstream `/50` fails 3:1 on white), and status/focus colors are darkened until they pass WCAG contrast. |
-| 2026-09-23 | Phase-check follow-up: destructive tints retuned (danger step `#ad3f3f`, hover tints at 15%) and error rings/borders made full-opacity, so destructive/invalid states pass contrast too. |
-| 2026-09-23 | Logged deviation: control borders stay whisper-thin (below the 3:1 boundary bar) per the Mintlify look; fields are identified by label + placeholder + a passing focus ring. **User-confirmed 2026-09-23.** |
-| 2026-09-23 | No browser in the implementer session: visual check handed to `@user` — `/kit` checked in light and dark, result **"looks good"**. Implementer rule updated to ask rather than infer. |
-| 2026-09-23 | **F-02 references chosen by `@user`:** sidebar = nested/collapsible (shadcn `sidebar-09`, customized to the token layer and OmniDoc content); top bar = slim utility bar (search entry, New note, theme toggle, inert F-08 mode slot); mobile = bottom tab bar; content region = centered column; command palette = shadcn `Command` (adds `cmdk`); workspace switcher = dropdown from the sidebar top; Storybook **not** added (Vitest instead). |
-| 2026-09-23 | **F-02 shell landed.** Shell blocks live in `packages/ui/src/shell` (SkipLink, WorkspaceSwitcher, MobileTabBar, CommandPalette + `useCommandPalette`, ContentRegion, PageHeader); app wiring in `apps/web/app/(app)`. Workspace data is a server-layout **placeholder passed as props** (types only, no fetch) — not a fixture authority; S-03/B-03 replace it with MSW/identity wiring. |
-| 2026-09-23 | `shadcn add` pulled the sidebar's `--sidebar*` color tokens, which this project does not carry. The copied-in `sidebar.tsx` was adapted to existing semantic roles (`bg-background`, `text-foreground`, `border-border`, `bg-muted`, `ring-ring`) and the width tokens; **no** `tokens.css` edit. Upstream physical utilities in all new components were normalized to logical (`ps/pe/ms/me`, `text-start/end`). |
-| 2026-09-23 | **F-02 revision after `@user` review:** sidebar rebuilt to the **`sidebar-09` double-sidebar** structure (always-narrow icon rail + contextual/labeled panel), replacing the single sidebar-07-style collapse. The workspace switcher collapses to a single circular mark with an `aria-label` (no clipped text, no stray selector icon). `@user`-requested fixes: responsive icon-only New note on mobile, `⌘ K` spacing, centered palette, more nav spacing, mobile tab type reduced, and motion added via **`tw-animate-css`** plus scoped theme/background transitions. |
-| 2026-09-23 | **Motion is a dependency, not free:** shadcn v4 overlay classes (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`) only work with `tw-animate-css` imported in the Tailwind entry; without it, dialogs/dropdowns open with no motion. |
-| 2026-09-23 | **Base UI `nativeButton`:** `Button`/`IconButton` with `render={<Link/>}` must pass `nativeButton={false}` or Base UI warns and drops native semantics. |
-| 2026-09-23 | **Sidebar block migrated to the upstream `sidebar-09` composition** (reference: `ui.shadcn.com/r/styles/new-york-v4/sidebar-09.json`; `@user` chose composition-only over a new-york-v4 Radix tier swap — the base-nova/Base UI primitives stay). The block now mirrors the upstream file layout: `apps/web/app/(app)/app-sidebar.tsx` (double-sidebar geometry) + `nav-user.tsx` (account dropdown footer). Content mapping: upstream brand block → workspace switcher; upstream mail-list demo → OmniDoc labeled nav; upstream "Unreads" `Switch` → **omitted** (no honest analog); panel-header `SidebarInput` → launcher that opens the command palette (`readOnly`; `onMouseDown` + `preventDefault`, Enter/Space — avoids a focus-return reopen loop). Upstream Upgrade/Billing items have no analog (no commerce); the rail-footer theme button moved into the NavUser dropdown (top bar ThemeToggle stays). Sign out renders **only** when an `onSignOut` handler is passed — F-03 (session UI) wires it and replaces the `ShellUser` render placeholder with contract-typed `Principal` consumption. |
-| 2026-09-23 | **Sidebar block migrated again, to the upstream `sidebar-07` composition** (reference: `ui.shadcn.com/r/styles/new-york-v4/sidebar-07.json`; `@user` request). One `Sidebar collapsible="icon"` replaces the sidebar-09 rail+panel pair, and the block now mirrors the upstream file layout: `apps/web/app/(app)/app-sidebar.tsx` (header/content/footer + `SidebarRail`) + the new `nav-main.tsx` (grouped, collapsible nav) + `nav-user.tsx` (unchanged — sidebar-07 and -09 share it). Content mapping: upstream brand/team block → the project-owned `WorkspaceSwitcher` block (reused, not re-implemented); upstream `NavMain` "Platform" group → one `Workspace` group of OmniDoc destinations; upstream second group (`NavProjects`) → **omitted** (a list of user-owned containers with per-row View/Share/Delete actions; no collection shape in `@omnidoc/contracts` and F-05 owns that surface, so it would mean invented fixtures and dead menu items); upstream `page.tsx` demo breadcrumb header + placeholder tiles → **not adopted** (demo content, not the sidebar block — the shell keeps its own top bar and `ContentRegion`). The panel-header palette launcher is gone with the panel; `system-ux.md` §1's "search entry" stays satisfied by the top bar. Upstream physical utilities normalized to logical (`ms-auto`, `rtl:-scale-x-100` on the chevron) and Radix's `group-data-[state=open]/collapsible:` retargeted to Base UI's `group-data-open/collapsible:`. Only items that actually have children render a collapsible, so no item shows a chevron that toggles nothing. |
-| 2026-09-24 | **Two `@user` review fixes to the F-02 shell.** (1) *Top-bar separator alignment + spacing.* The primitive's vertical default is `self-stretch`, which beats a definite `h-*` and pins the rule to the flex start, so the 20px separator hugged the top; the consumer now passes `data-vertical:self-auto` to hand alignment back to the container (`items-center`), and `me-1.5` evens the two *optical* gaps (the trigger's 16px glyph sits in a 28px hit box, so its perceived gap is 8 + 6 = 14px, matching the search field's 8 + 6 = 14px). The override holds because `cn` runs tailwind-merge, which drops the primitive's conflicting class — the generated CSS actually orders `self-stretch` last, so this must not be "simplified" into relying on source order. (2) *Trigger glyph.* `SidebarTrigger` now advertises the action it performs instead of a fixed "sidebar" glyph: `IconLayoutSidebarLeft/RightCollapse` when the panel is visible, `…Expand` when it is hidden, with the pair chosen by the sidebar `side` (a right-hand sidebar must not borrow the left-hand pair) and the accessible name left stable as "Toggle Sidebar". Two unit tests pin the state/side mapping. |
-| 2026-09-24 | **Two `@user` review fixes.** (1) *Workspace avatar letter vanished on dropdown hover.* `DropdownMenuItem` forces every **descendant** to `accent-foreground` while highlighted (`focus:**:text-accent-foreground`), which repainted the initial in the accent colour on the `primary` circle — invisible. `WorkspaceMark` now sets its foreground with the important modifier (`text-primary-foreground!`), because a filled chip's foreground is paired with its own background, not the row's. Verified in the built CSS: `!important` beats the non-important descendant rule. (2) *Skip link.* Kept — it is a required a11y affordance (ui-qa-checklist §1.7), and appearing on Tab is its whole purpose, not a bug. It gained `focus:shadow-lg` so it reads as a transient overlay rather than a collision with the sidebar header it covers, and its comment now records the real cascade dependency: `focus:not-sr-only` resets `position` to `static`, and `focus:fixed` only wins because Tailwind emits it later (checked in the built CSS). Losing that would turn the link into a flex item and shove the sidebar sideways. |
-| 2026-09-23 | **Two follow-ups after `@user` review of the sidebar-07 shell.** (1) `SidebarTrigger` no longer draws a fixed `IconLayoutSidebar`: it now picks the Tabler collapse/expand pair from the live `state` (and `side`), so the glyph advertises what the click will do; on mobile it always shows "expand", since the sidebar there is a closed sheet. Accessible name stays "Toggle Sidebar". (2) The top-bar `Separator` was pinned to the top instead of centred: the primitive's vertical default is `self-stretch`, and `align-self: stretch` with a definite height behaves as `flex-start`. Fixed at the call site with `data-vertical:h-5 data-vertical:self-auto` (same variant as the primitive, so it wins under `twMerge`) plus `me-1.5` to optically match the trigger-side gap. The primitive itself still matches upstream `base-nova` verbatim — no local fork. |
-| 2026-09-24 | **F-03 identity wiring landed.** Session identity is a server-side port (`apps/web/app/lib/identity/`) over `POST/GET/DELETE /api/v1/session` + `GET /api/v1/workspaces`, typed by `@omnidoc/contracts`. No client auth library; the browser never talks to the API, so no CORS, and Next relays `JSESSIONID` (httpOnly) + `XSRF-TOKEN`. |
-| 2026-09-24 | **Signed-in entry has three states, not two** — a correctness rule, not a look: authenticated → shell; rejected session → sign-in (with the requested path remembered); identity service unreachable → an honest "can't confirm" screen. Collapsing the third into "signed out" would show a sign-in form that cannot work. |
-| 2026-09-24 | **The account menu shows the contract `actorId`.** `Principal` carries no name or email, and adding one is a contract change — so the F-02 placeholder name was deleted rather than kept alongside it. |
-| 2026-09-24 | **A stale workspace preference falls back to the first server-resolved workspace** instead of dead-ending on the generic denial. That denial stays reserved for a selector the *server* refuses (`system-ux.md` §2); no F-03 surface triggers it yet. |
-| 2026-09-24 | **Next 16 file convention:** `middleware.ts` → `proxy.ts` (`export function proxy`), per the framework deprecation. `proxy.ts` was added to `tsconfig.app.json` so the fast typecheck target covers it too. |
-| 2026-09-24 | **Gap — sample vs mine (`F-09` + contract):** `Workspace` carries `id`/`tenantId`/`name` only, so the switcher cannot separate a sample corpus without inventing data. `system-ux.md` §1/§2 still require sample-vs-mine as real data. |
-| 2026-09-24 | **Gap — unreviewed screen:** the identity-unavailable entry screen is built from the stock `Empty` primitive with plain copy; no reference covers it, so it is flagged for `@user` rather than presented as designed. |
-| 2026-09-24 | **Sign-in block built from `@user`'s reference.** The pending choice was resolved by a supplied shadcn-style login card, so the block was built rather than guessed. `/sign-in` now exists as a real route. |
-| 2026-09-24 | **Unbacked controls render disabled, with a note — `@user`'s explicit choice over omitting them.** Social sign-in, "Remember this device", password recovery and account creation have no endpoint in `docs/api/openapi.yaml`, so they are `disabled` and each group says so in one short line. Enabling any of them is a contract change, not a frontend tweak. |
-| 2026-09-24 | **No third-party assets in the sign-in block.** The reference loaded its logo and provider icons from `images.shadcnspace.com`; those became a Tabler mark and Tabler brand icons, because a runtime request to a host we do not control is the same problem the self-hosted fonts avoid. |
-| 2026-09-24 | **The sign-in card title is the page `h1`.** `CardTitle` gained an optional `level` (default `3`, so existing cards are untouched) instead of shipping an `h1`→`h3` outline gap or a duplicate hidden heading. |
-| 2026-09-24 | **Reference-exact utilities substituted where they are equal:** `min-h-dvh` for `min-h-screen` (mobile toolbars), `left-full` for `left-1/1` (both compile to `left:100%` — verified in the built CSS). |
-| 2026-09-24 | **Two shadcn-registry defects fixed on copy-in (Checkbox).** The registry imports `cn` from an npm package and adds it as a dependency (removed — this project owns its `cn`); and its `disabled:` utilities can never match, because Base UI renders the control as `<span role="checkbox">` where `:disabled` does not apply, so the styling uses the `data-disabled` variant Base UI actually emits. |
-| 2026-09-24 | **The sign-in checkbox is named with `aria-labelledby`, not `htmlFor` alone.** Base UI applies the consumer's `id` to its hidden native input, so an `htmlFor`-only label points at an `aria-hidden` element and leaves the visible control anonymous. |
-| 2026-09-24 | **`bg-white/10` kept as a literal on the sign-in arcs.** The surface above is deliberately inverted (dark in both themes), so a light tint is needed in both; a token like `bg-foreground/10` would vanish into the surface it sits on. Same reasoning recorded in the block's comment. |
-| 2026-09-24 | **F-03 closed.** Sign-in, sign-out, three-state session entry and selector semantics are all landed and green. Gaps handed on are recorded in the handoff archive (no sample marker on `Workspace`; the forbidden denial has no reachable trigger; no real-API sign-in smoke test; visual confirmation is `@user`'s). |
-| 2026-09-25 | **Two `@user` review fixes.** (1) *Sign out did nothing — and neither did the theme-toggle item nor workspace picking.* All three were wired with `onSelect`, which is **Radix's** `DropdownMenu.Item` prop. This project's `base-nova` tier is Base UI, whose `Menu.Item` handler is `onClick`; the dead `onSelect` reached the item as a native DOM `select` handler on a `<div>`, which a click never fires. Fixed in `apps/web/app/(app)/nav-user.tsx` and `packages/ui/src/shell/workspace-switcher.tsx`, with a unit test pinning the item callback. The sign-out handler is **wrapped** (`onClick={() => onSignOut()}`) rather than passed through, so a click event is never handed to the server action as an argument it cannot serialise. (2) *The workspace switcher opened straight down over the nav.* Its content carried no `side`/`align`, so it inherited the `DropdownMenuContent` defaults (`bottom` / `start`) and dropped a panel across the sidebar list. It now mirrors `NavUser` — `side={isMobile ? "bottom" : "right"}`, `align="end"` — so both menus anchor identically out of the sidebar. `WorkspaceSwitcher` now reads `useSidebar`, so like `NavUser` it must sit inside a `SidebarProvider` (recorded in the block's JSDoc). |
-| 2026-09-25 | **Gap — the social sign-in note is missing.** `packages/ui/src/shell/login.test.tsx` asserts *"Social sign-in isn't available yet."* and no such string exists in `login.tsx`, so `ui:test` carries one red test (confirmed pre-existing by re-running it against a stashed tree). The 2026-09-24 entry *"Unbacked controls render disabled, with a note"* is therefore only half-implemented: the disabled Google/GitHub buttons render with no explanation, while the account-creation/password-recovery group does carry its line. Restoring the sentence or amending the recorded choice is `@user`'s call, so it is left open rather than guessed. |
+| 2026-09-25 | CodeMirror 6 for fenced code (ADR-0001 §2) deferred to a follow-up slice; StarterKit's code block ships in F-04. *(Superseded by F-15, which builds the CodeMirror engine.)* |
 | 2026-09-27 | **F-12 look decision: none.** `@user` chose behaviour-only for the markdown render pipeline — stock tokens, no typography, no prose scale, no palette work. The pipeline is a shared `packages/ui` block, so the answer-prose look stays open for F-07 and still needs a reference. |
-| 2026-09-27 | **F-12 scope narrowed to the render consumer.** `@tiptap/extension-table` and CodeMirror 6 were **refused** in this slice rather than added: both need a *new* pin (ADR + ledger), which is an Architect decision, not a lane-local install. The sanitize schema's refusals (`style`, `on*`, presentational attributes, `name`, non-`http(s)` schemes) are locked by schema-level tests, because a rendered markdown fixture **cannot** distinguish a narrowed schema from the library default — every channel narrowed is reachable only through raw HTML, which the renderer drops. |
-| 2026-10-01 | **Multi-mode capture & markdown editing architecture chosen: Option A.2** (`@user`). Four operating modes: (1) **Normal**: TipTap WYSIWYG + sticky toolbar + selection bubble + native markdown input rules; (2) **Markdown**: Obsidian-style inline live preview in CodeMirror 6 (syntax tokens fold/preview when unfocused and expand when cursor is present); (3) **Text**: CodeMirror 6 raw markdown source without preview, with toolbar shortcuts inserting markdown tokens; (4) **Reading**: sanitized read-only projection via F-12 `Markdown` component. Data synchronization: ProseMirror JSON remains the durable database SoT; bidirectional sync between Markdown text and ProseMirror JSON runs on mode switch and save. |
-| 2026-10-01 | **Multi-mode capture review fixes (`@user`), all verified in a browser against the local stack.** (1) The mode pill row became **one icon+label button opening a menu** — same radio semantics (`menuitemradio`), one control instead of four; Base UI radio items need an explicit `closeOnClick`, since they default to *keeping* the menu open. (2) The save indicator got a **fixed 4.5rem slot**; it was reflowing the caption row on every `Saving…` → `Saved` → idle transition. (3) The formatting toolbar's CodeMirror handle is now **mirrored into state from a callback ref** — reading a ref during render missed the editor's mount, so Reading → Text left the toolbar hidden. (4) Live-preview folding now follows **Obsidian reveal rules**: line tokens (`#`, `>`) unfold when the selection touches their line, inline tokens (`**`, `~~`, backticks, link brackets/URL) unfold only when the selection touches the *formatted span*; folded tokens use `Decoration.replace` (genuinely out of layout/DOM, no stylesheet dependency). (5) The heading underline was CodeMirror's `defaultHighlightStyle` (`tags.heading` = underline + bold) leaking through an ungenerated stylesheet — the default style is no longer installed and the preview styles itself. (6) Markdown and Reading now share the Normal-mode typography (`CAPTURE_BODY_CLASSES`), with the preview's own theme rules mirroring it; the preview parser also moved to the **GFM** dialect the Reading mode renders. Root cause worth keeping: `packages/ui/src/codemirror` was missing from Tailwind's `@source` list, so every preview utility class silently never existed. |
-| 2026-10-01 | **Capture modes revised (`@user`): three modes plus a lock.** *Reading* is removed — every mode renders live, so a separate preview mode duplicated Normal/Markdown; the fourth control is now a **lock button** beside the mode menu, which makes the whole note read-only (TipTap `setEditable(false)`; CodeMirror `EditorState.readOnly` + `EditorView.editable`; toolbar and selection bubble hidden; title and import disabled). Two findings from the same pass: markdown folding was unfolding the first line on every mode switch, because a freshly opened surface parks the caret at position 0 — unfolding is now gated on **focus and the lock**, so an unfocused or locked note renders as a finished document; and the Markdown preview still printed source for block constructs, so it now draws bullets, ordered numbers, task checkboxes, the fenced code block (muted, monospace, fences folded) and `---` as a rule, with markers swallowing the space that follows them (`## Hello` → `Hello`, not ` Hello`). Defects fixed while verifying: the surface re-derived its markdown source on **every server echo** (a save revalidates `/notes`), silently replacing what the user had typed — it now seeds once per note; line insets needed compound selectors (`.cm-line.cm-live-*`) because CodeMirror's base theme owns `.cm-line` padding; and marker widgets needed `text-indent: 0`, since `text-indent` inherits from the hanging-indent line and painted glyphs outside their boxes. |
-| 2026-10-02 | **Markdown & editor tables (F-14) architecture and UI choices (`@user`):** (1) Interactive size popover (matrix picker) plus default 3x3 table insertion button in the toolbar; (2) Contextual table manipulation controls (add row before/after, add col before/after, delete row/col/table) in the floating selection bubble when selection is within a table; (3) Pinned `@tiptap/extension-table*` at 3.31.3; (4) Bidirectional JSON ↔ Markdown bridge converts GFM tables without loss; (5) CodeMirror Markdown mode live preview formats tables and unfolds raw pipes when cursor touches the row. |
-| 2026-10-03 | **F-14 review — Markdown-mode tables (`@user` report, all verified in a browser against the local stack).** The table widget is now **permanent and editable in place**, not a preview that unfolds: (1) the block is found by **scanning lines** (`findTableBlocks`), never by looking for a GFM `Table` node in the syntax tree — a syntax-tree-valid table is not what a user typing one ever has on screen, so `\| Head 1 \| Head 2 \| Head 3 \|` + `\| --- \|` renders as a three-column table the moment the picture stops moving; (2) the *only* deferral is a delimiter row narrower than its header that still sits on the last line with the caret at its end (still being typed), and an idle timer then pads that row — which also makes the stored markdown valid GFM; (3) cells show and accept **markdown source**, so `**bold**`, `` `code` ``, `~~strike~~` and links are typed as characters and render in place when the cell is left; a heavy-tabbed cell whose delimiter row is short is padded, never truncated; (4) a helper toolbar above the table (insert/delete row, insert/delete column, delete table) acts on the focused cell, claiming the first cell if none is focused, and `Tab`/`Enter`/arrow keys navigate cells with `Tab` off the last cell growing a row; (5) **a literal pipe is escaped as `\|` in cells, including inside a code span** — GFM requires the escape there, the editor's reader honours it, and the bridge serializer carries it out through a private-use sentinel, because otherwise a pipe in a cell silently adds a column and drops the tail of the row on the next read; (6) `normalizeMarkdownTables` pads and escapes tables at the **bridge boundary**, so a lenient table in the editor is still a table in Normal mode and after a reload. Two defects found while verifying: writes from the widget had to move **out of CodeMirror's update cycle** (a `focusout` arrives during the update that moved focus, and `EditorView.dispatch` then throws and the edit is lost), and the note-selection mode is now **remembered across the new-note → saved-note remount** — the first save swaps the route (and therefore unmounts the surface), which used to drop a writer out of Markdown mode mid-table. |
+| 2026-09-27 | **F-12 scope narrowed to the render consumer.** `@tiptap/extension-table` and CodeMirror 6 were **refused** in this slice rather than added: both need a *new* pin (ADR + ledger), which is an Architect decision, not a lane-local install. The sanitize schema's refusals (`style`, `on*`, presentational attributes, `name`, non-`http(s)` schemes) are locked by schema-level tests. |
+| 2026-10-01 | **Multi-mode capture & markdown editing architecture chosen: Option A.2** (`@user`). Normal (TipTap WYSIWYG + sticky toolbar + selection bubble + native markdown input rules), Markdown (Obsidian-style inline live preview in CodeMirror 6), Text (raw markdown source), Reading (sanitized read-only projection). ProseMirror JSON remains the durable database SoT; bidirectional sync runs on mode switch and save. *(Reading removed the same day — see below.)* |
+| 2026-10-01 | **Live-preview folding follows Obsidian reveal rules:** line tokens (`#`, `>`) unfold when the selection touches their line; inline tokens (`**`, `~~`, backticks, link brackets/URL) unfold only when the selection touches the *formatted span*; folded tokens use `Decoration.replace`. Unfolding is gated on **focus and the lock**, so an unfocused or locked note renders as a finished document. |
+| 2026-10-01 | **Capture modes revised (`@user`): three modes plus a lock.** *Reading* is removed — every mode renders live, so a separate preview mode duplicated Normal/Markdown; the fourth control is a **lock button** beside the mode menu, which makes the whole note read-only (toolbar and selection bubble hidden; title and import disabled). |
+| 2026-10-02 | **Markdown & editor tables (F-14) architecture and UI choices (`@user`):** (1) interactive size popover (matrix picker) plus default 3x3 table insertion button in the toolbar; (2) contextual table manipulation controls (add row before/after, add col before/after, delete row/col/table) in the floating selection bubble when selection is within a table; (3) pinned `@tiptap/extension-table*` at 3.31.3; (4) the bidirectional JSON ↔ Markdown bridge converts GFM tables without loss; (5) CodeMirror Markdown mode live preview formats tables and unfolds raw pipes when the cursor touches the row. |
+| 2026-10-03 | **F-14 review — Markdown-mode tables (`@user` report, verified in a browser against the local stack).** The table widget is **permanent and editable in place**, not a preview that unfolds: (1) the block is found by **scanning lines** (`findTableBlocks`), never by a GFM `Table` node in the syntax tree — a syntax-tree-valid table is not what a user typing one ever has on screen; (2) the only deferral is a delimiter row narrower than its header still sitting on the last line with the caret at its end, and an idle timer then pads that row (which also makes the stored markdown valid GFM); (3) cells show and accept **markdown source**, rendering in place when the cell is left; (4) a helper toolbar above the table acts on the focused cell, and `Tab`/`Enter`/arrows navigate cells with `Tab` off the last cell growing a row; (5) **a literal pipe is escaped as `\|` in cells, including inside a code span** — GFM requires it, and the bridge serializer carries it through a private-use sentinel, because otherwise a pipe in a cell silently adds a column and drops the tail of the row on the next read; (6) `normalizeMarkdownTables` pads and escapes tables at the **bridge boundary**, so a lenient table in the editor is still a table in Normal mode and after a reload. Two defects found while verifying: widget writes had to move **out of CodeMirror's update cycle** (a `focusout` arrives during the update that moved focus, and `EditorView.dispatch` then throws and the edit is lost), and the note-selection mode is now **remembered across the new-note → saved-note remount**. |
+| 2026-10-10 | **Editor parity is a contract, and its source is evidence.** The editing surface must behave like Obsidian's editor so a user who knows Obsidian needs no retraining; behavior is derived from shipped-artifact analysis (REA, Obsidian 1.14.4) and reproduced with permissively-licensed building blocks only. |
+| 2026-10-10 | **Wikilinks deferred (v1):** `[[…]]` stays literal text in every mode — no resolution, autocomplete, or unresolved-link styling. `@user` chose option 3 (out of scope) over a dedicated `wikilink` mark (Obsidian-faithful; needs a TipTap mark + `tiptap-markdown` serializer/parser work) or a plain internal `omni://` link mark (cheapest; breaks on rename). The SoT (`ProseMirrorDocument`) and `docs/api/openapi.yaml` are unchanged; the F-15 plan's Phase E is deferred with it. |
+| 2026-10-10 | **F-15 supersedes-in-part the F-13/F-14 CM6 internals** (inline extension assembly, the 1,722-line live-preview module, the two parallel toolbars). Their user-facing behavior — three modes + lock, GFM tables, live-preview folding — is preserved and guarded by the existing test suites. |
+| 2026-10-10 | **Editor settings persistence: prop / component state only in v1** (`@user`). No server or localStorage persistence; revisit only with a concrete need. |
+| 2026-10-10 | **`now.md` restructured.** The per-slice status blocks moved to `context.md` and the handoffs; this file keeps the living plan plus an append-only decisions log. Full detail for compressed rows lives in git history and `docs/memory/implementer.md`. |
 | 2026-10-11 | **F-05 rows chosen by `@user`: quiet Mintlify rows** — title + meta line, hairline dividers, no cards. States, empty-state CTA and pagination affordances were bound (not choices) and built on the existing `Empty`/`Skeleton`/`Button` patterns. |
 | 2026-10-11 | **F-05 pagination is URL-based server cursors** (`?cursor=…`, repeated, bounded at 20 pages). Links stay shareable, reloadable and JavaScript-optional; only server-issued cursors are followed, and a stale cursor falls back to the pages the server still vouches for plus the server's own next cursor. No client cache, no client-made cursor. |
 | 2026-10-11 | **F-05 lists do not claim indexing state.** Contract `Note`/`NotePage` carry no per-note indexing field, so rows show only what the server returns (title, updated time, and a `Sample` label when `corpusOwnership` says so). Per-file indexing status stays F-04's import rows, where the contract does return it. |

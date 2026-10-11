@@ -1,114 +1,212 @@
 ---
-handoff_id: H-2026-10-11-P1-F05
+handoff_id: H-2026-10-11-P1-F06
 affinity: implementation
 track: parallel
-status: completed
+status: ready
 phase: "1"
-task: "F-05"
+task: "F-06"
 lane: frontend
 human_owner: front-end-programmer
 from: commander
 to: implementer
-created: 2026-09-25
+created: 2026-10-11
 updated: 2026-10-11
 ---
 
-# F-05 — Organize (inbox, notes list, honest Collections)
+# F-06 — Retrieve (search screen)
 
 ## Start Command
 
 ```text
-/implementer Read docs/handoffs/active/lane-frontend.md and execute it exactly. F-05 is completed on this branch; take the next task this head assigns, or stop and ask Commander to sequence one.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute F-06 exactly. Build the retrieve slice — a search port over the frozen S-02 search contract plus the `/search` screen (server snippets, real Sample/Mine filter, honest degraded notice, pivot to Ask) — verified against the local Java API. Ask @user for a reference before building each visual block. Do not touch the backend lane, docs/api, or packages/contracts.
 ```
 
-## Status
-
-**Completed 2026-10-11** on branch `F05-organize` — resumed out of sequence at
-`@user` direction (the lane had jumped F-04 → F-12/F-13/F-14; F-05 is
-back-filled before F-06+). The archived ticket carrying the original scope,
-risks and soft-stop rules is
-`docs/handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`; this head
-records what was actually built and what stayed stopped.
+## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
+**allowed_task_classes:** `F-06` only.
 
-## What landed
+Deliver the retrieve journey: **search is its own operation**, separate from Ask
+(`docs/design/system-ux.md` §1/§2). Hits, snippets, ordering, and degradation
+come from the server; the client renders what it receives and invents nothing.
+This is a core Phase 1 journey on the CX critical path and the last named
+journey step before Ask (F-07).
 
-1. **List block set** — `packages/ui/src/organize/`: `NoteList` (real
-   `ul`/`li`; rows are links into the capture route; `bdi`-isolated UGC titles
-   that truncate without widening ~390px; `Updated <time>` from the contract;
-   `Sample` badge only when the server says so; `Load more` / `First page`
-   pagination), `NoteListSkeleton` / `NoteListEmpty` / `NoteListUnavailable` /
-   `NoteListDenied`, `UnfiledNotice`, `CollectionsUnavailable`. Link components
-   are injected (`OrganizeLink`), so `@omnidoc/ui` keeps no `next/link`
-   dependency.
-2. **Server-first lists** — `apps/web/app/lib/notes/notes-pages.ts` walks the
-   server's cursor chain (bounded at 20 pages) and `note-list-loader.ts`
-   resolves the workspace server-side; the routes build their hrefs from the
-   chain the server vouched for, never from the URL's stale one.
-3. **Routes** — `inbox/page.tsx` and `notes/page.tsx` (list + `denied` +
-   `unavailable` + empty states), `inbox/loading.tsx`, `notes/loading.tsx`, and
-   `collections/page.tsx` stating the contract gap. Navigation is composed in
-   `organize-links.tsx` (`NoteRowLink`, `NotePaginationLink` with
-   `scroll={false}`).
-4. **Tests** — organize blocks (`packages/ui`, 18) and cursor-chain/loader tests
-   (`apps/web`, 10).
+## Required Reading
 
-## Post-completion fix (2026-10-11)
+1. `docs/design/system-ux.md` §1/§2 — Search vs Ask; server snippets/citations;
+   Sample vs Mine is a real filter; indexing/degradation must be visible
+2. `docs/planning/implementation-tracks.md` — F-06 row (and the F-07 boundary)
+3. `docs/api/openapi.yaml` — `/api/v1/search/lexical`, `/api/v1/search/hybrid`,
+   `SearchRequest`, `SearchHit`, `SearchResults`
+4. `docs/quality/b07-retrieval-evaluation.md` — what B-07 actually validates
+5. `apps/web/app/lib/notes/notes-api.ts`, `notes-pages.ts`, `note-loader.ts`,
+   `apps/web/app/lib/api/transport.ts` — port + transport patterns to follow
+6. `apps/web/app/(app)/organize-links.tsx` and `packages/ui/src/organize/**` —
+   block/state conventions and the injected-link pattern
+7. `apps/web/app/(app)/search/page.tsx`, `apps/web/app/(app)/nav.ts` — the stub
+   route and the existing Search entry points
+8. `quality/ui-qa-checklist.md` — §6 keyboard/overflow, a11y checklist
+9. `docs/memory/implementer.md` — durable lessons (Tailwind `@source`, toolbars)
 
-`@user` reported the Inbox rows had **no separators** and read as one compact
-block. Cause: the new `packages/ui/src/organize/` directory was never added to
-the `@source` list in `packages/ui/src/styles/globals.css`, so Tailwind emitted
-none of its utilities (`divide-y`, `divide-border`, `border-y`,
-`focus-visible:ring-inset`) — verified against the pre-fix bundle CSS (zero
-occurrences) and the rebuilt CSS (rules present). Fixed by registering the
-directory; `packages/ui/src/styles/globals.test.ts` now fails when a source
-directory that renders classes is unregistered. Re-verified in a real browser at
-1280px and 390px (dark). Row density was reviewed with `@user` and **kept as
-is** (12px vertical padding, 14px title, 12px meta, 4px gap).
+## Inputs / Evidence
 
-## Soft-stops that remain
+- **B-07 is completed and Commander-validated PASS** — real lexical +
+  deterministic hybrid retrieval is live on the local stack
+  (`POST /api/v1/search/lexical`, `POST /api/v1/search/hybrid`). This satisfies
+  F-06's "B-07 **or** search fixtures" dependency for live local verification
+  (F-05 precedent: run the local Java API + Postgres).
+- S-03 mock corpus (`packages/mocks`) already implements both search endpoints,
+  but the `web → mocks` in-app import exception is still **unauthorized**:
+  tests inject through the search port; do not import `@omnidoc/mocks` in app
+  or test code.
+- Server snippet semantics (B-07, `JdbcSearchAdapter`): whitespace-flattened
+  **plain text** window around the best match with `...` markers — **no
+  highlight markup**. Render snippets as text; do not re-highlight client-side.
+- `SearchHit` carries `chunkId`, `noteId`, `versionId`, `score`, `snippet`,
+  `corpusOwnership` — **no note title**. If a reference wants titles, resolve
+  them server-side through the existing notes port for the current result page
+  only (bounded to `topK`) and fail soft to snippet-led rows; otherwise rows
+  are snippet-led from the start. Do not fork the contract.
+- `corpusOwnership` (`sample` | `mine`) is the only user-facing filter the
+  backend implements; other `filters` keys are internal (embedding
+  model/dimensions). Sample vs Mine must be a real request field, not a label.
+- `SearchResults.degraded: true` means a partial/degraded topK — show an honest
+  incomplete-results notice. Never present an incomplete index as complete.
+- `/search` is a stub route; the shell already exposes Search (nav + mobile tab
+  + palette entry). The shell itself is done — do not redesign it.
 
-- **Collections** — S-02 has no `collections`/`tags` operation and `Note`
-  carries no folder/tag field. No client model was forked: the route states the
-  gap, and the contract change stays a Commander / `@user` sequencing decision.
-- **`web → mocks` import exception** — still unauthorized, so tests inject
-  through the notes port; no second fixture authority was created.
-- **Inbox and Notes are the same set today** (every note is unfiled).
-  `UNFILED_NOTICE` says so on both routes instead of faking a difference.
+## Allowed Write Paths
 
-## Verification
+- `packages/ui/src/search/**` (new blocks) and `packages/ui/src/index.ts`
+- `apps/web/app/(app)/search/**`
+- `apps/web/app/(app)/organize-links.tsx` (additive link components only)
+- `apps/web/app/lib/search/**`
+- `docs/handoffs/active/lane-frontend.md`
+- `docs/design/now.md`
+- `context.md`
+- `docs/memory/implementer.md`
 
-- Gate green with `--skip-nx-cache`: `ui:typecheck/lint/test` (451 tests) and
-  `web:typecheck/lint/test/build` (87 tests); `contracts`/`mocks` unaffected
-  and green.
-- **Known pre-existing flake (recorded, not a defect):** `ui:test` failed twice
-  in 18 full-suite runs on `src/shell/login.test.tsx` — *"reports progress once:
-  the submit is disabled and the form is busy"* (`aria-busy` still `true` when
-  the assertion runs). That test and the block it covers are untouched by F-05;
-  it passes 18/18 in isolation over 3 runs, and a 5-run baseline without the
-  organize slice did not reproduce it. Same finding as the F-04 verification.
-  Also aware: **none of the 18 organize tests failed in any of those runs.**
-- Live against the local Java API + Postgres: 25 notes → Inbox page 1 renders
-  20 rows + `Load more`; following the server cursor renders 25 rows +
-  `First page`; a stale `?cursor=` renders the first page and offers the
-  **server's** cursor; after deleting the notes the empty state renders
-  (one primary `New note` CTA); `/notes` and `/collections` render as designed.
-  The temporary verify actor/workspace/notes were removed afterwards.
+## Out of Scope / Must Not Touch
 
-## Allowed Write Paths (this slice)
+- `apps/api/**`, `docs/api/**`, `packages/contracts/**`, `packages/mocks/**` —
+  the S-02 contract and its authorship stay frozen
+- `apps/web/app/(app)/ask/**` — F-07 owns Ask; F-06's pivot is a link only
+- `apps/web/app/(app)/shell.tsx`, `nav.ts`, `page.tsx` (shell and entry points
+  already exist)
+- Collections folders/tags sub-slice (soft-stopped on the S-02 contract gap)
+- F-15 editor work (deferred; do not start editor phases from this head)
+- F-08 dual-mode chrome, F-09 sample workspace, F-10/F-11 passes
+- Production AI activation, any RTL-locale claim, new dependencies (if one
+  seems necessary, soft-stop)
 
-- `packages/ui/src/organize/**`, `packages/ui/src/index.ts`
-- `apps/web/app/(app)/inbox/**`, `notes/**`, `collections/**`,
-  `organize-links.tsx`
-- `apps/web/app/lib/notes/notes-pages.ts`, `note-list-loader.ts`
-- `docs/design/now.md`, `context.md`, `docs/frontend/README.md`,
-  `docs/memory/implementer.md`
+## Deliverables
 
-## Next
+1. **Search port** (`apps/web/app/lib/search/`): typed over the frozen S-02
+   schemas (via `@omnidoc/contracts` where applicable); reuses the shared
+   server-side transport; consumes the search endpoints (hybrid as the default
+   path — deterministic fusion includes lexical; do not add a user-facing
+   retrieval-mode toggle). Failure mapping stays in the existing vocabulary —
+   a **generic denial**, **unavailable**, and **validation** must be
+   distinguishable from **empty results** and from **degraded results**.
+2. **Search screen** `/search`:
+   - labelled query field; as-you-type search with debounce (current
+     preference, not a locked contract); submit still works without JS
+   - results as a real list reaching the **existing** capture route
+     (`/notes/[noteId]`) for each hit
+   - **Sample/Mine filter** mapped to the real `corpusOwnership` request field
+     (chips are local UI state; only contract fields may be sent)
+   - honest **degraded/incomplete** notice on `degraded: true`
+   - empty / loading / denied / unavailable states on the F-05 block
+     conventions (one consistent block set, not a second design)
+   - a quiet **pivot to Ask** affordance (link to `/ask`; F-07 owns the
+     destination and behavior)
+3. **Blocks** in `packages/ui/src/search/` with injected link components
+   (no `next/link` in `@omnidoc/ui`), `bdi` isolation for UGC snippets, no
+   cards — list conventions follow `organize` unless `@user`'s reference says
+   otherwise.
+4. **Tests**: port tests (success, degraded, empty, denial, unavailable),
+   block tests (states, roles/names, isolation, keyboard), route tests via
+   port injection; plus the full frontend gate.
+5. `docs/design/now.md` decision-log update and `context.md` status line on
+   completion; archive + next-head handling per Completion Instructions.
 
-**No live frontend task is assigned by this head.** F-06 (retrieve) is
-dependency-ready per `context.md` (S-02 search + B-07 completed), but sequencing
-belongs to Commander. The parallel **F-15** Obsidian-parity editor stream holds
-its own rewrite of this lane head on branch `f15-editor-redesign-governance`;
-Commander reconciles the two at merge.
+## Constraints / Prohibited Decisions
+
+- The server is the only source of hits, snippets, ordering, and `degraded`.
+  No client-side re-ranking, no client-side highlighting of snippets, no
+  invented hits, no invented relevance labels from raw scores.
+- No client answer cache; no Ask behavior in this slice (F-07 is a separate
+  port; B-08 is building its adapter in parallel).
+- Only contract fields may be sent (`query`, bounded `topK` — default 10, max
+  100 — `corpusOwnership`, and internal `filters` only if the backend honors
+  them; do not invent filter keys).
+- If a full "indexing in progress" notice is demanded beyond `degraded`, that
+  is a **contract gap** — soft-stop for a Commander decision; do not fake it.
+- Ask `@user` for a reference (link, pasted code, or prompt — image welcome)
+  before building each visual block; with no reference, offer options. If a
+  Figma link is supplied and the Figma MCP is authenticated it may be used for
+  design-system fidelity; MCP output never closes gates — continue with
+  repo-native tools if unavailable.
+- Logical CSS only; locale-driven `lang`/`dir`; `bdi` isolation for snippets
+  and identifiers; no physical-direction JS.
+- Accessibility is a release gate: keyboard-only operation, visible focus,
+  labelled input, result count announced once (`role="status"` — F-05
+  pattern), reduced-motion respect; ~390px viewport holds without horizontal
+  widening.
+- Upgrade-safe and within ADR-0003 conventions (shadcn/Base UI primitives,
+  Mintlify token roles; no new visual language).
+
+## Acceptance Criteria
+
+- One search port consumes the frozen contract; requests carry `query` and a
+  bounded `topK`, and `corpusOwnership` only when the Sample/Mine filter is
+  active.
+- Result rows render the server snippet verbatim as text; `corpusOwnership:
+  sample` rows are visibly labelled as sample data; an empty result set is
+  distinguishable from every failure class and from `degraded`.
+- The Sample/Mine filter changes results via the real request field —
+  demonstrated against the local Java API.
+- `degraded: true` renders the incomplete-results notice.
+- Denied / unavailable / validation failures each render distinct honest
+  states; no fake rows, no silent fallback to unfiltered results.
+- As-you-type is debounced; keyboard and screen-reader flows pass
+  `quality/ui-qa-checklist.md`; layout holds at ~390px.
+- Checks green: focused new suites plus the full frontend gate
+  (`ui` + `web` typecheck/lint/test, `web` build) — record whether
+  `--skip-nx-cache` was used.
+- Live smoke against the local Java API + Postgres (temporary actor/workspace/
+  notes fixture, then removed) with evidence recorded in the Outcome.
+- No file changes outside Allowed Write Paths.
+
+## Stop / Escalate Conditions
+
+- **Soft-stop:** a required field is absent from the frozen contract (note
+  title, non-corpus filter, highlight boundaries, full indexing notice), the
+  `web → mocks` exception is needed, or a reference forces a new dependency —
+  return the lane to Commander with the specific gap instead of forking a
+  client shape.
+- **Hard-stop:** write collision with another lane, any ADR reopen, production
+  AI/provider activation, an RTL-shipped claim, or a dependency change outside
+  this ticket.
+- Escalate to `/commander`; do not reassign work silently.
+
+## Gates
+
+- Production AI/provider activation remains gated
+- RTL locale remains deferred (readiness discipline required); `en` (LTR) is
+  the only shipping locale
+- Collections contract change remains an open `@user`/Commander decision — do
+  not touch
+- F-15 editor redesign is deferred (`listed`); do not start editor work
+- Phase Check remains closed until Phase 1 Build exit
+
+## Completion Instructions
+
+On completion: archive this handoff to
+`docs/handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`, then
+either rewrite this same `lane-frontend.md` path with the next same-lane slice
+(no unmet cross-lane dependency) or set `status: blocked` with an Outcome
+naming the dependency and return the lane to Commander. Update `context.md`
+status lines and record durable lessons in `docs/memory/implementer.md`. Do
+not open F-07/F-15 or Phase Check yourself.

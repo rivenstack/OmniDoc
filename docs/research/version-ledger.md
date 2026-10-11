@@ -3,6 +3,7 @@
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
 **Last verified:** 2026-10-11 (B-06d AvalAI model/API evidence);
+2026-10-10 (F-15 editor package pins + `@codemirror/*` reconciliation);
 2026-10-06 (B-05a ingestion/chunking library pins);
 2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
 **Status:** Evidence ledger; ADR-accepted pins are binding where an ADR cites them
@@ -144,13 +145,60 @@ Pinned by `@user` decision; rationale in
 | `@tiptap/extension-table-cell` | **3.31.3** | 2026-08-15 | 2026-10-02 | MIT | Editor table cell node (F-14) |
 | `@tiptap/extension-table-header` | **3.31.3** | 2026-08-15 | 2026-10-02 | MIT | Editor table header cell node (F-14) |
 | `codemirror` | **6.0.2** | 2025-06-25 | 2026-10-01 | MIT | CodeMirror 6 core editor for text source and live preview |
-| `@codemirror/lang-markdown` | **6.5.2** | 2026-08-15 | 2026-10-01 | MIT | Markdown grammar and syntax tree for CodeMirror 6 |
+| `@codemirror/lang-markdown` | **6.5.2** | 2026-08-04 | 2026-10-10 | MIT | Markdown grammar and syntax tree for CodeMirror 6 (exact pin; released date corrected from 2026-08-15 on re-verification) |
+| `@codemirror/state` | **6.7.6** | 2026-09-22 | 2026-10-10 | MIT | Editor state model; installed with F-13 (row was missing) |
+| `@codemirror/view` | **6.43.13** | 2026-09-22 | 2026-10-10 | MIT | Editor view + `lineNumbers()` gutter; installed with F-13 (row was missing). Latest 6.43.14 (2026-10-07) sits inside the `^6.43.13` range |
+| `@codemirror/language` | **6.12.4** | 2026-06-25 | 2026-10-10 | MIT | `indentUnit` / `indentOnInput` / `foldGutter` / `codeFolding` / `foldService`; installed with F-13 (row was missing). Latest 6.13.1 (2026-10-07) sits inside the `^6.12.4` range |
+| `@codemirror/commands` | **6.11.1** | 2026-09-15 | 2026-10-10 | MIT | `undoDepth` / `redoDepth` / keymaps; installed with F-13 (row was missing) |
 | next-intl (deferred) | 4.14.5 | — | 2026-09-14 | MIT | Only if an RTL/second locale is scheduled |
 
 Sanitization, the Radix/React-Aria fallbacks, and the deferred rows are
 recorded as decisions, not idle notes: do not add a client cache
 library, an i18n runtime, or a second component base without reopening
 ADR-0003.
+
+## Editor package candidates — F-15 Obsidian-parity redesign (2026-10-10)
+
+Pins requested for
+[`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md)
+task G-1. Versions re-verified against the npm registry on 2026-10-10.
+**Nothing in this section is installed yet.** The two candidate pins become
+direct dependencies only at their plan tasks (D-1, F-1), after Architect
+confirmation; the gated rows must not appear in `packages/ui/package.json`.
+**F-15 implementation is deferred as of 2026-10-11** (Governance G-1…G-4
+complete; ready handoff archived superseded-before-execution): nothing here
+may be installed until Commander resequences the plan and the Architect
+confirms the candidates.
+
+| Package | Version | Released | Verified | License | Status / role |
+|---|---|---|---|---|---|
+| `@codemirror/autocomplete` | **6.20.3** | 2026-06-03 | 2026-10-10 | MIT | **Candidate pin** (Architect confirmation pending). `closeBrackets()` for D-1 auto-pairing; completion source for Phase E wikilink/tag autocomplete (**deferred**, G-2). Already present transitively via `codemirror` 6.0.2 — must become a **direct** dependency to be importable under pnpm's strict layout |
+| `@codemirror/search` | **6.7.2** | 2026-08-31 | 2026-10-10 | MIT | **Candidate pin** (Architect confirmation pending). In-editor find/replace (F-1) |
+| `@replit/codemirror-indentation-markers` | 6.5.3 | 2024-07-15 | 2026-10-10 | MIT | **Candidate — decision at D-5.** Indent guides; evaluate against a small custom `ViewPlugin` first (reuse-before-custom). Last release 2024-07-15 is a maintenance signal to weigh |
+| `@replit/codemirror-vim` | 6.4.0 | 2026-07-29 | 2026-10-10 | MIT | **Gated — no** (`@user` 2026-10-10). Vim mode (F-3) stays conditional; not installed |
+| `katex` | 0.19.0 | 2026-10-01 | 2026-10-10 | MIT | **Gated — no** (`@user` 2026-10-10). Math widgets (C-6) stay conditional; not installed |
+| `remark-math` | 6.0.0 | 2023-09-19 | 2026-10-10 | MIT | **Gated — no** (with `katex`). F-12 render-path math; not installed |
+| `rehype-katex` | 7.0.1 | 2024-08-19 | 2026-10-10 | MIT | **Gated — no** (with `katex`). F-12 render-path math; not installed |
+| `mermaid` | 12.1.0 | 2026-10-02 | 2026-10-10 | MIT | **Gated — no** (`@user` 2026-10-10). Diagram widgets (C-6) stay conditional; not installed |
+
+**Explicit yes/no (`@user`, 2026-10-10):** vim — **no**; math (KaTeX) —
+**no**; mermaid — **no**. All three remain gated: each needs a fresh explicit
+approval plus a pin before any install, and C-6 / F-3 stay conditional on
+that answer.
+
+**Deprecated artifacts — do not install:**
+
+- `@codemirror/closebrackets` — deprecated pre-1.0 artifact; `closeBrackets()`
+  ships from `@codemirror/autocomplete`.
+- `@codemirror/fold` — deprecated; folding (`foldGutter`, `codeFolding`,
+  `foldService`) ships from `@codemirror/language`, already installed.
+
+**No new pin needed:** `lineNumbers()` (`@codemirror/view`, installed),
+`indentUnit` / `indentOnInput` / folding (`@codemirror/language`, installed),
+`undoDepth` / `redoDepth` (`@codemirror/commands`, installed), and
+`insertNewlineContinueMarkup` / `deleteMarkupBackward` / `markdownKeymap`
+(`@codemirror/lang-markdown`, installed) cover D-3, D-4, D-5 and F-2 without
+additional packages.
 
 ## Provider SDKs (not on the critical path until activation is unlocked)
 

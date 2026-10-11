@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-14 completed in frontend head; B-07 completed and accepted; B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-06 ready in the frontend head (F-15 governance merged; editor phases deferred); B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -373,20 +373,22 @@ Depends: F-02, S-02 notes, and S-03 fixtures for data.
 
 | | |
 |--|--|
-| **Status** | **completed** 2026-10-11 (branch `F05-organize`) — Inbox and Notes are server-first lists over `listNotes` with URL-based server cursors; rows are keyboard-operable links with `bdi`-isolated titles; empty / loading / transport-error / generic-denial states share one block set. **Collections sub-slice stays soft-stopped** pending the S-02 contract change and renders as an honest gap statement. Live head: [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
+| **Status** | **completed** 2026-10-11 (branch `F05-organize`) — Inbox and Notes are server-first lists over `listNotes` with URL-based server cursors; rows are keyboard-operable links with `bdi`-isolated titles; empty / loading / transport-error / generic-denial states share one block set. **Collections sub-slice stays soft-stopped** pending the S-02 contract change and renders as an honest gap statement. Completed head archived: [`../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | A-BE2 (ADR-0005 `accepted`) |
+| **Blocks** | F-01+ source work (now unblocked) |
+| **Write path** | workspace config, `apps/web`, `packages/ui|contracts|mocks` stubs, TS typecheck/lint/test CI |
 
-**Short description:** inbox as the unfiled home; light optional
-folders/tags; no structure required to capture.
-
-**Integrations:** notes/collections via S-02 list + mutation endpoints;
-MSW fixtures. State: server-first lists; selection state local.
-
-**Look:** references from `@user` (list rows, collection tree); offer
-options otherwise.
-
-Depends: F-04.
+Nx 23.2.1, pnpm 12.4.1, Node 24 for the **JS graph only**.
+`@nx/enforce-module-boundaries` must still **fail** on an illegal
+`apps/web` → provider SDK import. **No** Node API app. Java module
+boundaries are ArchUnit + CI (S-01b / ADR-0005), not Nx tags.
 
 ### F-06 — Retrieve
+
+| | |
+|--|--|
+| **Status** | **ready** — live frontend lane head [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-11; S-02 search + B-07 completed) |
 
 **Short description:** search screen — results, snippets, filters,
 indexing notice, pivot to Ask.
@@ -474,7 +476,7 @@ Depends: F-04–F-09. Feeds Phase 2 CX gate.
 
 | | |
 |--|--|
-| **Status** | **live** — `docs/handoffs/active/lane-frontend.md` (opened 2026-09-27; promoted from backlog `BL-19`) |
+| **Status** | **completed** — delivered 2026-09-27 (branch `F12-markdown-render`); the single sanitized render path every later consumer uses (`packages/ui/src/markdown/`; see the F-15 plan §0.2) |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-01 (tokens + primitives, completed); **ADR-0003 §4 pins — already accepted**, ledger rows exist (`version-ledger.md:127–130`), so this task installs pins and does **not** make a new pin decision |
 | **Blocks** | F-07 (answer prose); note / citation previews on F-06+ and F-09 |
@@ -505,17 +507,17 @@ card and still needs a reference.
 
 | | |
 |--|--|
-| **Status** | **listed** — scheduled following `@user` verification of Option A.2 (2026-10-01) |
+| **Status** | **completed** — delivered on `develop` (commits `3c170f9`, `fe5a97f`); `@user`-verified 2026-10-01. The docs-sync commit `acaa031` remains on the `frontend_plan_tasks` worktree. Reconciled 2026-10-11 via the F-15 governance stream |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), Architect pin for `@codemirror/*` and `tiptap-markdown` |
-| **Blocks** | F-05, Phase 2 CX gate (power-user capture journey) |
-| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` |
+| **Blocks** | Phase 2 CX gate (power-user capture journey) |
+| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` (pinned deps only, after G-1) |
 
-**Short description:** Four-mode note viewing and editing surface (`system-ux.md` §1/§2):
+**Short description:** three capture modes plus a lock control (`system-ux.md` §1/§2, synced 2026-10-10):
 1. **Normal**: Visual rich text editor (TipTap) with sticky formatting toolbar, floating bubble menu, and native markdown input shortcuts.
 2. **Markdown**: Obsidian-style inline live preview (CodeMirror 6) with syntax folding/decorations (syntax marks fold/preview when unfocused and expand when cursor is present).
 3. **Text**: Pure raw markdown source editor (CodeMirror 6 / monospace) with no preview; formatting toolbar inserts markdown tokens.
-4. **Reading**: Sanitized read-only projection via F-12 `Markdown` component (`react-markdown` + `rehype-sanitize`).
+4. **Lock**: a separate control beside the mode menu makes any mode read-only. Reading is a render path (`packages/ui/src/markdown/`), not a capture mode.
 
 **Integrations:** Bidirectional JSON ↔ Markdown synchronization (`BL-22`) bridges CodeMirror raw markdown edits to the durable ProseMirror JSON store (`ADR-0001 §2`). Unified formatting toolbar provides action bindings for both TipTap and CodeMirror. Autosave debounce and concurrency conflict resolution work seamlessly across all editing modes.
 
@@ -525,10 +527,10 @@ card and still needs a reference.
 
 | | |
 |--|--|
-| **Status** | **completed** 2026-10-02 per frontend lane Outcome; scheduled following `@user` approval of BL-20 promotion |
+| **Status** | **completed** — lane head `status: completed` 2026-10-02; archived 2026-10-10 as [`H-2026-10-02-P1-F14-commander-implementer.md`](../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md) |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
 | **Depends on** | F-04 (capture foundation), F-12 (markdown render pipeline), F-13 (multi-mode capture), Architect pin for `@tiptap/extension-table*` |
-| **Blocks** | F-05, Phase 2 CX gate |
+| **Blocks** | Phase 2 CX gate |
 | **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` |
 
 **Short description:** Rich Markdown and GFM table capabilities across OmniDoc's multi-mode capture editor and reading pipelines:
@@ -540,6 +542,27 @@ card and still needs a reference.
 **Integrations:** Bidirectional JSON ↔ Markdown bridge (`markdown-bridge.ts`) preserves table nodes and attributes across mode switches and persistence.
 
 **Look:** Mintlify token layer (`border-border`, `bg-muted/50`, `text-foreground`); logical directionality utilities (`text-start`, `border-inline`).
+
+### F-15 — Obsidian-parity editor redesign
+
+| | |
+|--|--|
+| **Status** | **listed — deferred** (governance G-1…G-4 complete 2026-10-10; ready handoff archived **superseded before execution** 2026-10-11 — no F-15 code exists; implementation awaits Commander resequencing behind F-06) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | F-13 (multi-mode capture, **completed**), F-14 (markdown & editor tables, **completed**) |
+| **Blocks** | Phase 2 CX gate (power-user capture journey) — deferred |
+| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` (pinned deps only, after G-1) |
+| **Plan** | [`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md) |
+
+**Short description:** replace the ad-hoc CodeMirror 6 live preview with a single Obsidian-fidelity markdown editing engine — an extension factory parameterised by an `EditorSettings` object plus `Compartment`s, a live-preview extension pair (a `StateField` for block widgets and a viewport-scoped `ViewPlugin` for inline marks with `atomicRanges`), and **one command/toolbar surface** shared by the TipTap and CodeMirror adapters — then harden it (auto-pairing, multiple selections, smart lists, find/replace, folding, per-line direction, perf and a11y budgets).
+
+**Supersedes in part:** F-15 **supersedes-in-part the CM6 internals delivered by F-13/F-14** (inline extension assembly, the 1,722-line `markdown-live-preview.ts` module, and the two parallel toolbars). Their **user-facing behaviour is preserved**: three capture modes + lock, GFM tables, and live-preview folding keep working, and the existing `cm-editor.test.tsx` / `table-preview.test.tsx` suites are the regression net.
+
+**Integrations:** ProseMirror JSON stays the durable SoT (ADR-0001 §2); markdown remains a derived projection via `markdown-bridge.ts`; the block never calls the API; direction comes from one locale source (logical CSS only); body typography is defined once.
+
+**Look:** no new visual language — the Mintlify token layer and the existing capture chrome carry over; retuning tokens re-skins the editor without touching screens.
+
+**Gated (not in this slice):** `[[wikilink]]` autocomplete (plan Phase E — `@user` 2026-10-10: literal text in v1), vim mode (F-3), and math/mermaid widgets (C-6) — each needs an explicit `@user` yes plus a ledger pin before any install.
 
 ---
 
@@ -897,15 +920,18 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-14 | **completed** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (Outcome 2026-10-02; next FE assignment awaits Commander sequencing) |
-| F-05 | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists + honest Collections placeholder; folders/tags still need the S-02 contract change. Live head: [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md); original ticket archived at [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
+| F-06 | **ready / live** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-11; S-02 search + B-07 completed) |
+| F-15 | **listed (deferred)** — governance G-1…G-4 complete; plan [`../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md); ready handoff archived superseded-before-execution [`../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md`](../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md) |
+| F-14 | **completed** — archived [`../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md`](../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md) (Outcome 2026-10-02) |
+| F-05 | **completed** 2026-10-11 (branch `F05-organize`) — Inbox/Notes lists + honest Collections placeholder; folders/tags still need the S-02 contract change. Completed head archived: [`../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md); original ticket: [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |
 | B-05 (implementer, pre-split) | **superseded** — [`../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md`](../handoffs/archive/H-2026-09-20-P1-B05-superseded-split.md) |
 | B-05b | **completed; Commander-accepted** — [`../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md`](../handoffs/archive/H-2026-10-06-P1-B05B-commander-implementer.md) (2026-10-09) |
 | B-05c | **completed; Commander-accepted** — archived [`../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md`](../handoffs/archive/H-2026-10-09-P1-B05C-commander-implementer.md) (2026-10-11) |
 | B-06 | **completed; Commander-reviewed** — [`../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md) (2026-10-11; independent clean gate 140/140) |
 | B-06d | **completed offline; operator live smoke deferred** — [`../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md) |
-| B-07 | **ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
+| B-07 | **completed; Commander-validated PASS** — archived [`../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md) (2026-10-11; independent clean gate 156/156) |
+| B-08 | **ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (mock ask adapter + citation assembler) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

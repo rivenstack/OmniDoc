@@ -29,12 +29,14 @@ implementer work assignment.
 D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
 B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, **S-03**,
 **B-05a** (Researcher + Architect), **B-05b**, **B-05c**, **B-06**, the
-offline **B-06d** implementation slice, and **B-07** are **closed and
-archived**. Two humans own parallel lanes:
+offline **B-06d** implementation slice, **B-07**, and **F-05** are
+**closed and archived**; **F-13/F-14** are reconciled to `completed`, and
+the parallel **F-15** governance stream was merged and deferred
+(2026-10-11). Two humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-14 completed** per live head; next assignment awaits Commander sequencing |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-06 ready** — search port + `/search` screen over the frozen S-02 search contract (opened 2026-10-11 after the F-15 stream was reconciled; F-15 deferred) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-08 ready**; mock ask adapter + citation assembler is now the live backend slice |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -42,9 +44,14 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-14 completed**
-  per its Outcome; this index does not assign a new frontend task. F-05
-  remains listed with its Collections sub-slice blocked by the contract gap.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-06 ready**
+  (retrieve: one search port over the frozen S-02 search contract plus the
+  `/search` screen — server snippets, real Sample/Mine filter, honest
+  degraded notice, pivot to Ask; opened 2026-10-11 after the F-15 stream
+  was reconciled). F-05 is **completed and archived**; its Collections
+  sub-slice remains soft-stopped on the contract gap. **F-15's editor
+  redesign is deferred** (`listed`, governance G-1…G-4 complete) — do not
+  exit this head into editor phases.
 - Backend: `docs/handoffs/active/lane-backend.md` → **B-08 ready**.
   Commander accepted B-07, consumed the duplicate sequencing hold, and opened
   the dependency-ready ask/citation backend slice. The live backend work is now
@@ -68,13 +75,27 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-05c** | **completed** (Commander-accepted 2026-10-11) | Verification closeout landed; unblocked B-06 |
 | **B-06** | **completed** (Commander-reviewed 2026-10-11) | Deterministic mock embeddings + real pgvector persistence/search landed; unblocked B-07/B-08 retrieval work |
 | **B-06d** | **offline implementation completed; operator live smoke deferred** | Local probe landed and was verified offline; the checked-in run stopped `blocked-before-io`. Account/terms/payment, key, route, charge, and live retrieval observations remain a separate operator gate |
-| **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; F-06 live search can consume this when sequenced. B-08 is now the live backend slice and B-12 remains unopened |
+| **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-08 is the live backend slice and B-12 remains unopened |
+| **F-06 retrieve deps** | **met** (S-02 search + B-07 completed) | `/search` port + screen dependency-ready; tests inject through the port (no `web → mocks` import) |
+| **F-15** (editor redesign) | **governance merged; superseded-before-execution** (2026-10-11) | Parallel stream's rewrite of `lane-frontend.md` reconciled into `develop`; F-15 returns to `listed` (G-1…G-4 complete); F-06 takes the head; archive `H-2026-10-10-P1-F15-superseded-before-execution.md` |
 | **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05's folders/tags sub-slice stays soft-stopped, and F-05 is now back to `listed` — the remediation is unchanged: an `@user`/Commander sequencing decision (contract change). |
 | **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. Java `pm-md-v1` is corpus SoT for chunking (B-05b); FE bridge remains editor tooling only. |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- F-15 Obsidian-parity editor redesign **superseded before execution**
+  (2026-10-11 — governance G-1…G-4 merged to `develop`; implementation
+  phases A–H never began; F-06 took the frontend head):
+  `docs/handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md`
+- F-05 **completed head archived on lane rotation** (2026-10-11 —
+  the implementer left the completed head in place; Commander archived it
+  when opening F-06):
+  `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`
+- F-14 **completed and archived** (2026-10-10 via the F-15 governance
+  stream; merged to `develop` 2026-10-11 — the lane head had sat at
+  `status: completed` since 2026-10-02):
+  `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md`
 - B-07 Implementer **completed and Commander-validated PASS** (2026-10-11 —
   independent focused search validation passed; independent
   `./gradlew clean test`: **156 tests, 0 failures/errors/skips**):
@@ -175,21 +196,25 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. **F-14 is completed in the frontend lane head**. A next frontend task
-   has not been assigned in this cycle. F-05 remains listed; its Collections
-   sub-slice is soft-stopped on the missing S-02 contract.
-2. **B-07 is accepted.** Commander reread the archived implementation,
-  evaluation doc, search code, and focused tests, then reran the focused
-  retrieval/HTTP/eval command and the full backend gate. The slice satisfies
-  the frozen S-02 contract and architecture §7 evidence requirements for this
-  bounded phase.
-3. B-06d's actual AvalAI account/terms/payment, balance, external key, route,
-  charge, and live retrieval observations remain a separate deferred gate.
-  No product live mode or production AI activation follows from the accepted
-  exception or from the accepted B-07 slice.
-4. **B-08 is now open.** The backend lane no longer stays on a post-B-07 hold;
-  the live backend handoff explicitly assigns the mock Ask/chat and citation
-  assembly slice on the frozen contract.
+1. **F-06 (retrieve) is the live frontend ticket** (opened 2026-10-11 after
+   the F-15 stream was reconciled; F-05 completed and archived). Scope: one
+   search port over the frozen S-02 search contract plus the `/search`
+   screen. Dependency-ready: S-02 search and B-07 are completed. The
+   **Collections** (folders/tags) sub-slice stays soft-stopped on the
+   missing S-02 contract.
+2. **F-15 (Obsidian-parity editor redesign) is reconciled and deferred.**
+   Governance G-1…G-4 (editor pins, wikilink deferral, mode-contract sync,
+   F-13/F-14 reconciliation) merged to `develop`; the ready handoff was
+   archived **superseded before execution** (no F-15 code exists); F-15
+   returns to `listed` with its plan preserved. Do not execute editor
+   phases from the F-06 head.
+3. **B-07 is accepted** (unchanged) and **B-08 is the live backend slice**
+   (opened 2026-10-11): mock ask adapter + citation assembler on the frozen
+   S-02 ask/SSE contract.
+4. B-06d's actual AvalAI account/terms/payment, balance, external key,
+   route, charge, and live retrieval observations remain a separate
+   deferred operator gate. No product live mode or production AI activation
+   follows from the accepted exception or from the accepted B-07 slice.
 5. **Open decision for `@user`:** whether to sequence a **Collections
    contract change** (a new backend track or an S-02 extension) before
    F-06+, since F-05's folders/tags work cannot be built against the frozen
@@ -219,10 +244,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 - DevOps I-* unassigned
 - **Collections contract** — open; F-05 folders/tags soft-stopped until
   `@user`/Commander sequences the contract change
-- **B-06d AvalAI PoC live smoke** — the local probe is implemented, but actual
-  account/terms/payment, balance, key, route, charge, and live retrieval checks
-  remain deferred operator-only evidence. The development key stays outside the
-  repository; normal API and CI remain offline/mock-only
+- **F-15 editor redesign** — deferred (`listed`, governance complete);
+  editor phases A–H are not assigned to any live head
 
 ## Completion Instructions
 
