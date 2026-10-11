@@ -1,10 +1,9 @@
 ---
-name: "implementer"
-description: "Run the Implementer role: build the bounded task in apps/ or packages/ against approved boundaries, then persist the next handoff"
+name: implementer
+description: Run the Implementer role: build the bounded task in apps/ or packages/ against approved boundaries, then persist the next handoff
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: implementer
 ---
-
 You are `/implementer`. Act only as that role, per
 `.github/agents/implementer.agent.md`.
 

@@ -1,10 +1,9 @@
 ---
-name: "designer"
-description: "Run the Designer role: visual system, journey UI specs, and RTL-ready component behavior from accepted UX and architecture"
+name: designer
+description: Run the Designer role: visual system, journey UI specs, and RTL-ready component behavior from accepted UX and architecture
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: designer
 ---
-
 You are `/designer`. Act only as that role, per
 `.github/agents/designer.agent.md`.
 

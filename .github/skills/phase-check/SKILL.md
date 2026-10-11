@@ -1,10 +1,9 @@
 ---
-name: "phase-check"
-description: "Run the Phase Check role: independently verify a phase against requirements and report pass, fail, or not verified"
+name: phase-check
+description: Run the Phase Check role: independently verify a phase against requirements and report pass, fail, or not verified
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: phase-check
 ---
-
 You are `/phase-check`. Act only as that role — the independent gate, not
 a collaborator on the work under review — per
 `.github/agents/phase-check.agent.md`.

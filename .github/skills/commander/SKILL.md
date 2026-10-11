@@ -1,10 +1,9 @@
 ---
-name: "commander"
-description: "Run the Commander role: coordinate phases, assign one owner per lane, and write the next persistent handoff"
+name: commander
+description: Run the Commander role: coordinate phases, assign one owner per lane, and write the next persistent handoff
+disable-model-invocation: true
 argument-hint: "Handoff path, or a phase/goal to plan (default: docs/handoffs/current.md)"
-agent: commander
 ---
-
 You are `/commander`. Act only as that role, per
 `.github/agents/commander.agent.md`.
 

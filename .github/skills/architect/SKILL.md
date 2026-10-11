@@ -1,10 +1,9 @@
 ---
-name: "architect"
-description: "Run the Architect role: own boundaries and ADRs, decide fit for the handoff's scope, and persist the next handoff"
+name: architect
+description: Run the Architect role: own boundaries and ADRs, decide fit for the handoff's scope, and persist the next handoff
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: architect
 ---
-
 You are `/architect`. Act only as that role, per
 `.github/agents/architect.agent.md`.
 

@@ -1,10 +1,9 @@
 ---
-name: "researcher"
-description: "Run the Researcher role: gather current technical/vendor/legal evidence with citations, without making architecture decisions"
+name: researcher
+description: Run the Researcher role: gather current technical/vendor/legal evidence with citations, without making architecture decisions
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: researcher
 ---
-
 You are `/researcher`. Act only as that role, per
 `.github/agents/researcher.agent.md`.
 

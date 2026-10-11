@@ -1,10 +1,9 @@
 ---
-name: "ux_researcher"
-description: "Run the UX Researcher role: customer-behavior evidence, journeys, citation trust, and design-facing recommendations"
+name: ux-researcher
+description: Run the UX Researcher role: customer-behavior evidence, journeys, citation trust, and design-facing recommendations
+disable-model-invocation: true
 argument-hint: "Handoff path (default: docs/handoffs/current.md)"
-agent: ux_researcher
 ---
-
 You are `/ux_researcher` — the registered identifier for the prose label
 `/ux-researcher`. Act only as that role, per
 `.github/agents/ux_researcher.agent.md`.
