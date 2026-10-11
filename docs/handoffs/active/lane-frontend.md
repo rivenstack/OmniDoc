@@ -172,6 +172,12 @@ journey step before Ask (F-07).
   states; no fake rows, no silent fallback to unfiltered results.
 - As-you-type is debounced; keyboard and screen-reader flows pass
   `quality/ui-qa-checklist.md`; layout holds at ~390px.
+- **Accessibility (release gate):** focus order and visible focus on result
+  updates, keyboard-only operation, labelled input, result count announced
+  once (`role="status"`), reduced-motion respected, token-contrast intact.
+- **LTR-now / RTL-readiness:** logical CSS only, locale-driven `lang`/`dir`,
+  `bdi` isolation for snippets/identifiers; primary locale `en` (LTR) is the
+  only shipping locale — no RTL-locale claim.
 - Checks green: focused new suites plus the full frontend gate
   (`ui` + `web` typecheck/lint/test, `web` build) — record whether
   `--skip-nx-cache` was used.
