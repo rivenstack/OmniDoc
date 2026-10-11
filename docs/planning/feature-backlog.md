@@ -144,6 +144,20 @@ sanitized render path is now build work, live at
 
 ---
 
+## 5. Retrieval & search
+
+Search and Ask are different ports (`docs/design/system-ux.md` §1), and B-07
+landed the lexical + deterministic hybrid retrieval that F-06 consumes. This
+section records **retrieval-quality gaps** — things that are not defects in the
+shipped slice, are not a new product surface, and have no lane owner. They tend
+to surface only once the corpus is real.
+
+| ID | Item | Why it is unscheduled | Suggested necessity | State |
+|---|---|---|---|---|
+| BL-25 | **Title-aware retrieval — index note titles so a title match is found** | Surfaced 2026-10-12 while `@user` reviewed the F-06 retrieve slice: a note whose **title** matches but whose **body** does not is never returned. Chunk text is derived only from `note_versions.body_json` (the `pm-md-v1` projection → `omni-blockpack-v1` packer), and `notes.title` is a separate column that is not a block in `body_json`, so it never enters a chunk — see `apps/api/src/main/java/com/omnidoc/api/projection/ProseMirrorMarkdownProjector.java` (body-only node allowlist), `apps/api/src/main/java/com/omnidoc/api/adapters/ingestion/VersionChunker.java` (source is `body_json`), and `apps/api/src/main/java/com/omnidoc/api/chunking/BlockPackChunker.java`. Both retrieval paths match chunk text alone: lexical `apps/api/src/main/java/com/omnidoc/api/adapters/retrieval/JdbcSearchAdapter.java` (`to_tsvector('english', c.text) @@ query.terms`), GIN index `apps/api/src/main/resources/db/migration/V6__lexical_search_index.sql:8`; vector `JdbcVectorSearchAdapter.java` + `MockEmbeddingAdapter.java` (embeddings over `chunk.text`). **Not a lane-local tweak:** `chunks` has no title column (`apps/api/src/main/resources/db/migration/V4__ingestion_jobs_and_chunks.sql:77`) and holds the invariant `projection.substring(start_offset, end_offset) == text`, so simply prepending the title to chunk text would break the citation-anchor offset invariant (`architecture.md` §5.2.1 §3). A title-aware path (a separate `notes.title` FTS index and/or a title term in the query) is an **Architect decision**, not a frontend or lane-local change. **Displaying** a title would additionally need a contract decision: the frozen `SearchHit` carries no title (`docs/api/openapi.yaml`), and `@user` declined resolving titles through the notes port for F-06 | **Medium.** Recall by title is the most common way a person re-finds a note; today a title-only match returns the zero-match screen against a healthy index, which reads as a broken search rather than an honest empty. Matching alone can be contract-neutral | `proposed` |
+
+---
+
 ## Not in this file
 
 Do not duplicate these here — they have canonical homes and duplicating them
@@ -171,6 +185,7 @@ without new evidence. A `BL-*` row that changes state must gain a line here.
 | 2026-09-27 | BL-19 | Triaged **`scheduled`** as **`F-12`** (sanitized markdown render pipeline, lane `frontend`), and F-05 was superseded before execution so F-12 took the live lane head. The row's blocker note was **corrected**: the pins were already `accepted` (ADR-0003 §4 + `version-ledger.md:127–130`), so no Architect pin decision was required. `BL-20`…`BL-23` stay `proposed` — `BL-20`/`BL-21` still need a **new pin** (Architect), `BL-22` is cross-lane, `BL-23` is an architecture/product decision | `@user` + Commander |
 | 2026-10-01 | BL-21, BL-22, BL-24 | **Option A.2 verified and adopted** (`@user`). BL-21 expanded to power-user editor modes (Text source + Markdown live preview); BL-22 confirmed for bidirectional JSON ↔ Markdown sync; BL-24 added for 4-mode switcher + toolbar adapter. | `@user` |
 | 2026-10-02 | BL-20 | Triaged **`scheduled`** as **`F-14`** (Markdown / rich tables across TipTap, CodeMirror live preview, and bridge) | `@user` |
+| 2026-10-12 | BL-25 | Recorded as `proposed` — title-aware retrieval (index note titles so a title match is found). Section 5 (**Retrieval & search**) created for it, since §3 is scoped to defects/enablers and excludes new capabilities. Surfaced during the F-06 retrieve review; no triage yet | `@user` (request) |
 
 ---
 
