@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-06 ready in the frontend head (F-15 governance merged; editor phases deferred); B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-06 ready in the frontend head (F-15 governance merged; editor phases deferred); B-08 accepted after live Ask API verification; B-08p full live pipeline checkpoint opened Architect-first before B-09; B-06d standalone probe remains separate | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -805,11 +805,64 @@ soft-delete/purge, and untrusted-content rules as the vector path. Architecture
 §7 evaluation evidence (Recall@K plus zero isolation failures) is part of the
 slice; no live embedding/LLM provider is required or authorized.
 
-### B-08 — Ask port mock adapter + citation assembler
+### B-08 — Ask port mock adapter + citation assembler + bounded AvalAI Ask
+
+**2026-10-12 status: Commander-validated PASS.** Researcher selected
+Alibaba `qwen3.5-plus` with thinking disabled; Architect recorded the
+gate; Implementer delivered mock and gated live Ask. Final backend
+suite: **164 tests, zero failures/errors/skips**. Frozen S1–S6 passed
+through the live app API with openable citations. AvalAI User API
+reconciled 26 Researcher/B-08 synthetic transactions at **$0.01247960**
+against 27 shared ledger reservations. The separate B-08p checkpoint
+is open; B-09 remains closed.
 
 Depends: S-02, S-03, and B-06 **or** fixture ranking. All §4 states
 including `no_supported_answer` as success. Passage-level citations.
 No auto-persist of answers into the corpus (REC-06).
+
+**User expansion 2026-10-12:** sequential Researcher → Architect →
+Implementer ownership. Researcher selects a cost-conscious AvalAI Ask model
+from current evidence; Architect records a local/demo-only, public/synthetic-
+content exception to ADR-0004 before any live Ask call; Implementer adds mock
+and gated live Ask behind AnswerPort on the frozen S-02 SSE contract. Production
+and customer-content use remain closed. B-08 and the separate pre-B-09
+end-to-end checkpoint share a $5 live spend cap. Commander opens that checkpoint
+after B-08 validation to prove import → chunk → live embed → retrieval →
+live Ask through application APIs, before opening B-09.
+
+### B-08p — Full live application pipeline checkpoint before B-09
+
+**2026-10-12 status: Architect gate ready** at
+[`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md).
+Architect must approve a bounded local/demo `text-embedding-v4`/1024
+application path and hand to Implementer. The checkpoint must prove
+approved import → chunk → live embedding → exact-model/dimension
+retrieval → live `qwen3.5-plus` Ask → openable citations through the
+running APIs. Use a distinct disposable database, current authorized
+notes, tenant/workspace/deletion negatives, and the shared $5
+Researcher/B-08/B-08p spend cap. At handoff open, $0.01247960 actual
+spend and 27 of 50 conservative reservations were used. Default
+runtime and CI remain mock; customer content and production AI remain
+closed. Gemini may be separately researched and explicitly configured
+after the user funds it; it is not an automatic fallback.
+
+**Blocks:** B-09. The B-06d standalone probe and B-08 live Ask test do
+not replace this full application API checkpoint.
+
+### B-08g — Optional Gemini Ask model setting after account funding
+
+**Status: listed; not assigned and not a B-09 blocker.** The user plans
+to add Gemini credit so a controlled local/demo operator can explicitly
+select between the measured Alibaba Ask model and a Gemini model by
+setting configuration. Researcher must verify the funded account's exact
+Gemini model ID, eligibility, grounded S1–S6 quality, latency and
+effective input/output cost. Architect must approve the two exact
+model configurations and server-side selection/credit gates before
+Implementer adds an explicit setting. Keep `mock` default, frozen S-02
+contracts, no automatic routing or fallback, and no customer content.
+Any comparison call made before B-08p closes counts against the shared
+$5 cap; later work needs its own bounded budget. Do not assume the
+Alibaba-only package funds Gemini.
 
 ### B-09 — Sample vs mine labelling
 
@@ -931,7 +984,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | B-06 | **completed; Commander-reviewed** — [`../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md) (2026-10-11; independent clean gate 140/140) |
 | B-06d | **completed offline; operator live smoke deferred** — [`../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md) |
 | B-07 | **completed; Commander-validated PASS** — archived [`../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md) (2026-10-11; independent clean gate 156/156) |
-| B-08 | **ready / live** — [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) (mock ask adapter + citation assembler) |
+| B-08 | **completed; Commander-validated PASS** — 164 tests and live S1–S6 Ask API matrix with openable citations; see [`../quality/b08-ask-verification.md`](../quality/b08-ask-verification.md) |
+| B-08p | **Architect gate ready** — separate full live import/embed/retrieval/Ask API checkpoint before B-09; [`../handoffs/active/lane-backend.md`](../handoffs/active/lane-backend.md) |
 | S-03 | archived completed — [`../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-S03-commander-implementer.md) |
 | B-04c Implementer closeout | archived completed — [`../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md`](../handoffs/archive/H-2026-09-20-P1-B04C-IMPL-commander-implementer.md) |
 | B-04c Commander eval | archived GO — [`../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md`](../handoffs/archive/H-2026-09-20-P1-B04C-implementer-commander.md) |

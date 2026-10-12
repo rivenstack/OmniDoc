@@ -280,6 +280,21 @@ Program of record:
   **B-08** as the live backend slice. The backend lane no longer idles on a
   repeat evaluation hold; it now assigns the mock ask adapter + citation
   assembler on the frozen S-02 ask/SSE contract.
+- **2026-10-12:** B-08 was resequenced Researcher → Architect → Implementer
+  under the user's controlled local/demo AvalAI Ask exception. Researcher
+  selected Alibaba `qwen3.5-plus` with thinking disabled. The user added an
+  Alibaba API package; the top-level credit fields remained zero but active
+  source credit paid for model calls. The mock and gated live adapters,
+  citation assembler and S-02 SSE API passed **164 backend tests** and the
+  frozen S1–S6 synthetic live application API matrix with authorized,
+  openable citations. Account lookup reconciled **26** successful
+  Researcher/B-08 transactions at **$0.01247960**, with 27 shared ledger
+  reservations. Commander validated **B-08 PASS** and opened separate
+  **B-08p** Architect-first checkpoint for import → chunk → live AvalAI
+  embedding → retrieval → AvalAI Ask/citation before B-09. Production AI
+  and customer-note provider use remain closed. The user's later
+  Gemini funding/explicit model setting is tracked separately as
+  **B-08g listed**, with no automatic fallback and no B-09 dependency.
 - **2026-10-11:** **F-05 (organize) completed on the frontend lane** (branch
   `F05-organize`) — resumed out of sequence at `@user` direction after the lane
   jumped F-04 → F-12/F-13/F-14. Inbox and Notes are server-first lists over
@@ -423,7 +438,8 @@ Program of record:
 | B-06 pgvector + mock embed adapter | backend | Implementer (back-end programmer) | **completed; Commander-reviewed** 2026-10-11 | `docs/handoffs/archive/H-2026-10-11-P1-B06-commander-implementer.md` |
 | B-06d AvalAI development embedding-provider PoC | backend | Implementer (back-end programmer; after Researcher and Architect) | **completed offline** 2026-10-11; operator live smoke remains deferred on account/key/route checks | `docs/handoffs/archive/H-2026-10-11-P1-B06D-commander-implementer.md` |
 | B-07 lexical + hybrid search | backend | Implementer (back-end programmer) | **completed; Commander-validated PASS** 2026-10-11 — B-08 opened afterward | `docs/handoffs/archive/H-2026-10-11-P1-B07-REOPEN-commander-implementer.md` |
-| B-08 Ask port mock adapter + citation assembler | backend | Implementer (back-end programmer) | **ready** — live backend lane head; mock ask + citation assembly on frozen S-02 ask/SSE contract | `docs/handoffs/active/lane-backend.md` |
+| B-08 Ask model research, gate, mock/live adapter | backend | Researcher → Architect → Implementer; Commander validated | **completed PASS** 2026-10-12 — 164 tests, synthetic live S1–S6 API matrix, openable citations, $0.01247960 reconciled spend | `docs/handoffs/archive/H-2026-10-12-P1-B08-RETURN-implementer-commander.md` |
+| B-08p full live pipeline checkpoint | backend | Architect (back-end programmer) | **ready** — design local/demo live embedding-through-app gate, then Implementer tests import → chunk → AvalAI embed → retrieval → Ask before B-09 | `docs/handoffs/active/lane-backend.md` |
 
 Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 [`docs/planning/implementation-tracks.md`](docs/planning/implementation-tracks.md).
@@ -507,5 +523,5 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
   `/implementer` (**F-06 retrieve**, `ready`, `lane: frontend`, human:
   front-end programmer; F-15 editor redesign deferred back to `listed`)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
-  `/implementer` (**B-08** mock ask adapter + citation assembler, `ready`,
+  `/architect` (**B-08p** full live pipeline checkpoint gate, `ready`,
   `lane: backend`; human: back-end programmer)

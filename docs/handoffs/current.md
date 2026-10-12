@@ -29,7 +29,7 @@ implementer work assignment.
 D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
 B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, **S-03**,
 **B-05a** (Researcher + Architect), **B-05b**, **B-05c**, **B-06**, the
-offline **B-06d** implementation slice, **B-07**, and **F-05** are
+offline **B-06d** implementation slice, **B-07**, **B-08**, and **F-05** are
 **closed and archived**; **F-13/F-14** are reconciled to `completed`, and
 the parallel **F-15** governance stream was merged and deferred
 (2026-10-11). Two humans own parallel lanes:
@@ -37,7 +37,7 @@ the parallel **F-15** governance stream was merged and deferred
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
 | Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-06 ready** — search port + `/search` screen over the frozen S-02 search contract (opened 2026-10-11 after the F-15 stream was reconciled; F-15 deferred) |
-| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-08 ready**; mock ask adapter + citation assembler is now the live backend slice |
+| Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-08p Architect ready** — gated full live pipeline checkpoint before B-09; B-08 Ask accepted |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
 not serialize FE behind BE (or vice versa) when dependencies are clear.
@@ -54,13 +54,13 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
   Inbox/Collections left the shell on 2026-10-12. **F-15's editor
   redesign is deferred** (`listed`, governance G-1…G-4 complete) — do not
   exit this head into editor phases.
-- Backend: `docs/handoffs/active/lane-backend.md` → **B-08 ready**.
-  Commander accepted B-07, consumed the duplicate sequencing hold, and opened
-  the dependency-ready ask/citation backend slice. The live backend work is now
-  the mock ask adapter plus citation assembler on the frozen S-02 ask/SSE
-  contract; the AvalAI local probe remains implemented and archived while
-  actual account/terms/payment, key, route, charge, and live retrieval
-  observations stay deferred as a separate operator live-smoke gate.
+- Backend: `docs/handoffs/active/lane-backend.md` → **B-08p Architect ready**.
+  B-08 mock and gated Alibaba Ask, citations and frozen SSE endpoint passed
+  164 backend tests plus the synthetic live S1–S6 app API matrix. The
+  authenticated Alibaba package paid for `qwen3.5-plus` calls; the
+  Researcher/B-08 window spent $0.01247960 actual against 27 shared
+  reservations. The checkpoint must move `text-embedding-v4`/1024 into
+  the gated app and prove the full API journey before B-09.
 - Shared / DevOps heads: none live
 
 ## Cross-lane dependencies
@@ -77,7 +77,10 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-05c** | **completed** (Commander-accepted 2026-10-11) | Verification closeout landed; unblocked B-06 |
 | **B-06** | **completed** (Commander-reviewed 2026-10-11) | Deterministic mock embeddings + real pgvector persistence/search landed; unblocked B-07/B-08 retrieval work |
 | **B-06d** | **offline implementation completed; operator live smoke deferred** | Local probe landed and was verified offline; the checked-in run stopped `blocked-before-io`. Account/terms/payment, key, route, charge, and live retrieval observations remain a separate operator gate |
-| **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-08 is the live backend slice and B-12 remains unopened |
+| **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-12 remains unopened |
+| **B-08** | **completed; Commander-validated PASS** 2026-10-12 | Mock and gated Alibaba Ask passed 164 tests and live S1–S6 with openable citations; opens B-08p only, not B-09 |
+| **B-08p** | **Architect gate ready** | Separate full app API live embedding/retrieval/Ask checkpoint; B-09 blocked until this passes |
+| **B-08g** | **listed; unassigned** | User's future funded Gemini Ask option requires Researcher comparison, Architect gate and explicit model setting; not a B-09 blocker |
 | **F-06 retrieve deps** | **met** (S-02 search + B-07 completed) | `/search` port + screen dependency-ready; tests inject through the port (no `web → mocks` import) |
 | **F-15** (editor redesign) | **governance merged; superseded-before-execution** (2026-10-11) | Parallel stream's rewrite of `lane-frontend.md` reconciled into `develop`; F-15 returns to `listed` (G-1…G-4 complete); F-06 takes the head; archive `H-2026-10-10-P1-F15-superseded-before-execution.md` |
 | **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05 is **completed**; its collections sub-slice is `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and Inbox/Collections were removed from the shell the same day. Remediation unchanged: an `@user`/Commander decision on whether to author the contract. |
@@ -86,6 +89,16 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Recently archived
 
+- B-08 Researcher model screen, Architect local/demo exception, and
+  Implementer code return (2026-10-12):
+  `docs/handoffs/archive/H-2026-10-12-P1-B08-RES-commander-researcher.md`,
+  `docs/handoffs/archive/H-2026-10-12-P1-B08-ARCH-commander-architect.md`,
+  `docs/handoffs/archive/H-2026-10-12-P1-B08-IMPL-commander-implementer.md`.
+  Initial offline gate passed 163/163; after account top-up, Alibaba
+  model selection and the SSE error-response fix, final 164/164 and
+  synthetic live S1–S6 passed. The consumed Commander hold is archived
+  at `docs/handoffs/archive/H-2026-10-12-P1-B08-RETURN-implementer-commander.md`;
+  see `docs/quality/b08-ask-verification.md`.
 - F-15 Obsidian-parity editor redesign **superseded before execution**
   (2026-10-11 — governance G-1…G-4 merged to `develop`; implementation
   phases A–H never began; F-06 took the frontend head):
@@ -211,13 +224,14 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
    archived **superseded before execution** (no F-15 code exists); F-15
    returns to `listed` with its plan preserved. Do not execute editor
    phases from the F-06 head.
-3. **B-07 is accepted** (unchanged) and **B-08 is the live backend slice**
-   (opened 2026-10-11): mock ask adapter + citation assembler on the frozen
-   S-02 ask/SSE contract.
-4. B-06d's actual AvalAI account/terms/payment, balance, external key,
-   route, charge, and live retrieval observations remain a separate
-   deferred operator gate. No product live mode or production AI activation
-   follows from the accepted exception or from the accepted B-07 slice.
+3. **B-08 is accepted** (2026-10-12): 164 backend tests and the frozen
+   synthetic S1–S6 live Ask API matrix passed with authorized, openable
+   citations. The separate **B-08p** full app API checkpoint is open to
+   Architect first, then Implementer; B-09 remains closed.
+4. The B-06d standalone embedding probe does not prove live app
+   embedding or retrieval. B-08p must do that in a disposable demo
+   database within the remaining shared $5 cap. Production AI and
+   customer-content provider use stay closed.
 5. **Open decision for `@user`:** whether to author and sequence the
    **Collections contract change** (a new backend track or an S-02 extension).
    F-05 is completed; the sub-slice is recorded as `BL-26` (`proposed`) with

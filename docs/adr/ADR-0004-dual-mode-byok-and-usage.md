@@ -254,3 +254,93 @@ The Implementer must verify those live-smoke preconditions and receive
 the key only through the external local mechanism. The exception ends
 when B-06d closes; the normal ADR-0001 §5 and ADR-0004 §1 timing gates
 then continue to govern product live modes.
+
+## Accepted B-08 local/demo Ask exception (2026-10-12; scoped)
+
+**Decision and authority.** The user directed Researcher-first B-08,
+then authorized a real AvalAI Ask path through the ordinary application
+API in a controlled local/demo environment, using only approved public
+or synthetic notes. This is an explicit, bounded pre-CX exception to
+§1 and ADR-0001 §5. It is not customer-facing deployment, customer-note
+processing, BYOK/vault activation, or a replacement of the accepted
+OpenRouter production gateway. B-09/B-10/B-12 remain separate.
+
+**Model (amended 2026-10-12).** The user restricted both embedding and
+Ask to Alibaba models. The Researcher account-backed comparison in
+`docs/research/technical/18-b08-avalai-ask-model.md` therefore
+supersedes the provisional Gemini screen and pins **AvalAI
+`qwen3.5-plus` with `enable_thinking=false`** as the single Ask model.
+Use strict three-field JSON schema, at most 512 completion tokens,
+four passages and 12,000 prompt characters. The frozen synthetic
+provider cases showed grounded partial, conflict, no-support,
+refusal and injection-resistant answers at low observed cost.
+The normal app API path passed the frozen synthetic S1–S6 matrix,
+including openable citations. The user's later intention to fund Gemini
+does not change the B-08 pin: a Gemini option needs a separate measured
+Researcher choice, an Architect gate update and an explicit operator
+setting. No automatic substitution or fallback is permitted.
+
+**Runtime boundary.** The default application stays `mock`. A
+separately enabled `local` profile may resolve
+`operator_free_tier` for the `ASK` feature only when all of these
+server-side conditions hold: explicit B-08 enable flag; exact
+demo tenant and workspace allowlist; nonempty allowlist of approved
+note IDs; external `AVALAI_API_KEY`; and a bounded spend ledger.
+The HTTP session binds actor and tenant; the workspace selector is
+rebound to membership; retrieval remains tenant/workspace/ACL filtered
+under RLS. Before provider I/O, the Answer adapter re-verifies each
+candidate note ID against the allowlist and current authorized
+note/version/chunk. Only approved passage text and the question may
+leave the process. `customer_key` remains forbidden. Missing or
+invalid controls return `mode_forbidden`; there is no live-to-mock,
+model-to-model, or operator-to-customer fallback.
+
+**Cost and secret boundary.** B-08 and the distinct pre-B-09 full
+pipeline checkpoint share a cumulative **$5** actual account-spend
+limit, excluding any already-completed B-06d test. The local/demo
+adapter caps candidate count, prompt length, output tokens and
+requests, reserves a conservative per-call maximum in an external
+ledger shared with the checkpoint, and denies a call when the
+reservation would breach the cap. Operators reconcile actual charges
+using AvalAI request IDs/transactions before further testing. The
+key and ledger stay outside the repository, chat, logs and CI.
+The authenticated account has an active grant and a later Alibaba API
+package even when top-level `remaining_unit` and `remaining_irt` are
+zero; source eligibility, model scope, expiry and effective balance
+must be checked before live I/O.
+Without a verified usable account budget baseline, live calls stay
+closed. The User API reconciled 26 successful synthetic transactions
+at $0.01247960 actual cost against 27 external ledger reservations;
+one failed Qwen Max call had no listed transaction. This spend counts
+against the same $5 cap as the application and checkpoint runs.
+
+**Answer/citation boundary.** Keep `AnswerPort` and S-02
+`POST /api/v1/ask`/SSE unchanged. Retrieved text is quoted as
+untrusted data. A complete, bounded provider response is parsed into
+stable claims; each cited source reference must map to an authorized
+current passage with offsets, or that citation is dropped. Unsupported
+claims are rejected or marked as `partial`; no evidence produces
+`no_supported_answer`. Policy refusal and source conflict remain
+successful outcomes. Provider errors use existing `PortFailure`
+codes and SSE terminal events; answers are never auto-persisted.
+
+**Alternatives and consequences.** A separate Gradle probe would not
+exercise the product API, so it cannot meet the user's B-08 goal.
+Enabling live Ask on all workspaces would risk transmitting customer
+notes before upstream retention/region are established, so it is
+rejected. The allowlist and external ledger add local setup and may
+exclude newly imported notes until an operator explicitly approves
+them. No schema or wire migration is required. Rollback is to clear
+the enable flag or secret: the normal `mock` mode and offline tests
+remain available while live mode fails closed.
+
+**Verification gate.** The frozen `b08-ask-s03-v1` set in the
+Researcher report tests grounded support, partial support, conflict,
+unsupported questions, policy refusal, and retrieved prompt injection.
+Require zero cross-tenant/workspace/deleted/stale citation targets,
+exactly one SSE terminal event, pre-stream JSON errors, no key/body
+logging, actual charge reconciliation, and a local/demo-only
+integration run. Failed quality, cost, privacy or isolation checks
+disable live mode pending another decision. The follow-on checkpoint
+must prove import → chunk → AvalAI embed → retrieval → AvalAI Ask
+through application APIs before B-09 opens.

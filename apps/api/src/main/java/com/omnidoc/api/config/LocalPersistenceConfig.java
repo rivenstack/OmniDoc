@@ -18,6 +18,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.omnidoc.api.adapters.identity.JdbcIdentityAdapter;
+import com.omnidoc.api.adapters.answer.AvalAiAskClient;
+import com.omnidoc.api.adapters.answer.AvalAiAccountCredit;
+import com.omnidoc.api.adapters.answer.AvalAiSpendLedger;
+import com.omnidoc.api.adapters.answer.DemoAskPolicy;
+import com.omnidoc.api.adapters.answer.DemoAskRuntimeModeAdapter;
+import com.omnidoc.api.adapters.answer.JdbcAnswerAdapter;
+import com.omnidoc.api.adapters.answer.JdbcCitationAssembler;
 import com.omnidoc.api.adapters.ingestion.IngestionDispatcher;
 import com.omnidoc.api.adapters.ingestion.IngestionJobRepository;
 import com.omnidoc.api.adapters.ingestion.IngestionLimits;
@@ -32,8 +39,8 @@ import com.omnidoc.api.adapters.notes.RechunkOutbox;
 import com.omnidoc.api.adapters.retrieval.JdbcSearchAdapter;
 import com.omnidoc.api.adapters.retrieval.JdbcVectorSearchAdapter;
 import com.omnidoc.api.adapters.retrieval.MockEmbeddingAdapter;
-import com.omnidoc.api.adapters.retrieval.MockRuntimeModeAdapter;
 import com.omnidoc.api.application.port.EmbeddingPort;
+import com.omnidoc.api.application.port.AnswerPort;
 import com.omnidoc.api.application.port.IdentityPort;
 import com.omnidoc.api.application.port.IngestionPort;
 import com.omnidoc.api.application.port.NotesPort;
@@ -138,8 +145,43 @@ public class LocalPersistenceConfig {
 	}
 
 	@Bean
-	RuntimeModePort runtimeModePort() {
-		return new MockRuntimeModeAdapter();
+	RuntimeModePort runtimeModePort(DemoAskPolicy policy) {
+		return new DemoAskRuntimeModeAdapter(policy);
+	}
+
+	@Bean
+	DemoAskPolicy demoAskPolicy() {
+		return DemoAskPolicy.fromEnvironment();
+	}
+
+	@Bean
+	AvalAiSpendLedger avalAiSpendLedger(DemoAskPolicy policy) {
+		return new AvalAiSpendLedger(policy.ledgerFile());
+	}
+
+	@Bean
+	AvalAiAccountCredit avalAiAccountCredit(ObjectMapper objectMapper) {
+		return new AvalAiAccountCredit(objectMapper);
+	}
+
+	@Bean
+	JdbcCitationAssembler jdbcCitationAssembler(
+		JdbcTemplate jdbcTemplate, TenantRlsSession tenantRlsSession, TransactionTemplate transactionTemplate) {
+		return new JdbcCitationAssembler(jdbcTemplate, tenantRlsSession, transactionTemplate);
+	}
+
+	@Bean
+	AvalAiAskClient avalAiAskClient(
+		DemoAskPolicy policy, AvalAiSpendLedger ledger, AvalAiAccountCredit accountCredit,
+		RuntimeModePort modes, ObjectMapper objectMapper) {
+		return new AvalAiAskClient(policy, ledger, accountCredit, modes, objectMapper);
+	}
+
+	@Bean
+	AnswerPort answerPort(
+		SearchPort searchPort, JdbcCitationAssembler citations, RuntimeModePort modes,
+		DemoAskPolicy policy, AvalAiAskClient liveClient) {
+		return new JdbcAnswerAdapter(searchPort, citations, modes, policy, liveClient);
 	}
 
 	@Bean

@@ -34,6 +34,8 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	implementation("org.postgresql:postgresql")
 	implementation("com.pgvector:pgvector:0.1.6")
+	implementation(platform("org.springframework.ai:spring-ai-bom:2.0.1"))
+	implementation("org.springframework.ai:spring-ai-openai")
 
 	// B-05b import parsers (architecture.md §5.2.1 §6). Narrow Tika modules only —
 	// tika-parsers-standard-package pulls formats outside the allowlist.
