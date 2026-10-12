@@ -364,6 +364,17 @@ Program of record:
   port/adapter (ADR-0005). `@user` will decide later whether to author the
   contract and implement it. Gate: `ui` + `web` typecheck / lint / test green
   (`--skip-nx-cache`).
+- **2026-10-12:** **F-06 landed and F-07 (Ask UI) opened on the frontend
+  lane.** F-06's retrieve slice is on `develop` (`4695774`); its return head
+  was archived on rotation (2026-10-12) and the frontend head was rewritten to
+  **F-07 (Ask UI)** on branch `F07-ask`. F-07 is dependency-ready on **S-03
+  ask fixtures** (tests inject the answer port) with **B-08** in parallel on
+  the backend lane; ask-your-notes = one answer port over the frozen S-02
+  ask/SSE contract + `/ask` (composer, streaming answer, passage-level
+  citations, refusal/partial/conflict as success, Stop control). The
+  live-against-local-API ask smoke is a pending cross-lane check if B-08 has
+  not landed, and the `@user` visual/mobile pass on `/search` (F-06) remains a
+  separate open check. F-15 stays `listed`; F-08 awaits F-07.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -403,7 +414,8 @@ Program of record:
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
 | F-05 Organize (notes list) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — server-first notes list over `listNotes` with URL-based server cursors; **updated 2026-10-12**: Inbox and Collections removed from the shell (no collections contract ⇒ identical lists); collections sub-slice recorded with backend needs as `BL-26` | `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md` |
-| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F06-retrieve`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/active/lane-frontend.md` |
+| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F06-retrieve`; landed on `develop` as `4695774`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); return head archived 2026-10-12; **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md` |
+| F-07 Ask UI | frontend | Implementer (front-end programmer) | **ready** — live frontend lane head (opened 2026-10-12 on branch `F07-ask`); ask-your-notes: one answer port over the frozen S-02 ask/SSE contract + `/ask` screen (composer, streaming answer, passage-level citations, refusal/partial/conflict as success, Stop control); dependency-ready on **S-03 ask fixtures** (tests inject the port) with **B-08** in parallel; live ask smoke is a pending cross-lane check if B-08 has not landed | `docs/handoffs/active/lane-frontend.md` |
 | F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 (`@user`-verified) — three capture modes + lock, CodeMirror 6 live preview, JSON↔markdown bridge (commits `3c170f9`/`fe5a97f`); reconciled to `completed` 2026-10-11 via the F-15 governance stream | `docs/planning/implementation-tracks.md` |
 | F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 — tables across all modes; archived 2026-10-10 via the F-15 governance stream | `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md` |
 | F-15 Obsidian-parity editor redesign | frontend | Implementer (front-end programmer) — **deferred** | **listed (deferred)** — governance G-1…G-4 complete 2026-10-10; implementation phases A–H not started; ready handoff archived superseded-before-execution 2026-10-11 | `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md` |
@@ -504,8 +516,9 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (**F-06 retrieve**, `ready`, `lane: frontend`, human:
-  front-end programmer; F-15 editor redesign deferred back to `listed`)
+  `/implementer` (**F-07 Ask UI**, `ready`, `lane: frontend`, human:
+  front-end programmer; branch `F07-ask`; F-06 landed on `develop`; F-15
+  editor redesign deferred back to `listed`)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (**B-08** mock ask adapter + citation assembler, `ready`,
   `lane: backend`; human: back-end programmer)

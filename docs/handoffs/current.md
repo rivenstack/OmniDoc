@@ -36,7 +36,7 @@ the parallel **F-15** governance stream was merged and deferred
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-06 ready** — search port + `/search` screen over the frozen S-02 search contract (opened 2026-10-11 after the F-15 stream was reconciled; F-15 deferred) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-07 ready** — ask-your-notes: one answer port over the frozen S-02 ask/SSE contract plus the `/ask` screen (composer, streaming answer, passage-level citations, refusal/partial/conflict as success, Stop control), verified against S-03 ask fixtures through the injected port; branch `F07-ask` (opened 2026-10-12 after **F-06** landed on `develop` as `4695774`) |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-08 ready**; mock ask adapter + citation assembler is now the live backend slice |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -44,12 +44,15 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-06 ready**
-  (retrieve: one search port over the frozen S-02 search contract plus the
-  `/search` screen — server snippets, real Sample/Mine filter, honest
-  degraded notice, pivot to Ask; opened 2026-10-11 after the F-15 stream
-  was reconciled). F-05 is **completed and archived**; its collections
-  sub-slice is recorded as `BL-26` (`proposed`) in
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-07 ready**
+  (ask-your-notes: one answer port over the frozen S-02 ask/SSE contract
+  plus the `/ask` screen — composer, streaming answer, passage-level
+  citations, refusal/partial/conflict/no-supported-answer as success, Stop
+  control — verified against S-03 ask fixtures through the injected port;
+  branch `F07-ask`). **F-06 is completed and landed on `develop`**
+  (`4695774`; the return head is archived). F-05 is **completed and
+  archived**; its collections sub-slice is recorded as `BL-26`
+  (`proposed`) in
   [`../planning/feature-backlog.md`](../planning/feature-backlog.md), and
   Inbox/Collections left the shell on 2026-10-12. **F-15's editor
   redesign is deferred** (`listed`, governance G-1…G-4 complete) — do not
@@ -78,7 +81,9 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-06** | **completed** (Commander-reviewed 2026-10-11) | Deterministic mock embeddings + real pgvector persistence/search landed; unblocked B-07/B-08 retrieval work |
 | **B-06d** | **offline implementation completed; operator live smoke deferred** | Local probe landed and was verified offline; the checked-in run stopped `blocked-before-io`. Account/terms/payment, key, route, charge, and live retrieval observations remain a separate operator gate |
 | **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-08 is the live backend slice and B-12 remains unopened |
-| **F-06 retrieve deps** | **met** (S-02 search + B-07 completed) | `/search` port + screen dependency-ready; tests inject through the port (no `web → mocks` import) |
+| **F-06 retrieve** | **completed and landed on `develop`** (`4695774`, 2026-10-11) | `/search` port + screen accepted in the lane; return head archived 2026-10-12. Visual/mobile pass still awaits `@user` (no browser in the implementer session) — a separate `@user` check, not a blocker on F-07 |
+| **F-07 ask deps** | **met via fixtures** (S-03 ask fixtures completed); **B-08 in parallel** | `/ask` answer port + screen are dependency-ready on fixtures; tests inject through the port (no `web → mocks` import). Live ask smoke depends on the parallel **B-08** endpoint — if B-08 has not landed, the live smoke is a pending cross-lane check (soft-stop), not a hard block |
+| **F-08 dual-mode chrome** | **blocked on F-07** | Do not open F-08 until F-07 lands and Commander sequences it |
 | **F-15** (editor redesign) | **governance merged; superseded-before-execution** (2026-10-11) | Parallel stream's rewrite of `lane-frontend.md` reconciled into `develop`; F-15 returns to `listed` (G-1…G-4 complete); F-06 takes the head; archive `H-2026-10-10-P1-F15-superseded-before-execution.md` |
 | **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05 is **completed**; its collections sub-slice is `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and Inbox/Collections were removed from the shell the same day. Remediation unchanged: an `@user`/Commander decision on whether to author the contract. |
 | **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. Java `pm-md-v1` is corpus SoT for chunking (B-05b); FE bridge remains editor tooling only. |
@@ -86,6 +91,11 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Recently archived
 
+- F-06 retrieve **return head archived on lane rotation** (2026-10-12 —
+  the implementer returned the built, live-verified lane to Commander while
+  F-07 was Commander-sequenced; F-06's work is on `develop` as `4695774`):
+  `docs/handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`.
+  F-06's implementation ticket: `docs/handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`.
 - F-15 Obsidian-parity editor redesign **superseded before execution**
   (2026-10-11 — governance G-1…G-4 merged to `develop`; implementation
   phases A–H never began; F-06 took the frontend head):
@@ -198,13 +208,19 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. **F-06 (retrieve) is the live frontend ticket** (opened 2026-10-11 after
-   the F-15 stream was reconciled; F-05 completed and archived). Scope: one
-   search port over the frozen S-02 search contract plus the `/search`
-   screen. Dependency-ready: S-02 search and B-07 are completed. The
-   **Collections** (folders/tags) sub-slice is **not scheduled** — it is
-   `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and
-   Inbox/Collections were removed from the shell the same day.
+1. **F-07 (Ask UI) is the live frontend ticket** (opened 2026-10-12 on
+   branch `F07-ask`, after **F-06** landed on `develop` as `4695774`). Scope:
+   one answer port over the frozen S-02 ask/SSE contract plus the `/ask`
+   screen — composer, streaming answer, passage-level citations,
+   refusal/partial/conflict/`no_supported_answer` as **success**, and a Stop
+   control. Dependency-ready: **S-03** ask fixtures are completed, and
+   **B-08** (the mock ask adapter + citation assembler) is the parallel
+   backend slice. The lane does **not** wait on B-08 to start — tests inject
+   the port — but the live-against-local-API smoke is a pending cross-lane
+   check if B-08 has not landed. The **Collections** (folders/tags)
+   sub-slice is **not scheduled** — it is `BL-26` (`proposed`, 2026-10-12)
+   with its backend needs named, and Inbox/Collections were removed from the
+   shell the same day.
 2. **F-15 (Obsidian-parity editor redesign) is reconciled and deferred.**
    Governance G-1…G-4 (editor pins, wikilink deferral, mode-contract sync,
    F-13/F-14 reconciliation) merged to `develop`; the ready handoff was

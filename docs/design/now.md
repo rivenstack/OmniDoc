@@ -56,7 +56,22 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-06 retrieve — built 2026-10-11, live-verified against the local Java API.**
+**F-07 Ask UI — ready 2026-10-12 (branch `F07-ask`).**
+
+Ask-your-notes: one answer port over the frozen S-02 ask/SSE contract plus the
+`/ask` screen — the composer, the streaming answer, and passage-level
+citations, with refusal / partial / conflict / `no_supported_answer` as
+**success**, and a Stop control. Dependency-ready on **S-03 ask fixtures**
+(tests inject the port); **B-08** (mock ask adapter + citation assembler) is the
+parallel backend slice, so the live-against-local-API smoke is a pending
+cross-lane check until B-08 lands. Ticket:
+[`lane-frontend.md`](../handoffs/active/lane-frontend.md). **No look reference
+yet** — the composer, answer card, and citation panel each need an `@user`
+reference (or offered options) before they are built; answer prose renders
+through the F-12 sanitized `Markdown` block and its typography is still open.
+
+**F-06 retrieve — built 2026-10-11, live-verified against the local Java API;
+landed on `develop` (`4695774`).**
 
 Search is its own operation, separate from Ask (`system-ux.md` §1/§2). Delivered:
 one search port over the frozen S-02 search contract (`hybrid` default —
@@ -136,7 +151,10 @@ table is the map, not the archive.
   never a look decision — it was blocked on the S-02 contract, and on
   2026-10-12 `@user` removed Inbox and Collections from the shell altogether
   (see the decision log); the capability is recorded as `BL-26` in the backlog.
-- **F-07 answer-prose look:** no reference yet. F-12 shipped behaviour-only.
+- **F-07 answer-prose look:** no reference yet — the composer, answer card, and
+  citation panel are F-07's live slice (opened 2026-10-12) and each block needs
+  an `@user` reference (or offered options). F-12 shipped behaviour-only, so
+  answer-prose typography is still open here.
 - **Sample vs Mine:** `Workspace` carries no sample marker — F-09 plus a
   contract change.
 - **Identity-unavailable entry screen:** built from the stock `Empty`

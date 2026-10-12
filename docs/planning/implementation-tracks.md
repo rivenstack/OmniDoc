@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-06 ready in the frontend head (F-15 governance merged; editor phases deferred); B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-07 ready in the frontend head (F-06 landed on `develop`; F-15 governance merged, editor phases deferred); B-08 is the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -388,7 +388,7 @@ boundaries are ArchUnit + CI (S-01b / ADR-0005), not Nx tags.
 
 | | |
 |--|--|
-| **Status** | **ready** — live frontend lane head [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-11; S-02 search + B-07 completed) |
+| **Status** | **completed** 2026-10-11 — built and live-verified on branch `F06-retrieve`; landed on `develop` as `4695774`. The `/search` port + screen were accepted in the lane, and the return head was archived on lane rotation 2026-10-12: [`../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`](../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md). Implementation ticket: [`../handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md). **Visual/mobile pass on `/search` still awaits `@user`** (no browser in the implementer session) — a separate `@user` check |
 
 **Short description:** search screen — results, snippets, filters,
 indexing notice, pivot to Ask.
@@ -406,16 +406,26 @@ Depends: F-02, S-02 search, and B-07 **or** search fixtures.
 
 ### F-07 — Ask UI
 
+| | |
+|--|--|
+| **Status** | **ready** — live frontend lane head [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-12 on branch `F07-ask`; S-03 ask fixtures completed; B-08 in parallel) |
+| **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Depends on** | S-03 (**completed**), and B-08 **or** ask fixtures (fixtures ready — S-03) |
+| **Blocks** | F-08 (dual-mode chrome), F-09 (labelled sample workspace), F-11 (Playwright + axe journeys); the Phase 2 CX gate trust loop |
+| **Write path** | `apps/web/app/(app)/ask/**`, `apps/web/app/lib/ask/**`, `packages/ui/src/ask/**` + `packages/ui/src/index.ts`, `packages/ui/src/styles/globals.css` |
+
 **Short description:** ask-your-notes — composer, streaming answer,
 passage-level citations, refusal/partial/conflict as success.
 
 **Integrations:** answer port via S-02 + SSE; B-08 **or** ask fixtures.
 Citation payload identity comes from the server (`architecture.md` §4);
 client never attaches citations it did not receive. State: streaming is
-server-driven; no client answer cache.
+server-driven; no client answer cache; answers are never auto-persisted
+(REC-06).
 
 **Look:** references from `@user` (composer, answer card, citation
-panel); offer options otherwise.
+panel); offer options otherwise. F-12 shipped behaviour-only, so the
+answer-prose typography still needs a reference.
 
 Depends: S-03, and B-08 **or** ask fixtures.
 
@@ -920,7 +930,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-06 | **ready / live** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-11; S-02 search + B-07 completed) |
+| F-06 | **completed** — landed on `develop` (`4695774`); return head archived [`../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`](../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md); ticket [`../handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md) |
+| F-07 | **ready / live** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-12 on branch `F07-ask`; S-03 ask fixtures completed; B-08 in parallel) |
 | F-15 | **listed (deferred)** — governance G-1…G-4 complete; plan [`../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md); ready handoff archived superseded-before-execution [`../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md`](../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md) |
 | F-14 | **completed** — archived [`../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md`](../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md) (Outcome 2026-10-02) |
 | F-05 | **completed** 2026-10-11 (branch `F05-organize`) — Notes list over `listNotes` with URL-based server cursors; **updated 2026-10-12**: Inbox and Collections removed from the shell (no collections contract ⇒ identical lists); collections sub-slice recorded with backend needs as `BL-26` in [`feature-backlog.md`](./feature-backlog.md). Completed head archived: [`../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md); original ticket: [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |

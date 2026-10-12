@@ -216,6 +216,29 @@
   `develop`; `markdown_table_plan` and `fix_new_note_autosave` are fully
   contained in `develop`. Cherry-picking the F-12 return archive is a
   separate decision — do not fold it into a lane reconciliation silently.
+- 2026-10-12: **F-06 landed on `develop` (`4695774`) and the frontend head was
+  rotated to F-07 (Ask UI) on branch `F07-ask`.** When a lane returns a
+  *built, live-verified* slice blocked only on "Commander sequencing", archive
+  the consumed return head on rotation (do not rewrite a `lane-*.md` path while
+  its head is unarchived) and rewrite the same path with the next in-sequence
+  track. `F06-retrieve` and `develop` pointed at the same commit — verify with
+  `git log develop..<branch>` / `<branch>..develop` and state the real merge
+  state instead of repeating a stale "not merged" claim.
+- 2026-10-12: **F-07 was opened in parallel with B-08, not serialized behind
+  it.** The track's dependency is "S-03, and **B-08 or ask fixtures**"; S-03
+  ask fixtures are completed, so the dependency is clear. Commander rule
+  (`current.md`): "does not serialize FE behind BE when dependencies are
+  clear." Handle the resulting verification gap honestly: fixture-injected
+  tests are the acceptance gate, and the live-against-local-API smoke is a
+  **pending cross-lane check** (soft-stop) when the parallel backend slice
+  (B-08) has not landed — never claim live verification without it. Keep the
+  B-06d-style discipline of separating what is *proven* from what is
+  *deferred operator evidence*.
+- 2026-10-12: **Branch-per-slice.** Create the slice branch (e.g. `F07-ask`)
+  from the integration branch before the implementer executes, and name it in
+  the lane head's Start Command so the implementer confirms the branch first.
+  Do not put F-*/B-* work bodies into `current.md`; it stays the Commander
+  integration index (lane pointers + cross-lane deps).
 
 ## Phase-Boundary Stewardship
 
