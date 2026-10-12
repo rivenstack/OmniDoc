@@ -1,7 +1,7 @@
 # Now — UI plan
 
 **Living page.** Edit this during the build. Keep it short.
-**Updated:** 2026-10-11
+**Updated:** 2026-10-12
 
 Choose here. Do not wait for a finished mock to review.
 
@@ -56,19 +56,28 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-07 Ask UI — ready 2026-10-12 (branch `F07-ask`).**
+**F-07 Ask UI — built 2026-10-12 (branch `F07-ask`); lane soft-stopped to
+Commander.**
 
-Ask-your-notes: one answer port over the frozen S-02 ask/SSE contract plus the
-`/ask` screen — the composer, the streaming answer, and passage-level
-citations, with refusal / partial / conflict / `no_supported_answer` as
-**success**, and a Stop control. Dependency-ready on **S-03 ask fixtures**
-(tests inject the port); **B-08** (mock ask adapter + citation assembler) is the
-parallel backend slice, so the live-against-local-API smoke is a pending
-cross-lane check until B-08 lands. Ticket:
-[`lane-frontend.md`](../handoffs/active/lane-frontend.md). **No look reference
-yet** — the composer, answer card, and citation panel each need an `@user`
-reference (or offered options) before they are built; answer prose renders
-through the F-12 sanitized `Markdown` block and its typography is still open.
+Ask-your-notes is delivered: one answer port over the frozen S-02 ask/SSE
+contract (`apps/web/app/lib/ask/`) plus the `/ask` screen — a chat-style
+composer, a **streaming** answer, **passage-level citations**, and a **Stop**
+control, with `supported` / `partial` / `no_supported_answer` / `conflict` /
+`refused_policy` all rendered as **success** and `truncated` / `error` / the
+pre-stream failures as distinct error+retry states. The browser cannot reach
+the Java API, so `/ask/stream` is a same-origin route handler that re-authorizes
+the workspace from the session and proxies validated SSE frames. Ticket:
+[`lane-frontend.md`](../handoffs/active/lane-frontend.md); Outcome:
+[`H-2026-10-12-P1-F07`](../handoffs/archive/H-2026-10-12-P1-F07-commander-implementer.md).
+
+**`@user` chose every block on 2026-10-12** (see the decisions log): chat-style
+composer, quiet no-card answer, inline numbered chips with an expandable
+passage, and one honest outcome block set with distinct copy. **Two checks are
+open:** the live against-local-API ask smoke is a **pending cross-lane check**
+(B-08 has not landed), and the visual/mobile pass on `/ask` awaits `@user` (no
+browser in the implementer session). Passage-level *anchor* navigation (opening
+the cited passage, not just the note) is left to a Commander decision — the
+citations link to the note and carry the anchor, and nothing is faked.
 
 **F-06 retrieve — built 2026-10-11, live-verified against the local Java API;
 landed on `develop` (`4695774`).**
@@ -123,6 +132,7 @@ table is the map, not the archive.
 | F-04 capture | 2026-09-25 | Notes port, save cycle, import status, capture blocks |
 | F-05 organize | 2026-10-11 | Notes server-first list with URL-based server cursors and quiet rows (no cards). *Updated 2026-10-12:* Inbox and Collections were removed from the shell; Collections stays recorded as `BL-26` |
 | F-06 retrieve | 2026-10-11 | `/search` over the frozen S-02 search contract: one search port (hybrid default), URL-held `?q=`/`?corpus=`, snippet-led rows rendered verbatim, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot |
+| F-07 ask | 2026-10-12 | `/ask` over the frozen S-02 ask/SSE contract: one answer port + a pure SSE frame parser + a pure session reducer, a same-origin SSE proxy (`/ask/stream`), a chat-style composer, a streaming answer, numbered citation disclosures, a Stop control, and five success outcomes / every failure class as honest states |
 | F-12 markdown render | 2026-09-27 | `packages/ui/src/markdown/` sanitized render path |
 | F-13 multi-mode capture | 2026-10-01 | Three modes + lock, CodeMirror live preview, JSON ↔ markdown bridge |
 | F-14 markdown & editor tables | 2026-10-02 | GFM tables across modes, shared table grammar |
@@ -151,10 +161,21 @@ table is the map, not the archive.
   never a look decision — it was blocked on the S-02 contract, and on
   2026-10-12 `@user` removed Inbox and Collections from the shell altogether
   (see the decision log); the capability is recorded as `BL-26` in the backlog.
-- **F-07 answer-prose look:** no reference yet — the composer, answer card, and
-  citation panel are F-07's live slice (opened 2026-10-12) and each block needs
-  an `@user` reference (or offered options). F-12 shipped behaviour-only, so
-  answer-prose typography is still open here.
+- **F-07 (ask): closed 2026-10-12.** `@user` chose the direction — *chat-style
+  composer* (growing textarea + send arrow + Stop pill while streaming),
+  *quiet, no card* answer on the F-05/F-06 conventions, and *inline numbered
+  chips with an expandable passage* for citations, with **one honest outcome
+  block set and distinct copy** for the five success outcomes and every failure
+  class. Answer prose renders through the F-12 sanitized `Markdown` block; the
+  answer-prose **typography scale is deliberately still open** (F-12 shipped
+  behaviour-only, and `@user` chose no card rather than a type scale). Bound and
+  **not** choices, built without asking: the failure/outcome vocabulary and its
+  copy, the single `role="status"` announcement (generating once, ready once),
+  native `<details>` citation disclosures with a "Citation N" accessible name,
+  the target `/notes/[noteId]` for a citation link, and the `Sample` badge from
+  the server's `corpusOwnership`. **Left open and escalated:** opening the cited
+  *passage* needs the note reader to accept an anchor (out of F-07); an Ask
+  Sample/Mine filter is not in F-07's deliverables (it belongs with F-08/§9.2).
 - **Sample vs Mine:** `Workspace` carries no sample marker — F-09 plus a
   contract change.
 - **Identity-unavailable entry screen:** built from the stock `Empty`
@@ -255,3 +276,8 @@ table is the map, not the archive.
 | 2026-10-11 | **F-06 states are six, not two.** Idle (no query), zero matches, degraded (`degraded: true` → incomplete-results notice inside the single announced count), generic denial, rejected request (400), and unreachable service. A `null` `corpusOwnership` from the API is *absent*, not a fifth state: it renders an unlabelled row, because guessing `mine` would be inventing data. |
 | 2026-10-11 | **Local indexing/corpus gap observed (not a UI fix):** every note in the local dev database has `corpus_ownership` NULL, so Sample/Mine both return nothing while All returns the hits. That is the server's honest answer — `mine` means `corpus_ownership = 'mine'`, not "yours" — so labelling notes at creation is a backend/seed concern, not something the search client may infer. |
 | 2026-10-12 | **Inbox and Collections removed from the shell (`@user`; `system-ux.md` §1 contract edit).** With no collections/folders contract there is nothing to file, so an "unfiled" Inbox and an "all notes" Notes were the same list under two names. The shell now carries one note list (Notes), plus Search, Ask and New note; the `/inbox` and `/collections` routes, the `UnfiledNotice`/`CollectionsUnavailable` gap blocks, and the post-sign-in default landing were all repointed to `/notes`. The capability is **not declined** — F-05's collections sub-slice (with its backend needs: S-02 contract, Flyway + RLS migration, Java port/adapter, frontend) is recorded as `BL-26` in [`../planning/feature-backlog.md`](../planning/feature-backlog.md) for a later decision. |
+| 2026-10-12 | **F-07 blocks chosen by `@user`.** *Chat-style composer* (growing textarea + send arrow, Stop pill while streaming), *quiet no-card answer* on the F-05/F-06 conventions, *inline numbered chips with an expandable passage* for citations, and *one honest outcome block set with distinct copy*. The answer-prose typography scale stays deliberately open (F-12 shipped behaviour-only; no card, no type scale). |
+| 2026-10-12 | **F-07 streams through a same-origin Next route handler.** The Java API origin and the session cookies are server-only, so the browser cannot open the SSE stream itself; `/ask/stream` re-authorizes the workspace from the session (a client `workspaceId` is only a *selector*, and a non-member selector is a **generic denial** with the server detail dropped) and pipes validated frames back. The answer port is injected in tests, so the whole state machine is exercised without an API. |
+| 2026-10-12 | **F-07 renders each citation as a native `<details>`.** Expanding a passage needs no JavaScript and no client state, so citation inspection is keyboard-operable and works before hydration; the accessible name is "Citation N", not the bare number. A sample citation carries the `Sample` badge driven by the server's `corpusOwnership`, and the preview renders through the F-12 sanitized `Markdown` path. |
+| 2026-10-12 | **F-07 keeps `partial`/`conflict` on the *no card* look, not §5.4/§5.5.** `no_supported_answer`, `refused_policy`, `partial` and `conflict` each get a neutral notice with distinct copy, but **inline per-span** unsupported marking (§5.4) and a two-source conflict comparison (§5.5) need the server to say *which* span is unsupported or *which* source is which — the frozen contract carries one flat claim/citation list. Escalated to Commander rather than invented. |
+| 2026-10-12 | **F-07 citation links open the note, not the passage.** Opening the cited *passage* needs the note reader to accept an anchor — outside the F-07 ticket — so the chip links to `/notes/[noteId]` and surfaces the anchor's block id when present. The passage-open is a Commander decision; nothing is faked. |

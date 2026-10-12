@@ -18,4 +18,5 @@ export * from "./markdown";
 export * from "./organize";
 export * from "./providers";
 export * from "./search";
+export * from "./ask";
 export * from "./shell";

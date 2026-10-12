@@ -32,6 +32,7 @@
 @source "../markdown";
 @source "../organize";
 @source "../search";
+@source "../ask";
 
 /* Test files are scanned for classes only if they are real render targets;
    excluding them keeps audit strings in assertions from generating dead
@@ -52,6 +53,8 @@
 @source not "../organize/**/*.test.ts";
 @source not "../search/**/*.test.tsx";
 @source not "../search/**/*.test.ts";
+@source not "../ask/**/*.test.tsx";
+@source not "../ask/**/*.test.ts";
 
 /* The app tree that renders these components. */
 @source "../../../../apps/web/app";

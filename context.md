@@ -375,6 +375,33 @@ Program of record:
   live-against-local-API ask smoke is a pending cross-lane check if B-08 has
   not landed, and the `@user` visual/mobile pass on `/search` (F-06) remains a
   separate open check. F-15 stays `listed`; F-08 awaits F-07.
+- **2026-10-12:** **F-07 (Ask UI) built and verified; frontend lane soft-stopped
+  to Commander.** Ask-your-notes landed on branch `F07-ask` (not merged): one
+  answer port + a pure SSE frame parser + a pure session state machine in
+  `apps/web/app/lib/ask/`, a same-origin SSE proxy at `/ask/stream` (the browser
+  cannot reach the Java API — the origin and session cookies are server-only — so
+  the route handler re-authorizes the workspace from the session, treats a client
+  `workspaceId` only as a *selector*, and pipes validated frames), and the `/ask`
+  screen — chat-style composer, streaming answer, passage-level citations as
+  numbered `<details>` disclosures, and a Stop control — plus the
+  `packages/ui/src/ask/**` blocks. All five success outcomes render as success;
+  `truncated`/`error` and every pre-stream failure class (`denied` / `validation`
+  / `unavailable` / `mode_forbidden` / `quota_exhausted` / `unauthenticated`)
+  render as distinct error+retry states with a **generic denial** that drops the
+  server detail; answer prose and citation previews render through the F-12
+  sanitized `Markdown` block. `@user` chose every block on 2026-10-12
+  (`docs/design/now.md`). Gate (`--skip-nx-cache`): ui **499** / web **179**
+  tests, typecheck, lint, and `web:build` green (10 routes including `/ask` and
+  `/ask/stream`). **Verify-status honesty:** the live against-local-API ask smoke
+  is a **pending cross-lane check** — `apps/api` has no ask controller and the
+  backend head is still `ready`, so B-08 has not landed. A throwaway **stub** API
+  in `/tmp` (removed) proved the proxy end-to-end (page render, canonical SSE
+  frames, `400` validation, `403` generic denial with no id leak, `307`
+  cookie-less redirect) but **is not** live verification. The `@user`
+  visual/mobile pass on `/ask` (and the still-open `/search` pass) is not done;
+  passage-level anchor navigation (opening the cited passage, not just the note)
+  is escalated to Commander, as is an Ask Sample/Mine filter (F-08/§9.2). F-15
+  stays `listed`; F-08 awaits Commander sequencing.
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)

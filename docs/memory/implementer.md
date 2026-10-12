@@ -798,3 +798,49 @@
   committed. When the user reports a failure on a port they chose, check
   `ps -eo pid,cmd | grep next` before assuming your instance is the one they
   are looking at.
+- **2026-10-12 (F-07): `apps/web`'s Node-only vitest cannot resolve
+  `@omnidoc/contracts` *values*, only its *types*.** `@omnidoc/ui` is symlinked
+  into `apps/web/node_modules`, but `@omnidoc/contracts` is not — Next resolves
+  it through tsconfig `paths`, and `apps/web/vitest.config.ts` has no
+  tsconfig-paths plugin, so a `value` import (`ASK_SUCCESS_OUTCOMES`,
+  `TERMINAL_ASK_SSE_EVENTS`, …) fails with `Cannot find package
+  '@omnidoc/contracts'`. Type-only imports are erased and fine (the F-06 pattern).
+  When the app needs a runtime contract table, re-derive it in the port with a
+  `Record<TheContractUnion, true>` **completeness guard** so a contract addition
+  fails the typecheck instead of silently drifting; and validate wire values with
+  an explicit `switch` rather than a `includes()` on an imported array. Lifting
+  this properly is a `apps/web/vitest.config.ts` alias — a config change outside
+  a lane slice.
+- **2026-10-12 (F-07): a browser-initiated SSE stream needs a same-origin Next
+  route handler.** The API origin and the session cookies are server-only, so the
+  browser cannot open the stream; `/ask/stream` (`runtime = "nodejs"`,
+  `dynamic = "force-dynamic"`) resolves the session, re-authorizes the workspace
+  **server-side** (a client `workspaceId` is a *selector*; a non-member selector is
+  a generic `403` denial with the server `detail` dropped), and pipes parsed
+  frames back. Two consequences: (1) the shared `sendApiRequest` is unusable for
+  a stream — it hides the raw `Response` body and takes no abort signal — so the
+  port builds its own `fetch` from `apiOrigin()` / `cookieHeader()` and bounds
+  **only the connect phase** (`AbortSignal.timeout` on a streaming request would
+  cut a long legitimate answer); (2) layouts do **not** run for route handlers, so
+  `readIdentityJar()` / `readWorkspaces()` are called in the handler. Keep the
+  decision logic in `lib/ask/ask-run.ts` and pass a resolved `AskSessionInput` in,
+  so the whole proxy is testable without mocking `next/headers`.
+- **2026-10-12 (F-07): a citation chip is a native `<details>`/`<summary>`.**
+  Expanding a passage is keyboard-operable and works before hydration with **no**
+  client state, which is the cheapest correct answer to `ui-qa-checklist.md`
+  §1.5. Put the real accessible name in an `sr-only` span ("Citation 1") instead
+  of a bare number (§2.1), and render the citation `preview` through the
+  sanitized `Markdown` block (§6.6) since a passage can contain code/URLs/tables.
+- **2026-10-12 (F-07): `openapi-typescript` marks a property with a `default` as
+  *required* in the generated type.** `AskRequest.locale` is optional in the
+  OpenAPI (`default: en`) but `components["schemas"]["AskRequest"]` requires it, so
+  a body typed as the schema must send it — pulled from the single locale source
+  (`apps/web/app/locale.ts`), not hardcoded. `mode` stays absent so there is no
+  silent mode switch.
+- **2026-10-12 (F-07): chat composer + link-as-button primitives.** Use
+  `InputGroup` + `InputGroupTextarea` + `InputGroupAddon align="block-end"` for a
+  growing composer, and swap the send button for a Stop button while busy rather
+  than disabling the field (disabling steals focus, §1.6). Base UI's `Button` has
+  **no `asChild`** — style an anchor with `buttonVariants(...)` instead (the
+  `SidebarMenuButton` `render` note is a different case). `next build` still
+  rewrites `apps/web/next-env.d.ts`; revert it before finishing (see the F-06 row).
