@@ -25,7 +25,7 @@ import { syntaxTree } from "@codemirror/language";
 import type { Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
-import type { Span } from "./taxonomy";
+import { buildRegionIndex, type RegionIndex, type Span } from "./taxonomy";
 import {
   RULE,
   codeBlockFirstLine,
@@ -145,6 +145,161 @@ export const transparentMark = Decoration.mark({});
  * place to land instead of a second styling vocabulary.
  */
 export const unresolvedMark = Decoration.mark({ class: "cm-live-unresolved" });
+
+/* ------------------------------------------------------------------ inline
+ * Highlighting (`==text==`)
+ *
+ * The GFM grammar has no node for `==`, so this construct — and only this one
+ * of the five inline-formatting kinds — is found by the preview's own text
+ * layer over prose (`REVEAL-008` names highlight as an inline-formatting kind;
+ * plan §7 risk D-5 is the parser divergence it implies).
+ *
+ * Two rules come from the artifact's documentation rather than from the
+ * catalogue (`documentation-map.md`): a colour emoji goes **immediately after**
+ * the opening `==`, and without one the highlight uses the theme's default
+ * colour. Whether the emoji is stripped from the rendered text was never
+ * established, so it is **not** stripped here — the text is left exactly as the
+ * user typed it.
+ * ------------------------------------------------------------------------ */
+
+/** The artifact's default highlight plus the six colours its emoji select picks. */
+export type HighlightColour =
+  | "default"
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "purple";
+
+/** All seven highlight colours, default first. */
+export const HIGHLIGHT_COLOURS: readonly HighlightColour[] = [
+  "default",
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+];
+
+/**
+ * The six canonical circle emoji and their square synonyms.
+ *
+ * `OBS-1.14.4-CMD-003` records that six highlight-colour commands are generated
+ * from a list; the two emoji per colour are the ones the documentation names
+ * ("Add a color emoji immediately after the opening `==`").
+ */
+export const HIGHLIGHT_EMOJI: Readonly<Record<HighlightColour, readonly string[]>> = {
+  default: [],
+  red: ["🔴", "🟥"],
+  orange: ["🟠", "🟧"],
+  yellow: ["🟡", "🟨"],
+  green: ["🟢", "🟩"],
+  blue: ["🔵", "🟦"],
+  purple: ["🟣", "🟪"],
+};
+
+/** The highlight delimiter. */
+export const HIGHLIGHT_MARKER = "==";
+
+/**
+ * The colour a highlight's content selects.
+ *
+ * The emoji has to be the **first character** of the content — "immediately
+ * after the opening `==`". Anything else, or nothing at all, is the default
+ * colour.
+ */
+export function highlightColourOf(content: string): HighlightColour {
+  const [first] = Array.from(content);
+  if (!first) return "default";
+  for (const colour of HIGHLIGHT_COLOURS) {
+    if (HIGHLIGHT_EMOJI[colour].includes(first)) return colour;
+  }
+  return "default";
+}
+
+/** One `==…==` span the text layer found. */
+export type HighlightSpan = {
+  /** The whole construct, delimiters included. */
+  readonly from: number;
+  readonly to: number;
+  /** The content between the delimiters. */
+  readonly contentFrom: number;
+  readonly contentTo: number;
+  readonly colour: HighlightColour;
+};
+
+/** Marks are cached per colour so a rebuild reuses decoration identity. */
+const highlightMarks = new Map<HighlightColour, Decoration>();
+
+/** The mark for one highlight colour (cached). */
+export function highlightMark(colour: HighlightColour): Decoration {
+  let mark = highlightMarks.get(colour);
+  if (!mark) {
+    mark = Decoration.mark({
+      class:
+        colour === "default"
+          ? "cm-live-highlight"
+          : `cm-live-highlight cm-live-highlight-${colour}`,
+    });
+    highlightMarks.set(colour, mark);
+  }
+  return mark;
+}
+
+/**
+ * Find every `==…==` span in `[from, to)` that prose may contain.
+ *
+ * Line by line, because the artifact's highlight is an inline construct: an
+ * opener looks for the next `==` on the same line, and an opener with nothing
+ * closing it stays literal text. Spans inside code, a table or a link are
+ * skipped, so `` `a == b ==` `` and a URL's `==` are not highlights.
+ */
+export function scanHighlights(
+  doc: Text,
+  from: number,
+  to: number,
+  regions: RegionIndex,
+): HighlightSpan[] {
+  const spans: HighlightSpan[] = [];
+  const first = doc.lineAt(from).number;
+  const last = doc.lineAt(to).number;
+
+  for (let number = first; number <= last; number += 1) {
+    const line = doc.line(number);
+    let cursor = 0;
+    while (cursor < line.length) {
+      const open = line.text.indexOf(HIGHLIGHT_MARKER, cursor);
+      if (open < 0) break;
+      const contentStart = open + HIGHLIGHT_MARKER.length;
+      const close = line.text.indexOf(HIGHLIGHT_MARKER, contentStart);
+      // No closer on this line, or nothing between the delimiters: literal.
+      if (close < 0 || close === contentStart) {
+        cursor = contentStart;
+        continue;
+      }
+      const contentEnd = close;
+      const spanFrom = line.from + open;
+      const spanTo = line.from + contentEnd + HIGHLIGHT_MARKER.length;
+      cursor = contentEnd + HIGHLIGHT_MARKER.length;
+
+      if (spanFrom < from || spanTo > to) continue;
+      if (regions.overlaps(["verbatim", "table", "link"], spanFrom, spanTo)) continue;
+
+      const content = line.text.slice(contentStart, contentEnd);
+      spans.push({
+        from: spanFrom,
+        to: spanTo,
+        contentFrom: line.from + contentStart,
+        contentTo: line.from + contentEnd,
+        colour: highlightColourOf(content),
+      });
+    }
+  }
+
+  return spans;
+}
 
 const headingDecos: Partial<Record<string, Decoration>> = {
   ATXHeading1: Decoration.mark({ class: "cm-live-h1" }),
@@ -281,6 +436,21 @@ export function buildDecorations(view: EditorView): DecorationSet {
         }
       },
     });
+  }
+
+  // The text layer for constructs the grammar does not model. Highlight is the
+  // inline-formatting one, so it is recognised in prose only — the region index
+  // answers where prose ends (code, tables and links are excluded).
+  const regions = buildRegionIndex(state, view.viewport.from, view.viewport.to);
+  for (const { from, to } of view.visibleRanges) {
+    for (const span of scanHighlights(doc, from, to, regions)) {
+      ranges.push(highlightMark(span.colour).range(span.contentFrom, span.contentTo));
+      // The `==` pair folds away, and unfolds like every other inline
+      // delimiter — when the selection touches the whole construct.
+      const delimiter = isRevealed(span) ? SYNTAX : HIDDEN_DELIMITER;
+      ranges.push(delimiter.range(span.from, span.contentFrom));
+      ranges.push(delimiter.range(span.contentTo, span.to));
+    }
   }
 
   // `Decoration.set(..., true)` sorts (and merges) the collected ranges, so

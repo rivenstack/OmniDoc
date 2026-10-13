@@ -12,6 +12,25 @@ import {
 } from "../../capture/body-typography";
 
 /**
+ * The seven highlight tints: the artifact's default plus its six colours.
+ *
+ * Expressed as alpha over the note's own background rather than as opaque
+ * colours, so a highlight cannot break text contrast and needs no separate dark
+ * theme value. `default` is what `==text==` gets with no colour emoji
+ * (`documentation-map.md`: "Without a color emoji, the highlight uses your
+ * theme's default highlight color").
+ */
+const HIGHLIGHT_TINTS = {
+  default: "rgb(250 204 21 / 0.30)",
+  red: "rgb(248 113 113 / 0.30)",
+  orange: "rgb(251 146 60 / 0.30)",
+  yellow: "rgb(250 204 21 / 0.30)",
+  green: "rgb(74 222 128 / 0.30)",
+  blue: "rgb(96 165 250 / 0.30)",
+  purple: "rgb(192 132 252 / 0.30)",
+} as const;
+
+/**
  * Presentation for the live preview, deliberately kept in step with the
  * typography the capture surface applies to TipTap (Normal). The type values
  * are imported from `capture/body-typography.ts` — one source for both engines
@@ -33,6 +52,23 @@ export const markdownLivePreviewTheme = EditorView.theme({
     padding: "0.125rem 0.25rem",
   },
   ".cm-live-link": { color: "var(--primary)", textDecoration: "underline" },
+  // Inline highlighting (`==text==`) — an Obsidian construct the GFM grammar
+  // does not model, so the preview's own text layer finds it (Task 2.5). The
+  // six colour variants are the ones the artifact's emoji select chooses
+  // (`OBS-1.14.4-CMD-003` names six highlight-colour commands). Each is an
+  // alpha tint over whatever the note's background already is, which keeps text
+  // contrast intact in both themes; the design language will own these values
+  // when it names highlight roles.
+  ".cm-live-highlight": {
+    backgroundColor: HIGHLIGHT_TINTS.default,
+    borderRadius: "0.125rem",
+  },
+  ".cm-live-highlight-red": { backgroundColor: HIGHLIGHT_TINTS.red },
+  ".cm-live-highlight-orange": { backgroundColor: HIGHLIGHT_TINTS.orange },
+  ".cm-live-highlight-yellow": { backgroundColor: HIGHLIGHT_TINTS.yellow },
+  ".cm-live-highlight-green": { backgroundColor: HIGHLIGHT_TINTS.green },
+  ".cm-live-highlight-blue": { backgroundColor: HIGHLIGHT_TINTS.blue },
+  ".cm-live-highlight-purple": { backgroundColor: HIGHLIGHT_TINTS.purple },
   // These three set padding, which CodeMirror's base theme also sets on
   // `.cm-line` with the shorthand — the compound selector is what makes the
   // preview's insets win (equal-specificity rules are resolved by order, and
