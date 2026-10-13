@@ -73,10 +73,21 @@ export const markdownLivePreviewTheme = EditorView.theme({
   // `.cm-line` with the shorthand — the compound selector is what makes the
   // preview's insets win (equal-specificity rules are resolved by order, and
   // the base theme is not the loser).
+  // Blockquote (`OBS-1.14.4-REVEAL-007`). The border is drawn by the marker
+  // widget itself — its span carries the rule and the `>` glyph inside it is
+  // transparent — so the line carries only the muted colour. A line-level
+  // border here would draw the rule twice.
   ".cm-line.cm-live-quote": {
-    borderInlineStart: "2px solid var(--border)",
-    paddingInlineStart: "1rem",
     color: "var(--muted-foreground)",
+  },
+  ".cm-live-quote-border": {
+    borderInlineStart: "2px solid var(--border)",
+    paddingInlineEnd: "0.75rem",
+  },
+  // The transparency class the border glyph carries: the `>` is content the
+  // widget must produce, but it is not what the reader is meant to see.
+  ".cm-live-transparent": {
+    color: "transparent",
   },
   // List items: marker in the indent, wrapped lines aligned under the text.
   ".cm-line.cm-live-list-item": {

@@ -94,6 +94,19 @@ const HIDE_RULES: Record<string, HideRule> = {
 const SYNTAX = Decoration.mark({ class: "cm-live-syntax" });
 
 /**
+ * The heading pattern (`OBS-1.14.4-FOLD-002`).
+ *
+ * Optional indent, **one to six** hashes, then whitespace or end of line. Seven
+ * or more hashes is therefore not a heading, and neither is `#hash` — the
+ * whitespace-or-EOL requirement is what separates a heading marker from a tag.
+ *
+ * Landed here as the pattern only: the heading *fold service* is Task 5.1, and
+ * the preview's own heading handling comes from the parser's `HeaderMark` node
+ * rather than from this regex.
+ */
+export const HEADING_PATTERN = /^\s*(#{1,6})(\s+|$)/;
+
+/**
  * The three empty replace singletons (`OBS-1.14.4-REVEAL-004`).
  *
  * Replace decorations are compared **by identity** when the range set is

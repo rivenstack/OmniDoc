@@ -170,14 +170,22 @@ export const markdownLivePreviewPlugin = ViewPlugin.fromClass(
 );
 
 export {
+  HEADING_PATTERN,
   HIDDEN_BLOCK,
   HIDDEN_DELIMITER,
   HIDDEN_MARKER,
+  HIGHLIGHT_COLOURS,
+  HIGHLIGHT_EMOJI,
+  HIGHLIGHT_MARKER,
   buildDecorations,
+  highlightColourOf,
+  highlightMark,
   renderedLinkMark,
+  scanHighlights,
   transparentMark,
   unresolvedMark,
 } from "./decorations";
+export type { HighlightColour, HighlightSpan } from "./decorations";
 export { markdownLivePreviewTheme } from "./theme";
 export {
   WHOLE_LINE_CONSTRUCTS,
@@ -211,6 +219,8 @@ export type {
   RegionRange,
 } from "./taxonomy";
 export {
+  QUOTE_BORDER,
+  QUOTE_BORDER_GLYPH,
   codeBlockFirstLine,
   codeBlockLastLine,
   codeBlockLine,

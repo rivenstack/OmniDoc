@@ -68,6 +68,24 @@ const TASK_CHECKED = Decoration.replace({
 const RULE = Decoration.replace({ widget: new MarkerWidget("cm-live-hr", "") });
 export { RULE };
 
+/**
+ * The blockquote border glyph (`OBS-1.14.4-REVEAL-007`).
+ *
+ * The artifact's border is a **widget** whose content is the literal `>` — a
+ * real character produced by a decoration, not the document's own marker text.
+ * It carries a transparency class because the glyph is not meant to be read:
+ * what you see is the border the class draws in its place, so the rendered
+ * result is visually identical to a styled `>` while the source range stays
+ * owned by a decoration.
+ */
+const QUOTE_BORDER = Decoration.replace({
+  widget: new MarkerWidget("cm-live-quote-border cm-live-transparent", ">"),
+});
+export { QUOTE_BORDER };
+
+/** The literal glyph the quote-border widget draws (`REVEAL-007`). */
+export const QUOTE_BORDER_GLYPH = ">";
+
 /** Ordered markers repeat per item, so they are cached by their source text. */
 const orderedMarkers = new Map<string, Decoration>();
 function orderedMarker(text: string): Decoration {
@@ -154,6 +172,10 @@ export function markerDecoration(
    */
   hidden: Decoration,
 ): Decoration {
+  // A quote marker is drawn as the artifact's border glyph, never hidden: the
+  // `>` is what the border is made of (`REVEAL-007`).
+  if (node.name === "QuoteMark") return QUOTE_BORDER;
+
   if (node.name === "TaskMarker") {
     return /[xX]/.test(text) ? TASK_CHECKED : TASK_UNCHECKED;
   }
