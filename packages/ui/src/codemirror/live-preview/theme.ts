@@ -115,9 +115,52 @@ export const markdownLivePreviewTheme = EditorView.theme({
     textIndent: "0",
   },
   ".cm-live-task": {
+    // The project's own `Checkbox` (`components/checkbox.tsx`) in the preview's
+    // DOM: a 1rem bordered square that fills with `--primary` when checked, at
+    // the same size, radius and focus ring as the React primitive. The 0.5rem
+    // end margin keeps task text aligned with a non-task bullet's text, because
+    // the marker column is 1.5rem.
     display: "inline-block",
-    inlineSize: "1.5rem",
+    inlineSize: "1rem",
+    blockSize: "1rem",
+    marginInlineEnd: "0.5rem",
+    border: "1px solid var(--input)",
+    borderRadius: "var(--od-radius-xs)",
     textIndent: "0",
+    verticalAlign: "-0.125rem",
+    cursor: "pointer",
+    // No `transition-colors`: the React primitive animates its colour, but the
+    // QA checklist treats motion as opt-in, and a static tick is the honest
+    // reduced-motion equivalent. Nothing here animates at all.
+  },
+  ".cm-live-task[data-checked='true']": {
+    backgroundColor: "var(--primary)",
+    borderColor: "var(--primary)",
+    color: "var(--primary-foreground)",
+  },
+  ".cm-live-task:focus-visible": {
+    // The same 3px full-opacity ring the design system's checkbox uses — a
+    // tinted ring does not reach the 3:1 non-text contrast bar.
+    outline: "none",
+    boxShadow: "0 0 0 3px var(--ring)",
+  },
+  ".cm-live-task-tick": {
+    display: "block",
+    margin: "0 auto",
+    // The tick is only meaningful when the box is filled.
+    opacity: "0",
+  },
+  ".cm-live-task[data-checked='true'] .cm-live-task-tick": {
+    opacity: "1",
+  },
+  // A completed task's own text is struck through and faint — the same
+  // treatment the artifact's stylesheet gives a checked task item. This is a
+  // *visual* behaviour with no catalogue entry of its own (`TASK-001` covers the
+  // toggle, not the look), so it is recorded as a `@user`-directed addition
+  // rather than a parity claim.
+  ".cm-live-task-done": {
+    color: "var(--muted-foreground)",
+    textDecoration: "line-through",
   },
   // `---` renders as the rule it means.
   ".cm-live-hr": {

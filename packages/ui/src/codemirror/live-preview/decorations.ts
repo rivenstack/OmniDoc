@@ -26,7 +26,12 @@ import type { Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
-import { buildRegionIndex, type RegionIndex, type Span } from "./taxonomy";
+import {
+  LINK_NODES,
+  buildRegionIndex,
+  type RegionIndex,
+  type Span,
+} from "./taxonomy";
 import {
   RULE,
   codeBlockFirstLine,
@@ -37,7 +42,8 @@ import {
   markerDecoration,
   markerEnd,
   quoteLine,
-  taskItems,
+  scanTaskMarkers,
+  taskCheckbox,
   type NodeRange,
 } from "./widgets";
 
@@ -67,10 +73,6 @@ const HIDE_RULES: Record<string, HideRule> = {
     swallowTrailingSpace: true,
   },
   ListMark: {
-    context: (node, { doc }) => doc.lineAt(node.from),
-    swallowTrailingSpace: true,
-  },
-  TaskMarker: {
     context: (node, { doc }) => doc.lineAt(node.from),
     swallowTrailingSpace: true,
   },
@@ -127,6 +129,15 @@ export const HEADING_PATTERN = /^\s*(#{1,6})(\s+|$)/;
 export const HIDDEN_DELIMITER = Decoration.replace({});
 export const HIDDEN_BLOCK = Decoration.replace({});
 export { HIDDEN_MARKER } from "./widgets";
+
+/**
+ * The text of a completed task.
+ *
+ * Struck through and faint, like the artifact's own checked-task item. It is a
+ * *visual* behaviour: `TASK-001` specifies the toggle, not the look, so this is
+ * recorded as a `@user`-directed addition rather than a parity claim.
+ */
+export const taskDoneMark = Decoration.mark({ class: "cm-live-task-done" });
 
 /**
  * Rendered link text (`OBS-1.14.4-REVEAL-005`, `OBS-1.14.4-A11Y-002`).
@@ -365,11 +376,32 @@ export function buildDecorations(view: EditorView): DecorationSet {
   const reveal = revealContext(selection, revealEnabled);
 
   const ancestors: NodeRange[] = [];
-  const tasks = taskItems(view);
+
+  // The task layer runs *before* the walk, for two reasons (`TASK-001`):
+  //
+  // 1. The grammar reads `[?]` and `[-]` as shortcut reference links, so the
+  //    walk has to know which bracketed spans are task markers and leave them
+  //    alone — otherwise `[?]` is underlined and bracket-folded as link syntax.
+  // 2. A task item gives up its bullet, and that decision is needed before the
+  //    walk reaches the `ListMark`.
+  const taskMarkers = view.visibleRanges.flatMap(({ from, to }) =>
+    scanTaskMarkers(doc, from, to),
+  );
+  const taskLines = new Set(taskMarkers.map((marker) => marker.lineFrom));
+  const linkNodeNames = new Set(LINK_NODES);
+  const insideTaskMarker = (node: NodeRange) =>
+    linkNodeNames.has(node.name) &&
+    taskMarkers.some(
+      (marker) => marker.from <= node.from && node.to <= marker.to,
+    );
 
   const isRevealed = (span: Span) => spanRevealed(reveal, span);
 
   const decorate = (node: NodeRange) => {
+    // `[?]` is a task marker to the artifact and a link to the grammar; the
+    // task layer wins (plan §7 risk D-5).
+    if (insideTaskMarker(node)) return;
+
     const rule = HIDE_RULES[node.name];
 
     if (rule) {
@@ -391,10 +423,12 @@ export function buildDecorations(view: EditorView): DecorationSet {
       const to = rule.swallowTrailingSpace ? markerEnd(doc, node.to) : node.to;
       const text = doc.sliceString(node.from, node.to);
       ranges.push(
-        markerDecoration(node, text, { ancestorOf, tasks }, HIDDEN_DELIMITER).range(
-          node.from,
-          to,
-        ),
+        markerDecoration(
+          node,
+          text,
+          { doc, ancestorOf, tasks: taskLines },
+          HIDDEN_DELIMITER,
+        ).range(node.from, to),
       );
       return;
     }
@@ -492,6 +526,30 @@ export function buildDecorations(view: EditorView): DecorationSet {
       ranges.push(
         (span.marker ? commentMarkerMark : commentMark).range(span.from, span.to),
       );
+    }
+
+    // Task checkboxes (`TASK-001`), from the scan computed above. The marker
+    // unfolds with its whole line, like every other line token.
+    //
+    // **Recorded rule, not a catalogue claim:** the task marker is in neither
+    // construct set of `REVEAL-008`, so the catalogue gives it no reveal rule —
+    // yet `@user` observed the artifact revealing the raw `[ ]` when the caret is
+    // on the line (2026-10-13). The observation wins over the inference, and the
+    // rule is recorded here and in the lane handoff so it is never mistaken for
+    // parity evidence.
+    for (const marker of taskMarkers) {
+      const line = doc.lineAt(marker.from);
+      const contentFrom = markerEnd(doc, marker.to);
+      if (marker.done && contentFrom < line.to) {
+        // Only `x` / `X` strikes the text through — `[?]` fills the box but is
+        // not struck. The strike is state, so the caret cannot change it.
+        ranges.push(taskDoneMark.range(contentFrom, line.to));
+      }
+      if (isRevealed(line)) {
+        ranges.push(SYNTAX.range(marker.from, marker.to));
+      } else {
+        ranges.push(taskCheckbox(marker).range(marker.from, contentFrom));
+      }
     }
   }
 

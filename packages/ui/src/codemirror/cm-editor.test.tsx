@@ -119,7 +119,9 @@ describe("CodeMirrorEditor", () => {
 
     // Bullets replace `-`; the task item gets a checkbox instead of a bullet.
     expect(dom.querySelectorAll(".cm-live-bullet")).toHaveLength(1);
-    expect(dom.querySelector(".cm-live-task")?.textContent).toBe("☐");
+    const checkbox = dom.querySelector('.cm-live-task[role="checkbox"]');
+    expect(checkbox?.getAttribute("aria-checked")).toBe("false");
+    expect(checkbox?.querySelector(".cm-live-task-tick")).toBeTruthy();
     // Ordered markers keep the source's own number.
     expect(dom.querySelector(".cm-live-ordered-mark")?.textContent).toBe("1.");
     // Every list item carries the hanging indent, including nested content.

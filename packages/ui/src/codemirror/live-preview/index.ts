@@ -184,6 +184,7 @@ export {
   highlightMark,
   renderedLinkMark,
   scanHighlights,
+  taskDoneMark,
   transparentMark,
   unresolvedMark,
 } from "./decorations";
@@ -225,6 +226,8 @@ export type {
 export {
   QUOTE_BORDER,
   QUOTE_BORDER_GLYPH,
+  TASK_MARKER_PATTERN,
+  TaskCheckboxWidget,
   codeBlockFirstLine,
   codeBlockLastLine,
   codeBlockLine,
@@ -233,8 +236,10 @@ export {
   markerDecoration,
   markerEnd,
   quoteLine,
-  taskItems,
+  scanTaskMarkers,
+  taskCheckbox,
 } from "./widgets";
+export type { TaskMarkerSpan } from "./widgets";
 export type { NodeRange } from "./widgets";
 export {
   TABLE_COMPLETE_MS,
