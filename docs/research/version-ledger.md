@@ -159,16 +159,16 @@ ADR-0003.
 
 ## Editor package candidates — F-15 Obsidian-parity redesign (2026-10-10)
 
-Pins requested for
-[`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md)
-task G-1. Versions re-verified against the npm registry on 2026-10-10.
-**Nothing in this section is installed yet.** The two candidate pins become
-direct dependencies only at their plan tasks (D-1, F-1), after Architect
-confirmation; the gated rows must not appear in `packages/ui/package.json`.
-**F-15 implementation is deferred as of 2026-10-11** (Governance G-1…G-4
-complete; ready handoff archived superseded-before-execution): nothing here
-may be installed until Commander resequences the plan and the Architect
-confirms the candidates.
+Pins recorded under the F-15 governance stream (G-1, 2026-10-10) and carried
+into the [Rev 2 plan](../plans/2026-10-13_181100-obsidian-fidelity-editor.md)
+at **Plan Task 0.4**. Versions re-verified against the npm registry on
+2026-10-10. **Nothing in this section is installed yet.** The two candidate
+pins become direct dependencies only at their plan-task activation
+(**Plan Task 0.4**); the gated rows must not appear in
+`packages/ui/package.json`. **F-15 Rev 2 was resequenced 2026-10-13**
+(Commander, `@user`-directed; branch `F15-obsidian-fidelity-editor`):
+implementation proceeds per the Rev 2 plan; the gated rows stay gated until an
+explicit `@user` yes plus a fresh pin.
 
 | Package | Version | Released | Verified | License | Status / role |
 |---|---|---|---|---|---|

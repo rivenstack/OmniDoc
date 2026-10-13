@@ -1,7 +1,7 @@
 # Now — UI plan
 
 **Living page.** Edit this during the build. Keep it short.
-**Updated:** 2026-10-11
+**Updated:** 2026-10-13
 
 Choose here. Do not wait for a finished mock to review.
 
@@ -11,7 +11,7 @@ Choose here. Do not wait for a finished mock to review.
 | --- | --- |
 | What must the API and data honor? | [`system-ux.md`](./system-ux.md) |
 | What are we building now? | This file |
-| How should the editor behave? | **Obsidian.** Shipped-artifact analysis is the behavior source — the [F-15 plan](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md) §0.1 records the REA evidence |
+| How should the editor behave? | **Obsidian.** Shipped-artifact analysis is the behavior source — the [F-15 Rev 2 plan](../plans/2026-10-13_181100-obsidian-fidelity-editor.md) §0.1 records the REA catalogue evidence |
 | How should it look? | **Mintlify** design language — values in `packages/ui/src/styles/tokens.css` |
 | Old visual spec | Other files in `docs/design/` — history only (D-01) |
 
@@ -56,44 +56,44 @@ radius choices. Components are copied-in shadcn blocks and do not move.
 
 ## Current slice
 
-**F-06 retrieve — built 2026-10-11, live-verified against the local Java API.**
-
-Search is its own operation, separate from Ask (`system-ux.md` §1/§2). Delivered:
-one search port over the frozen S-02 search contract (`hybrid` default —
-deterministic fusion already includes the lexical pass, so there is no
-retrieval-mode toggle) plus the `/search` screen — server snippets rendered as
-text, a real Sample/Mine filter on `corpusOwnership`, an honest degraded notice,
-idle / empty / denied / validation / unavailable states, and a quiet pivot to
-Ask. Ticket: [`lane-frontend.md`](../handoffs/active/lane-frontend.md).
-Visual/mobile pass is **awaiting `@user`** — the implementer session has no
-browser.
-
-**F-15 — Obsidian-parity capture editor redesign (governance complete;
-implementation deferred).**
+**F-15 — Obsidian-fidelity editor, Rev 2 (live — `@user`-directed 2026-10-13).**
 
 Plan of record:
-[`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md).
-Governance tasks G-1…G-4 completed 2026-10-10 (editor pins, wikilink deferral,
-F-13/F-14 reconciliation, mode-contract sync) and are merged to `develop`.
-Phases A–H have **not** started: the ready handoff was archived
-superseded-before-execution (2026-10-11) and F-15 stays `listed` for Commander
-resequencing — do not start editor phases from the F-06 head.
+[`docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../plans/2026-10-13_181100-obsidian-fidelity-editor.md).
+Rev 2 supersedes [Rev 1](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md)
+(historical) and rebuilds the task set on the **finished** RE-Obsidian catalogue
+(114 entries; plan §0.3 records the twelve corrections it applies). `@user`
+locked ten decisions for it on 2026-10-13 (plan header) — do not re-decide them.
+Governance G-1…G-4 (2026-10-10, merged to `develop`) are inputs, not open
+questions. Phases 0–8 land one bite-sized task per commit, each green before the
+next begins, starting at Plan Task 0.1 — branch `F15-obsidian-fidelity-editor`,
+lane head [`lane-frontend.md`](../handoffs/active/lane-frontend.md).
 
 One markdown editing engine — an extension factory parameterised by an
 `EditorSettings` object plus `Compartment`s, and a live-preview `StateField` /
 viewport-scoped `ViewPlugin` pair with `atomicRanges` — driving **one
 formatting surface**: a command registry that both the TipTap and CodeMirror
 adapters implement, so the same affordances work identically in Normal,
-Markdown, and Text. Phases A–H land one bite-sized task per commit, each green
-before the next begins.
+Markdown, and Text.
 
 **Preserved, not rebuilt:** three capture modes + lock, GFM tables,
 live-preview folding, the JSON ↔ markdown bridge, and ProseMirror JSON as the
 durable source of truth.
 
 **Gated (not in this slice):** `[[wikilink]]` autocomplete (literal text in v1),
-vim mode, and math / mermaid widgets — each needs an explicit `@user` yes plus
-a ledger pin before any install.
+vim mode, and math / mermaid widgets (Task 3.5 — design recorded) — each needs
+an explicit `@user` yes plus a ledger pin before any install. **Deferred, design
+recorded:** image embeds (`EMBED-001…005`, Task 3.4 — no code lands) and tag
+click/autocomplete (Task 2.9 — parsing/styling only, pending `BL-26`).
+
+**Recently completed — F-06 retrieve.** Completed 2026-10-11, live-verified
+against the local Java API, and merged to `develop` (git-verified 2026-10-13):
+one search port over the frozen S-02 search contract (`hybrid` default — no
+retrieval-mode toggle) plus the `/search` screen; see the delivered table below.
+Archived ticket:
+[`H-2026-10-11-P1-F06-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md).
+**Open:** the `@user` visual/mobile pass on `/search` — the implementer session
+has no browser.
 
 ## Delivered slices
 
