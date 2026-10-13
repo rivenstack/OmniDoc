@@ -7,26 +7,29 @@ import {
   useRef,
   useState,
 } from "react";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { bracketMatching } from "@codemirror/language";
 import {
   EditorSelection,
   EditorState,
-  Compartment,
   type Extension,
 } from "@codemirror/state";
-import { EditorView, keymap, type ViewUpdate } from "@codemirror/view";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { cn } from "../lib/utils";
 import {
   BODY_CODE_FONT_FAMILY,
   BODY_TYPE_SCALE,
 } from "../capture/body-typography";
 import {
-  markdownLivePreviewPlugin,
-  markdownLivePreviewTheme,
-  tableLivePreview,
-} from "./markdown-live-preview";
+  createEditorCompartments,
+  editingExtensions,
+  editorExtensions,
+  livePreviewExtensions,
+  settingsExtensions,
+  type EditorEngineMode,
+} from "./editor-extensions";
+import {
+  DEFAULT_EDITOR_SETTINGS,
+  type EditorSettings,
+} from "./editor-settings";
 
 export type CodeMirrorEditorHandle = {
   focus: () => void;
@@ -39,7 +42,13 @@ export type CodeMirrorEditorHandle = {
 export type CodeMirrorEditorProps = {
   value: string;
   onChange: (value: string) => void;
-  mode: "text" | "markdown";
+  mode: EditorEngineMode;
+  /**
+   * Editor settings (`SET-002`). Changing one reconfigures the running editor —
+   * the caret, the scroll position and the undo history all survive — so a host
+   * may pass a fresh object on every render without paying for a rebuild.
+   */
+  settings?: EditorSettings;
   bodyLabel?: string;
   /** Locks the editor (the surface's lock control). */
   readOnly?: boolean;
@@ -56,6 +65,11 @@ export type CodeMirrorEditorProps = {
  * `readOnly` is the capture surface's lock: the document is untouched and the
  * source stops being contenteditable, while the preview keeps rendering (it
  * simply stops unfolding tokens).
+ *
+ * The extension set comes from `editor-extensions.ts` (F-15 Rev 2, Task 1.3),
+ * where everything reconfigurable lives in a `Compartment`. The effects below
+ * therefore dispatch **transactions**: a rebuild would drop the caret, the
+ * scroll position and the undo history (`SET-002`).
  */
 export const CodeMirrorEditor = forwardRef<
   CodeMirrorEditorHandle,
@@ -65,6 +79,7 @@ export const CodeMirrorEditor = forwardRef<
     value,
     onChange,
     mode,
+    settings = DEFAULT_EDITOR_SETTINGS,
     bodyLabel = "Note body",
     readOnly = false,
     className,
@@ -76,23 +91,14 @@ export const CodeMirrorEditor = forwardRef<
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  // Editable state lives in a compartment so the lock can toggle without
-  // rebuilding the view (a rebuild would drop the caret and scroll position).
-  const [editingCompartment] = useState(() => new Compartment());
+  // Read at view-creation time only: a settings change is applied to the running
+  // editor by the reconfiguration effect below, so it must not be a creation
+  // dependency — that would rebuild the view on every settings change.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
-  const editingExtensions = (locked: boolean, label: string): Extension => [
-    // Two facets on purpose: `EditorState.readOnly` stops command/API changes
-    // and drag-drop, `EditorView.editable` stops the DOM from being
-    // contenteditable at all.
-    EditorState.readOnly.of(locked),
-    EditorView.editable.of(!locked),
-    EditorView.contentAttributes.of({
-      role: "textbox",
-      "aria-multiline": "true",
-      "aria-label": label,
-      "aria-readonly": locked ? "true" : "false",
-    }),
-  ];
+  // One compartment set per editor instance, for the component's lifetime.
+  const [compartments] = useState(() => createEditorCompartments());
 
   useImperativeHandle(
     ref,
@@ -182,45 +188,21 @@ export const CodeMirrorEditor = forwardRef<
 
     const extensions: Extension[] = [
       baseTheme,
-      EditorView.lineWrapping,
-      bracketMatching(),
       // No `syntaxHighlighting(defaultHighlightStyle)`: its `tags.heading`
       // rule is `underline + bold`, which put a stray underline under every
       // heading in the source modes. Heading/bold/italic/code presentation is
-      // owned by `markdown-live-preview.ts` in Markdown mode; Text mode stays
-      // plain source by design.
-      history(),
-      keymap.of([
-        ...defaultKeymap,
-        ...historyKeymap,
-        {
-          key: "Escape",
-          run: (view: EditorView) => {
-            view.dom.blur();
-            return true;
-          },
-        },
-      ]),
-      // GFM makes the parser understand the same dialect the Reading mode
-      // renders (`remark-gfm`) and the toolbar can insert — strikethrough,
-      // autolinks, tables. Plain CommonMark silently produced no syntax nodes
-      // for `~~strike~~`.
-      markdown({ base: markdownLanguage }),
+      // owned by the live preview in Markdown mode; Text mode stays plain
+      // source by design.
+      ...editorExtensions(
+        { mode, settings: settingsRef.current, readOnly, bodyLabel },
+        compartments,
+      ),
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
           onChangeRef.current(update.state.doc.toString());
         }
       }),
-      editingCompartment.of(editingExtensions(readOnly, bodyLabel)),
     ];
-
-    if (mode === "markdown") {
-      extensions.push(
-        tableLivePreview,
-        markdownLivePreviewPlugin,
-        markdownLivePreviewTheme,
-      );
-    }
 
     const state = EditorState.create({
       doc: value,
@@ -238,8 +220,10 @@ export const CodeMirrorEditor = forwardRef<
       view.destroy();
       viewRef.current = null;
     };
-    // Recreate when mode changes so extensions are re-bound cleanly.
-  }, [mode, bodyLabel]);
+    // Recreate when mode changes: the base theme is mode-dependent and is not a
+    // compartment. Settings, the lock and the live preview are re-applied by the
+    // effects below, so they must not appear here.
+  }, [mode, bodyLabel, compartments]);
 
   // Synchronize document if value changed externally. A read-only state
   // rejects changes, so the sync waits for the unlock (the effect depends on
@@ -259,11 +243,37 @@ export const CodeMirrorEditor = forwardRef<
     const view = viewRef.current;
     if (!view) return;
     view.dispatch({
-      effects: editingCompartment.reconfigure(
+      effects: compartments.editing.reconfigure(
         editingExtensions(readOnly, bodyLabel),
       ),
     });
-  }, [bodyLabel, editingCompartment, readOnly]);
+  }, [bodyLabel, compartments, readOnly]);
+
+  // Live settings (`SET-002`). The individual values are the dependencies: a host
+  // that passes a fresh settings object every render must not pay for a
+  // transaction when none of the live keys actually changed.
+  const { tabSize, spellcheck, livePreview } = settings;
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: compartments.settings.reconfigure(
+        settingsExtensions(settingsRef.current),
+      ),
+    });
+  }, [compartments, tabSize, spellcheck]);
+
+  // The preview is switched by settings, not only by mode, so it gets its own
+  // reconfiguration rather than a place in the creation effect.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: compartments.livePreview.reconfigure(
+        livePreviewExtensions(mode, settingsRef.current),
+      ),
+    });
+  }, [compartments, livePreview, mode]);
 
   return (
     <div
