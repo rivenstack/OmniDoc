@@ -14,8 +14,17 @@ import { Decoration, WidgetType, type EditorView } from "@codemirror/view";
 /** A syntax-tree node's name and range. */
 export type NodeRange = { name: string; from: number; to: number };
 
-/** A folded token: nothing is rendered in its place. */
-const HIDDEN = Decoration.replace({});
+/**
+ * A folded token: nothing is rendered in its place.
+ *
+ * One of the three empty replace singletons `OBS-1.14.4-REVEAL-004` describes.
+ * Replace decorations are compared by identity when the range set is diffed, so
+ * three distinct singletons let the builder tell three kinds of hidden range
+ * apart while keeping that diff cheap. This is the *marker* kind — a line
+ * marker folded away with no glyph in its place (a task item's bullet, a folded
+ * comment delimiter).
+ */
+export const HIDDEN_MARKER = Decoration.replace({});
 
 /**
  * A folded token that is drawn as a glyph. The doc text stays authoritative —
@@ -138,6 +147,12 @@ export function markerDecoration(
     ancestorOf: (names: readonly string[]) => NodeRange | null;
     tasks: Set<number>;
   },
+  /**
+   * The decoration for a token that is folded with nothing in its place. The
+   * caller picks the *kind* (`REVEAL-004`): a delimiter token passes
+   * `HIDDEN_DELIMITER`, a marker token the marker singleton.
+   */
+  hidden: Decoration,
 ): Decoration {
   if (node.name === "TaskMarker") {
     return /[xX]/.test(text) ? TASK_CHECKED : TASK_UNCHECKED;
@@ -145,11 +160,12 @@ export function markerDecoration(
 
   if (node.name === "ListMark") {
     const item = ancestorOf(["ListItem"]);
-    // The checkbox replaces the bullet, so a task item gets no bullet.
-    if (item && tasks.has(item.from)) return HIDDEN;
+    // The checkbox replaces the bullet, so a task item gets no bullet — and
+    // that hidden bullet is a *marker*, not a delimiter.
+    if (item && tasks.has(item.from)) return HIDDEN_MARKER;
     const list = ancestorOf(["BulletList", "OrderedList"]);
     return list?.name === "OrderedList" ? orderedMarker(text) : BULLET;
   }
 
-  return HIDDEN;
+  return hidden;
 }

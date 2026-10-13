@@ -93,6 +93,59 @@ const HIDE_RULES: Record<string, HideRule> = {
 /** A token that is currently unfolded — dimmed so it reads as syntax. */
 const SYNTAX = Decoration.mark({ class: "cm-live-syntax" });
 
+/**
+ * The three empty replace singletons (`OBS-1.14.4-REVEAL-004`).
+ *
+ * Replace decorations are compared **by identity** when the range set is
+ * diffed, so three separate singletons let the builder distinguish three kinds
+ * of hidden range while keeping that diff cheap. The catalogue does not record
+ * which of the artifact's three corresponds to which kind, so ours are named by
+ * the use this engine makes of them:
+ *
+ * - {@link HIDDEN_DELIMITER} — an inline delimiter folded away (`**`, `~~`,
+ *   a backtick, a link bracket).
+ * - {@link HIDDEN_MARKER} — a line marker folded away with no glyph in its
+ *   place; defined beside the marker widgets in `widgets.ts` and re-exported
+ *   here so the three sit together.
+ * - {@link HIDDEN_BLOCK} — a whole block-level range hidden. Reserved for the
+ *   block constructs (callouts, embeds); nothing emits it yet.
+ */
+export const HIDDEN_DELIMITER = Decoration.replace({});
+export const HIDDEN_BLOCK = Decoration.replace({});
+export { HIDDEN_MARKER } from "./widgets";
+
+/**
+ * Rendered link text (`OBS-1.14.4-REVEAL-005`, `OBS-1.14.4-A11Y-002`).
+ *
+ * Carries three things at once, which is why the artifact builds it once: the
+ * underline class the theme styles, `tabindex="-1"` so the text is reachable by
+ * script and by pointer but deliberately **not** a tab stop, and
+ * `draggable="true"` — the same mark is both the accessibility surface and the
+ * drag surface.
+ */
+export const renderedLinkMark = Decoration.mark({
+  class: "cm-live-link",
+  attributes: { tabindex: "-1", draggable: "true" },
+});
+
+/**
+ * A range anchor with no presentation of its own.
+ *
+ * The activation layer attaches behaviour to a rendered span without changing
+ * how it looks, so this mark carries no class and no attributes — a test pins
+ * that, because a stray class here would restyle link text twice.
+ */
+export const transparentMark = Decoration.mark({});
+
+/**
+ * An unresolved link (`OBS-1.14.4-LINK-006`).
+ *
+ * Unresolved-link marking is **deferred** with internal links (wikilinks stay
+ * literal in v1), so nothing emits this yet: it exists so the re-open has one
+ * place to land instead of a second styling vocabulary.
+ */
+export const unresolvedMark = Decoration.mark({ class: "cm-live-unresolved" });
+
 const headingDecos: Partial<Record<string, Decoration>> = {
   ATXHeading1: Decoration.mark({ class: "cm-live-h1" }),
   ATXHeading2: Decoration.mark({ class: "cm-live-h2" }),
@@ -103,7 +156,6 @@ const strongDeco = Decoration.mark({ class: "cm-live-strong" });
 const emphasisDeco = Decoration.mark({ class: "cm-live-em" });
 const strikethroughDeco = Decoration.mark({ class: "cm-live-strike" });
 const inlineCodeDeco = Decoration.mark({ class: "cm-live-code" });
-const linkDeco = Decoration.mark({ class: "cm-live-link" });
 
 /**
  * Build the decoration set for the current view.
@@ -149,7 +201,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
       const to = rule.swallowTrailingSpace ? markerEnd(doc, node.to) : node.to;
       const text = doc.sliceString(node.from, node.to);
       ranges.push(
-        markerDecoration(node, text, { ancestorOf, tasks }).range(
+        markerDecoration(node, text, { ancestorOf, tasks }, HIDDEN_DELIMITER).range(
           node.from,
           to,
         ),
@@ -169,7 +221,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
     } else if (node.name === "InlineCode") {
       ranges.push(inlineCodeDeco.range(node.from, node.to));
     } else if (node.name === "Link") {
-      ranges.push(linkDeco.range(node.from, node.to));
+      ranges.push(renderedLinkMark.range(node.from, node.to));
     } else if (node.name === "ListItem") {
       // Hanging indent: the marker sits in the indent, wrapped lines align
       // under the text (`.cm-live-list-item` in the theme).

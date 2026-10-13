@@ -169,7 +169,15 @@ export const markdownLivePreviewPlugin = ViewPlugin.fromClass(
   },
 );
 
-export { buildDecorations } from "./decorations";
+export {
+  HIDDEN_BLOCK,
+  HIDDEN_DELIMITER,
+  HIDDEN_MARKER,
+  buildDecorations,
+  renderedLinkMark,
+  transparentMark,
+  unresolvedMark,
+} from "./decorations";
 export { markdownLivePreviewTheme } from "./theme";
 export {
   WHOLE_LINE_CONSTRUCTS,
