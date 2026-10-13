@@ -51,6 +51,7 @@ import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { DEFAULT_EDITOR_SETTINGS, type EditorSettings } from "./editor-settings";
 import { keymapExtensions } from "./keymap";
+import { linkActivationExtension } from "./links/activation";
 import {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
@@ -199,6 +200,10 @@ export function editorExtensions(
     // Outside every compartment: see the header — a mode switch must not drop
     // the undo history (HIST-002).
     history(),
+    // The link gate chain (`LINK-002`…`LINK-005`) has a Source-mode half, and
+    // this editor's source surface is Text mode — so it is installed for both
+    // modes rather than with the preview (Task 2.10).
+    linkActivationExtension(mode === "text" ? "source" : "preview"),
     compartments.keymap.of(keymapExtensions()),
     compartments.language.of(languageExtensions()),
     compartments.settings.of(settingsExtensions(settings)),

@@ -22,7 +22,7 @@
  */
 
 import { syntaxTree } from "@codemirror/language";
-import type { Range, Text } from "@codemirror/state";
+import type { EditorState, Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
@@ -139,6 +139,43 @@ export { HIDDEN_MARKER } from "./widgets";
  * recorded as a `@user`-directed addition rather than a parity claim.
  */
 export const taskDoneMark = Decoration.mark({ class: "cm-live-task-done" });
+
+/**
+ * The link's **rendered text** — what the mark belongs on.
+ *
+ * `OBS-1.14.4-REVEAL-005` puts the underline, the `tabindex` and `draggable` on
+ * "the rendered link text", and `OBS-1.14.4-LINK-002` turns on that distinction:
+ * a plain click follows a link only when it lands on the rendered text, and a
+ * click on the raw syntax — the brackets, the URL, an unrendered link on the
+ * active line — places the caret. So the mark covers the text between the
+ * brackets, not the whole node.
+ *
+ * An autolink (`<https://example.com>`) has no brackets; there the rendered text
+ * *is* the URL, so that is the range.
+ */
+function renderedLinkRange(state: EditorState, node: NodeRange): Span | null {
+  const marks: Span[] = [];
+  let url: Span | null = null;
+
+  syntaxTree(state).iterate({
+    from: node.from,
+    to: node.to,
+    enter: (child) => {
+      if (child.name === "LinkMark") {
+        marks.push({ from: child.from, to: child.to });
+      } else if (child.name === "URL" && url === null) {
+        url = { from: child.from, to: child.to };
+      }
+    },
+  });
+
+  if (marks.length >= 2) {
+    const from = marks[0].to;
+    const to = marks[marks.length - 1].from;
+    return from < to ? { from, to } : null;
+  }
+  return url;
+}
 
 /**
  * Rendered link text (`OBS-1.14.4-REVEAL-005`, `OBS-1.14.4-A11Y-002`).
@@ -465,7 +502,8 @@ export function buildDecorations(view: EditorView): DecorationSet {
     } else if (node.name === "InlineCode") {
       ranges.push(inlineCodeDeco.range(node.from, node.to));
     } else if (node.name === "Link") {
-      ranges.push(renderedLinkMark.range(node.from, node.to));
+      const text = renderedLinkRange(state, node);
+      if (text) ranges.push(renderedLinkMark.range(text.from, text.to));
     } else if (node.name === "ListItem") {
       // Hanging indent: the marker sits in the indent, wrapped lines align
       // under the text (`.cm-live-list-item` in the theme).

@@ -51,7 +51,14 @@ export const markdownLivePreviewTheme = EditorView.theme({
     borderRadius: "0.125rem",
     padding: "0.125rem 0.25rem",
   },
-  ".cm-live-link": { color: "var(--primary)", textDecoration: "underline" },
+  ".cm-live-link": {
+    color: "var(--primary)",
+    textDecoration: "underline",
+    // The mark covers the link's rendered *text* only, so the pointer appears
+    // exactly where a click follows the link — the brackets and the URL place
+    // the caret (`OBS-1.14.4-LINK-002`), and they keep the text cursor.
+    cursor: "pointer",
+  },
   // Inline highlighting (`==text==`) — an Obsidian construct the GFM grammar
   // does not model, so the preview's own text layer finds it (Task 2.5). The
   // six colour variants are the ones the artifact's emoji select chooses
