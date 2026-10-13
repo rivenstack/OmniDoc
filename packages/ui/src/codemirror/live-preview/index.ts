@@ -57,6 +57,23 @@ export const markdownLivePreviewPlugin = ViewPlugin.fromClass(
 export { buildDecorations, selectionTouches } from "./decorations";
 export { markdownLivePreviewTheme } from "./theme";
 export {
+  CONSTRUCT_REGIONS,
+  INLINE_FORMATTING_KINDS,
+  LINK_LIKE_KINDS,
+  buildRegionIndex,
+  classifyRegion,
+  regionOfNode,
+} from "./taxonomy";
+export type {
+  ConstructRegion,
+  ExclusionKind,
+  InlineFormattingKind,
+  LinkLikeKind,
+  MarkedRegion,
+  RegionIndex,
+  RegionRange,
+} from "./taxonomy";
+export {
   codeBlockFirstLine,
   codeBlockLastLine,
   codeBlockLine,
