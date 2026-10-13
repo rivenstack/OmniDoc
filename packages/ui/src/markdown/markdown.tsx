@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
+import { removeCommentSpans } from "./comments";
 import { markdownSanitizeSchema } from "./sanitize-schema";
 
 /**
@@ -109,7 +110,14 @@ export function Markdown({ source, className }: MarkdownProps) {
         rehypePlugins={[[rehypeSanitize, markdownSanitizeSchema]]}
         components={components}
       >
-        {source}
+        {/*
+          Comments render as nothing in the reading path (`OBS-1.14.4-COMMENT-001`,
+          `-003`, `-004`). This is a source-level stage, not a tree transform: a
+          block comment consumes to the next pair anywhere later — or to the end
+          of the note — which the parsed tree can no longer express. The rest of
+          the pipeline is unchanged.
+        */}
+        {removeCommentSpans(source)}
       </ReactMarkdown>
     </div>
   );

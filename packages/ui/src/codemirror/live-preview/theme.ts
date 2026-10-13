@@ -69,6 +69,11 @@ export const markdownLivePreviewTheme = EditorView.theme({
   ".cm-live-highlight-green": { backgroundColor: HIGHLIGHT_TINTS.green },
   ".cm-live-highlight-blue": { backgroundColor: HIGHLIGHT_TINTS.blue },
   ".cm-live-highlight-purple": { backgroundColor: HIGHLIGHT_TINTS.purple },
+  // Comments: faint, and never hidden (`OBS-1.14.4-COMMENT-001`). The `%%`
+  // pair is fainter still, so the delimiters read as syntax rather than as part
+  // of the sentence they wrap — but they stay on screen.
+  ".cm-live-comment": { color: "var(--muted-foreground)" },
+  ".cm-live-comment-marker": { opacity: "0.6" },
   // These three set padding, which CodeMirror's base theme also sets on
   // `.cm-line` with the shorthand — the compound selector is what makes the
   // preview's insets win (equal-specificity rules are resolved by order, and

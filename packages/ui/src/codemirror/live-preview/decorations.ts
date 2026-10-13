@@ -24,6 +24,7 @@
 import { syntaxTree } from "@codemirror/language";
 import type { Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
+import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
 import { buildRegionIndex, type RegionIndex, type Span } from "./taxonomy";
 import {
@@ -158,6 +159,27 @@ export const transparentMark = Decoration.mark({});
  * place to land instead of a second styling vocabulary.
  */
 export const unresolvedMark = Decoration.mark({ class: "cm-live-unresolved" });
+
+/* ------------------------------------------------------------------ comments
+ * Comments (`%%…%%`) are the one construct with no reveal rule at all
+ * (`OBS-1.14.4-COMMENT-001`): they are **styled faint and never hidden**, so
+ * these are marks, never replaces, and no caret position changes them. Only the
+ * reading path hides them (`markdown/comments.ts`).
+ * ------------------------------------------------------------------------ */
+
+/** The comment body and its delimiters: faint, always visible. */
+export const commentMark = Decoration.mark({ class: "cm-live-comment" });
+
+/**
+ * A `%%` pair itself.
+ *
+ * The artifact gives the pair the comment class *plus* its formatting markers,
+ * which is why the delimiters can be styled apart from the body they open —
+ * fainter, so the reader's eye skips them without them disappearing.
+ */
+export const commentMarkerMark = Decoration.mark({
+  class: "cm-live-comment cm-live-comment-marker",
+});
 
 /* ------------------------------------------------------------------ inline
  * Highlighting (`==text==`)
@@ -463,6 +485,13 @@ export function buildDecorations(view: EditorView): DecorationSet {
       const delimiter = isRevealed(span) ? SYNTAX : HIDDEN_DELIMITER;
       ranges.push(delimiter.range(span.from, span.contentFrom));
       ranges.push(delimiter.range(span.contentTo, span.to));
+    }
+
+    // Comments: marked, never hidden — and no reveal test, on purpose.
+    for (const span of scanComments(doc, from, to, regions)) {
+      ranges.push(
+        (span.marker ? commentMarkerMark : commentMark).range(span.from, span.to),
+      );
     }
   }
 

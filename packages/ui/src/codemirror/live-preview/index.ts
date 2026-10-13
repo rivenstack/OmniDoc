@@ -178,6 +178,8 @@ export {
   HIGHLIGHT_EMOJI,
   HIGHLIGHT_MARKER,
   buildDecorations,
+  commentMark,
+  commentMarkerMark,
   highlightColourOf,
   highlightMark,
   renderedLinkMark,
@@ -186,6 +188,8 @@ export {
   unresolvedMark,
 } from "./decorations";
 export type { HighlightColour, HighlightSpan } from "./decorations";
+export { COMMENT_DELIMITER, scanComments } from "./comment";
+export type { CommentRange } from "./comment";
 export { markdownLivePreviewTheme } from "./theme";
 export {
   WHOLE_LINE_CONSTRUCTS,
