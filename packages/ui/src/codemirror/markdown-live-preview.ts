@@ -26,6 +26,10 @@ import {
   unescapeTableCell,
   type ParsedTable,
 } from "../markdown/table";
+import {
+  LIVE_PREVIEW_CODE_TYPE,
+  LIVE_PREVIEW_TYPE_RULES,
+} from "../capture/body-typography";
 
 /**
  * Re-exported: this module was the table text rules' original home. The
@@ -1553,29 +1557,21 @@ export const markdownLivePreviewPlugin = ViewPlugin.fromClass(
 
 /**
  * Presentation for the live preview, deliberately kept in step with the
- * typography the capture surface applies to TipTap (Normal). Values are
- * expressed directly rather than as utility classes so the preview's look
- * cannot depend on Tailwind having scanned this folder.
+ * typography the capture surface applies to TipTap (Normal). The type values
+ * are imported from `capture/body-typography.ts` — one source for both engines
+ * (F-15 Rev 2, Task 1.2) — and the rest is expressed directly rather than as
+ * utility classes so the preview's look cannot depend on Tailwind having
+ * scanned this folder.
  */
 export const markdownLivePreviewTheme = EditorView.theme({
+  ...LIVE_PREVIEW_TYPE_RULES,
   ".cm-live-syntax": { color: "var(--muted-foreground)" },
-  ".cm-live-h1": { fontSize: "1.5rem", lineHeight: "2rem", fontWeight: "500" },
-  ".cm-live-h2": {
-    fontSize: "1.25rem",
-    lineHeight: "1.75rem",
-    fontWeight: "500",
-  },
-  ".cm-live-h3": {
-    fontSize: "1.125rem",
-    lineHeight: "1.75rem",
-    fontWeight: "500",
-  },
   ".cm-live-strong": { fontWeight: "700" },
   ".cm-live-em": { fontStyle: "italic" },
   ".cm-live-strike": { textDecoration: "line-through" },
   ".cm-live-code": {
-    fontFamily: "var(--font-geist-mono), monospace",
-    fontSize: "0.9em",
+    fontFamily: LIVE_PREVIEW_CODE_TYPE.fontFamily,
+    fontSize: LIVE_PREVIEW_CODE_TYPE.inlineFontSize,
     backgroundColor: "var(--muted)",
     borderRadius: "0.125rem",
     padding: "0.125rem 0.25rem",
@@ -1626,8 +1622,8 @@ export const markdownLivePreviewTheme = EditorView.theme({
   // Fenced code: one muted block, monospace, no fence text.
   ".cm-line.cm-live-code-block": {
     backgroundColor: "var(--muted)",
-    fontFamily: "var(--font-geist-mono), monospace",
-    fontSize: "0.875rem",
+    fontFamily: LIVE_PREVIEW_CODE_TYPE.fontFamily,
+    fontSize: LIVE_PREVIEW_CODE_TYPE.blockFontSize,
     paddingInline: "0.75rem",
   },
   ".cm-live-code-block-first": {

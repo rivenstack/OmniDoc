@@ -13,6 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 import type { EditorProps } from "@tiptap/pm/view";
 import { useStore } from "zustand";
 import { cn } from "../lib/utils";
+import { CAPTURE_BODY_CLASSES } from "./body-typography";
 import {
   EMPTY_DOCUMENT,
   isBlankDraft,
@@ -125,32 +126,11 @@ const CAPTURE_EXTENSIONS = [
  *
  * Normal (TipTap) and Markdown (CodeMirror live preview) must read as the same
  * page: switching modes changes how the source is edited, not how the note
- * looks. The look lives in one string so the modes cannot drift apart; the
- * CodeMirror side mirrors the same values in `markdown-live-preview.ts`
- * because it renders its own line DOM.
+ * looks. The values live in `body-typography.ts`, which both the utility string
+ * below and the CodeMirror live-preview theme derive from (F-15 Rev 2, Task 1.2)
+ * — the theme rules for the constructs CodeMirror draws itself are
+ * `LIVE_PREVIEW_TYPE_RULES` in the same module.
  */
-const CAPTURE_BODY_CLASSES = [
-  // `break-words` inherits, so long unbroken strings wrap anywhere in the
-  // body without a blanket descendant selector (`ui-qa-checklist.md` §5.9).
-  "break-words text-base text-foreground",
-  "[&_p]:my-3",
-  "[&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-medium",
-  "[&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-medium",
-  "[&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-medium",
-  "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
-  "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6",
-  "[&_blockquote]:my-4 [&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground",
-  "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-sm",
-  "[&_pre]:focus-visible:ring-3 [&_pre]:focus-visible:ring-ring [&_pre]:outline-none",
-  "[&_code]:rounded-xs [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
-  "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-  "[&_hr]:my-6 [&_hr]:border-border",
-  "[&_a]:text-primary [&_a]:underline",
-  "[&_.tableWrapper]:my-4 [&_.tableWrapper]:overflow-x-auto [&_.tableWrapper]:max-w-full",
-  "[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm",
-  "[&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:font-medium [&_th]:text-start",
-  "[&_td]:border [&_td]:border-border [&_td]:p-2",
-].join(" ");
 
 /** A note as this surface needs it — the app maps the contract onto this. */
 export type CaptureNote = {

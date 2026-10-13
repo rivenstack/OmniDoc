@@ -19,6 +19,10 @@ import {
 import { EditorView, keymap, type ViewUpdate } from "@codemirror/view";
 import { cn } from "../lib/utils";
 import {
+  BODY_CODE_FONT_FAMILY,
+  BODY_TYPE_SCALE,
+} from "../capture/body-typography";
+import {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
   tableLivePreview,
@@ -154,15 +158,15 @@ export const CodeMirrorEditor = forwardRef<
         outline: "none",
         backgroundColor: "transparent",
         color: "var(--foreground)",
-        fontSize: "1rem",
-        // Matches `text-base` in the Normal and Reading modes: the mode switch
-        // must not change the page's line rhythm.
-        lineHeight: "1.5",
+        // Body typography comes from the one shared scale (F-15 Rev 2, Task
+        // 1.2) so the mode switch cannot change the page's line rhythm.
+        fontSize: `${BODY_TYPE_SCALE.body.fontSizeRem}rem`,
+        lineHeight: String(BODY_TYPE_SCALE.body.lineHeightRem),
       },
       ".cm-content": {
         caretColor: "var(--foreground)",
         fontFamily:
-          mode === "text" ? "var(--font-geist-mono), monospace" : "inherit",
+          mode === "text" ? BODY_CODE_FONT_FAMILY : "inherit",
         padding: "0.75rem 0",
       },
       ".cm-line": {
