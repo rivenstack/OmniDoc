@@ -54,8 +54,22 @@ export const markdownLivePreviewPlugin = ViewPlugin.fromClass(
   },
 );
 
-export { buildDecorations, selectionTouches } from "./decorations";
+export { buildDecorations } from "./decorations";
 export { markdownLivePreviewTheme } from "./theme";
+export {
+  WHOLE_LINE_CONSTRUCTS,
+  accumulateSpan,
+  constructSpan,
+  focusedRanges,
+  isRevealed,
+  isWholeLineConstruct,
+  revealContext,
+  selectionTouches,
+  touches,
+  touchesAny,
+  wholeLineSpan,
+} from "./reveal";
+export type { RevealContext } from "./reveal";
 export {
   CONSTRUCT_REGIONS,
   INLINE_FORMATTING_KINDS,

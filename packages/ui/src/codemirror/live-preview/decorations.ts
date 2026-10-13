@@ -22,8 +22,10 @@
  */
 
 import { syntaxTree } from "@codemirror/language";
-import type { EditorSelection, Range, Text } from "@codemirror/state";
+import type { Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
+import { isRevealed as spanRevealed, revealContext } from "./reveal";
+import type { Span } from "./taxonomy";
 import {
   RULE,
   codeBlockFirstLine,
@@ -38,9 +40,6 @@ import {
   type NodeRange,
 } from "./widgets";
 
-/** A region that can sit under the selection. */
-type RangeLike = { from: number; to: number };
-
 type Helpers = {
   doc: Text;
   /** Nearest enclosing node with one of `names`, or `null`. */
@@ -52,7 +51,7 @@ type HideRule = {
    * The region the selection has to touch for this token to unfold. `null`
    * means "this spelling is not one the preview folds" — leave it visible.
    */
-  context: (node: NodeRange, helpers: Helpers) => RangeLike | null;
+  context: (node: NodeRange, helpers: Helpers) => Span | null;
   /** Also fold the whitespace after the token — it is syntax, not content. */
   swallowTrailingSpace?: boolean;
 };
@@ -107,23 +106,6 @@ const inlineCodeDeco = Decoration.mark({ class: "cm-live-code" });
 const linkDeco = Decoration.mark({ class: "cm-live-link" });
 
 /**
- * The inclusive touch predicate: a construct is revealed when a selection range
- * overlaps it from either side.
- *
- * Exported for the reveal engine's tests (Task 2.2) — it is the predicate the
- * whole unfold rule is built on.
- */
-export function selectionTouches(
-  selection: EditorSelection,
-  from: number,
-  to: number,
-): boolean {
-  return selection.ranges.some(
-    (range: RangeLike) => range.from <= to && range.to >= from,
-  );
-}
-
-/**
  * Build the decoration set for the current view.
  *
  * Exported so the plugin that owns it (and its tests) can call it directly.
@@ -136,12 +118,14 @@ export function buildDecorations(view: EditorView): DecorationSet {
   // A note nobody is editing renders like a finished document: unfolding is
   // gated on focus, and a locked note (`editable` false) never unfolds at all.
   const revealEnabled = view.hasFocus && state.facet(EditorView.editable);
+  // One reveal context for the whole walk — the predicate, the focus rule and
+  // the empty-when-unfocused rule live in `reveal.ts` (Task 2.2).
+  const reveal = revealContext(selection, revealEnabled);
 
   const ancestors: NodeRange[] = [];
   const tasks = taskItems(view);
 
-  const isRevealed = (context: RangeLike) =>
-    revealEnabled && selectionTouches(selection, context.from, context.to);
+  const isRevealed = (span: Span) => spanRevealed(reveal, span);
 
   const decorate = (node: NodeRange) => {
     const rule = HIDE_RULES[node.name];
