@@ -30,7 +30,12 @@ export type { EditorSettings } from "./editor-settings";
 export {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
-  tableLivePreview,
-  TablePreviewWidget,
-  parseMarkdownTable,
 } from "./markdown-live-preview";
+export {
+  TABLE_COMPLETE_MS,
+  TABLE_IDLE_FLUSH_MS,
+  TablePreviewWidget,
+  findTableBlocks,
+  tableLivePreview,
+  parseMarkdownTable,
+} from "./live-preview/table";
