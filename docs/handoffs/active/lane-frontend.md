@@ -20,9 +20,10 @@ branch: F15-obsidian-fidelity-editor
 
 ```text
 /implementer Read docs/handoffs/active/lane-frontend.md and execute it exactly.
-F-15 Rev 2 begins at Plan Task 0.1 — one plan task per commit, both gates green
-(`npx vitest run` in packages/ui; `npx nx typecheck ui` at repo root) before the
-next task begins. Continue through the plan until a soft-stop.
+F-15 Rev 2 Phases 0–2 are complete; continue at Plan Task 3.1 — one plan task per
+commit, both gates green (`npx vitest run` in packages/ui; `npx nx typecheck ui
+--skip-nx-cache` at repo root) before the next task begins. Continue through the
+plan until a soft-stop.
 ```
 
 ## Progress (implementer log)
@@ -99,6 +100,80 @@ Deviations recorded (no behaviour change, no plan re-open):
 - Task 1.5's "extract the keymap" gives the bindings their own `keymap.ts`;
   Task 1.3 had already created the `keymap` compartment, so the swap point
   existed one task earlier than the plan's sequencing assumed.
+
+**2026-10-13 — Plan Phase 2 complete.** Eleven tasks, one commit each, both
+per-task gates green before the next began (`npx vitest run` in `packages/ui`;
+`npx nx typecheck ui --skip-nx-cache` at the repo root — note the `--skip-nx-cache`,
+without which a gate can report the *previous* task's success). `@user` verified
+each visible task in the running dev server before its commit.
+
+| Task | Commit | What landed |
+|---|---|---|
+| 2.1 | `df45987` | `live-preview/taxonomy.ts` — the five inline-formatting and six link-like kinds (`REVEAL-008`), the `prose \| table \| verbatim` regions, and `buildRegionIndex` — the shared answer the text layer asks for prose boundaries and code/link exclusions |
+| 2.2 | `70b2e8a` | `live-preview/reveal.ts` — inclusive predicate (`REVEAL-001`), focused ranges only (`REVEAL-002`), accumulated spans with whole-line spans for heading/quote/escape (`REVEAL-011`); `decorations.ts` now asks it instead of carrying its own copy |
+| 2.3 | `07920bd` | `live-preview/policy.ts` — the three map-only guards (`REVEAL-006`, `IME-002`) and the five deferral delays (`REVEAL-010`); the plugin follows them, with integration tests proving the deferral is observable |
+| 2.4 | `7120abe` | three identity-distinct hidden-range singletons (`REVEAL-004`), `renderedLinkMark` with `tabindex`/`draggable` (`REVEAL-005`, `A11Y-002`), transparent and unresolved marks |
+| 2.5 | `a342992` | inline formatting; `==highlight==` via a text layer (the grammar models nothing for it), colour emoji parsed, default otherwise |
+| 2.6 | `2af2c1f` | headings/rules/quote border as the artifact's widget (`REVEAL-007`); `HEADING_PATTERN` landed regex-only (`FOLD-002`) |
+| 2.7 | `c26f193` | comments: LP styled and **never hidden** (`COMMENT-001`), the toggle/stream-state quirks (`COMMENT-002`); reading path inline+block rules (`COMMENT-003`, `-004`) as a source stage in `Markdown` |
+| 2.8 | `90f220c` | task checkbox: the `x`/space toggle (`TASK-001`), the project's own `Checkbox` look, detection by the artifact's predicate (so `[?]`/`[-]` are tasks, not links) |
+| 2.9 | `405a466` | tags: exclusion-class pattern, longest prefix, numeric rule (`TAG-001`), three-part class split (`TAG-003`), one character class (`TAG-005`); click/autocomplete deferred (`BL-26`) |
+| 2.10 | `5ff11a0` | external-link gate chain (`LINK-002`…`-005`, `-010`, `-011`) and the renderer scheme gate (`LINK-009`, D-2) |
+| 2.11 | `a833451` | footnotes: named refs styled and link-like, inline parsed/styled but never interactive (`FOOT-001`) |
+
+Gate evidence, Phase 2 close:
+
+- `npx vitest run` (`packages/ui`) — **737/737 pass**, 40 files.
+- `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
+  (lint carries the same 6 pre-existing warnings; no errors).
+- `pnpm nx run-many -t typecheck lint test build --exclude api` — **all 4 JS
+  projects green** (14 tasks).
+- `docs/fidelity/obsidian-parity-matrix.md` regenerated at phase close by its
+  test — **byte-identical** (Phase 2 changed no disposition), so no matrix
+  commit. 114 rows; totals unchanged.
+- `apps/web/next-env.d.ts` reverted after the build, as before.
+
+Rules implemented that have **no catalogue entry** — recorded here so Phase
+Check sees them as directed, never as parity claims:
+
+- **Strike-through of a completed task's text** — `x`/`X` only; `[?]`/`[-]` fill
+  the box but are not struck. `TASK-001` specifies the toggle, not the look.
+  `@user`-directed (2026-10-13).
+- **Task-marker reveal-on-caret** — the raw `[ ]` shows with the caret on the
+  line. `REVEAL-008`'s construct sets exclude the task marker, so the catalogue
+  gives it no reveal rule; `@user` observed the artifact doing this and directed
+  it (2026-10-13).
+- **A plain click on rendered link text opens a browser tab** — the artifact's
+  current-leaf intent would drop the note being edited. Named in
+  `LINK_TARGET_POLICY` rather than buried in the gate. `@user`-directed
+  (2026-10-13). D-3 already covered split/window.
+- **The tag chip** — the design language's `Badge` (secondary) at prose size,
+  chosen by `@user` over plain coloured text (2026-10-13).
+
+Deviations and gaps recorded (no plan re-open):
+
+- **Task 2.7's reading-path stage is a source transform, not a remark/mdast
+  plugin** (`markdown/comments.ts`). The plan's word is "plugin"; a block
+  comment that consumes to the end of the document crosses arbitrary block
+  boundaries, which a tree transform cannot express, and the F-12 pipeline and
+  its public contract are untouched. Behaviour is equivalent: the artifact's
+  render handler returns nothing for a comment.
+- **Task 2.10's activation lives in `editor-extensions.ts`** (one line in the
+  factory) rather than only in the plan's named files, because the gate has a
+  Source-mode half and this editor's source surface is Text mode.
+- **`LinkMark` added to `taxonomy.ts`'s `LINK_NODES`** (Task 2.11). Without it a
+  claiming layer suppressed the `Link` node but not its brackets, so `[^name]`'s
+  brackets were still folded as link syntax. The taxonomy's own test was
+  extended to keep the list in sync with the parser.
+- **`@user`-reported open item (2026-10-13):** after the reveal rule landed, the
+  task-marker reveal and the checkbox interact in a way `@user` is not happy
+  with. `@user` is tracking it in their own list and will address it; it is
+  **not** claimed as verified.
+
+**Next task pointer: Plan Task 3.1 — fenced code blocks** (`REVEAL-009`'s fence
+regex literal, `FOLD-004`), then 3.2 → 3.5 to close Phase 3 (3.4 images and 3.5
+math/Mermaid are design records only — no code, no installs). No soft-stop is in
+effect.
 
 ## Objective
 
