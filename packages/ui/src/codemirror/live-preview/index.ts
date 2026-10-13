@@ -184,6 +184,9 @@ export {
   highlightMark,
   renderedLinkMark,
   scanHighlights,
+  tagBeginMark,
+  tagEndMark,
+  tagMark,
   taskDoneMark,
   transparentMark,
   unresolvedMark,
@@ -191,6 +194,8 @@ export {
 export type { HighlightColour, HighlightSpan } from "./decorations";
 export { COMMENT_DELIMITER, scanComments } from "./comment";
 export type { CommentRange } from "./comment";
+export { scanTags } from "./tags";
+export type { TagSpan } from "./tags";
 export { markdownLivePreviewTheme } from "./theme";
 export {
   WHOLE_LINE_CONSTRUCTS,

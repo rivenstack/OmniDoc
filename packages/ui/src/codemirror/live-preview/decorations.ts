@@ -26,6 +26,7 @@ import type { Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
+import { scanTags } from "./tags";
 import {
   LINK_NODES,
   buildRegionIndex,
@@ -191,6 +192,25 @@ export const commentMark = Decoration.mark({ class: "cm-live-comment" });
 export const commentMarkerMark = Decoration.mark({
   class: "cm-live-comment cm-live-comment-marker",
 });
+
+/* ---------------------------------------------------------------------- tags
+ * `#tag` is not Markdown, so the grammar models nothing for it — the text layer
+ * finds it (`OBS-1.14.4-TAG-001`). The styling is the artifact's **three-part
+ * class split** (`TAG-003`): the tag as a whole, its opening hash and its
+ * trailing boundary, so a theme can address each independently.
+ *
+ * Nothing here is interactive: the click (`TAG-004`) and the autocomplete
+ * (`TAG-002`) are both deferred behind the `BL-26` collections/tags contract.
+ * ------------------------------------------------------------------------ */
+
+/** The whole tag. */
+export const tagMark = Decoration.mark({ class: "cm-live-tag" });
+
+/** The opening `#`. */
+export const tagBeginMark = Decoration.mark({ class: "cm-live-tag-begin" });
+
+/** The tag's last character — its trailing boundary. */
+export const tagEndMark = Decoration.mark({ class: "cm-live-tag-end" });
 
 /* ------------------------------------------------------------------ inline
  * Highlighting (`==text==`)
@@ -551,10 +571,17 @@ export function buildDecorations(view: EditorView): DecorationSet {
         ranges.push(taskCheckbox(marker).range(marker.from, contentFrom));
       }
     }
+    // Tags (`TAG-001`): styled text, never interactive — the click and the
+    // suggest are deferred behind `BL-26` (decisions 8 and `TAG-002`).
+    for (const span of scanTags(doc, from, to, regions)) {
+      ranges.push(tagMark.range(span.from, span.to));
+      ranges.push(tagBeginMark.range(span.from, span.from + 1));
+      ranges.push(tagEndMark.range(span.to - 1, span.to));
+    }
   }
 
-  // `Decoration.set(..., true)` sorts (and merges) the collected ranges, so
-  // the walk may emit nested ranges — a heading span, then the marks inside
-  // it — in any order.
+  // `Decoration.set(..., true)` sorts (and merges) the collected ranges, so the
+  // walk may emit nested ranges — a heading span, then the marks inside it — in
+  // any order.
   return Decoration.set(ranges, true);
 }

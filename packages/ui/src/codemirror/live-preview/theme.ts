@@ -74,6 +74,18 @@ export const markdownLivePreviewTheme = EditorView.theme({
   // of the sentence they wrap — but they stay on screen.
   ".cm-live-comment": { color: "var(--muted-foreground)" },
   ".cm-live-comment-marker": { opacity: "0.6" },
+  // Tags (`OBS-1.14.4-TAG-003`): the design language's `Badge` — secondary
+  // variant — at prose size. The badge's `text-xs` is deliberately **not**
+  // applied: a tag inside running prose must not change the text size, or the
+  // line rhythm the body type scale owns would break mid-sentence.
+  ".cm-live-tag": {
+    backgroundColor: "var(--secondary)",
+    color: "var(--secondary-foreground)",
+    borderRadius: "var(--od-radius-full)",
+    paddingBlock: "0.0625rem",
+  },
+  ".cm-live-tag-begin": { paddingInlineStart: "0.375rem" },
+  ".cm-live-tag-end": { paddingInlineEnd: "0.375rem" },
   // These three set padding, which CodeMirror's base theme also sets on
   // `.cm-line` with the shorthand — the compound selector is what makes the
   // preview's insets win (equal-specificity rules are resolved by order, and
