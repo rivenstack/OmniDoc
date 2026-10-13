@@ -364,6 +364,20 @@ Program of record:
   port/adapter (ADR-0005). `@user` will decide later whether to author the
   contract and implement it. Gate: `ui` + `web` typecheck / lint / test green
   (`--skip-nx-cache`).
+- **2026-10-13:** **F-06 (retrieve) confirmed completed and merged.**
+  Git-verified: `F06-retrieve` is an ancestor of `develop` (both at `7db930c`,
+  containing the retrieval slice `4695774`); the lane head's "not merged" note
+  was stale. Sequencing resolved — the consumed return head is archived at
+  `docs/handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`;
+  the `@user` visual/mobile pass on `/search` remains open
+- **2026-10-13:** **F-15 Rev 2 adopted for implementation** (`@user`; ten
+  decisions locked 2026-10-13). Branch `F15-obsidian-fidelity-editor`; plan
+  `docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md` (supersedes Rev 1,
+  historical). The frontend lane head is rewritten to **F-15** (`ready`,
+  `to: implementer`); next = **Plan Task 0.1**. Images deferred (Task 3.4
+  records the design), math/Mermaid gated (Task 3.5), tag click/autocomplete
+  deferred pending `BL-26`. **F-07 stays queued** — an unmerged, built ask
+  slice on branch `F07-ask` is soft-stopped on B-08 + the `@user` pass
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -403,10 +417,10 @@ Program of record:
 | F-03 Auth / session UI | frontend | Implementer (front-end programmer) | **completed** 2026-09-24 — identity port, three-state session entry, sign-out wiring, selector semantics, and the sign-in block (branch `F03-auth-ui`; ui + web checks and build green) | `docs/handoffs/archive/H-2026-09-23-P1-F03-user-implementer.md` |
 | F-04 Capture (TipTap) | frontend | Implementer (front-end programmer) | **completed** 2026-09-25 (Commander-validated PASS) — notes port, shared transport, save cycle, import-status, capture blocks + `/notes/new` + `/notes/[noteId]`; ui 277 / web 77 tests, build 12 routes | `docs/handoffs/archive/H-2026-09-24-P1-F04-implementer-implementer.md` |
 | F-05 Organize (notes list) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F05-organize`) — server-first notes list over `listNotes` with URL-based server cursors; **updated 2026-10-12**: Inbox and Collections removed from the shell (no collections contract ⇒ identical lists); collections sub-slice recorded with backend needs as `BL-26` | `docs/handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md` |
-| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11 (branch `F06-retrieve`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/active/lane-frontend.md` |
+| F-06 Retrieve (search) | frontend | Implementer (front-end programmer) | **completed** 2026-10-11; **merged to `develop`** (git-verified 2026-10-13 — branch contained; both at `7db930c`) — search port (hybrid default) + `/search` screen over the frozen S-02 search contract: URL-held `?q=`/`?corpus=`, snippet-led verbatim rows, real Sample/Mine filter, degraded notice, six honest states, quiet Ask pivot; live-verified against the local Java API (temporary fixture removed); **visual/mobile pass awaits `@user`** (no browser in session) | `docs/handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md` |
 | F-13 Multi-mode capture & markdown editing | frontend | Implementer (front-end programmer) | **completed** 2026-10-01 (`@user`-verified) — three capture modes + lock, CodeMirror 6 live preview, JSON↔markdown bridge (commits `3c170f9`/`fe5a97f`); reconciled to `completed` 2026-10-11 via the F-15 governance stream | `docs/planning/implementation-tracks.md` |
 | F-14 Markdown & editor tables | frontend | Implementer (front-end programmer) | **completed** 2026-10-02 — tables across all modes; archived 2026-10-10 via the F-15 governance stream | `docs/handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md` |
-| F-15 Obsidian-parity editor redesign | frontend | Implementer (front-end programmer) — **deferred** | **listed (deferred)** — governance G-1…G-4 complete 2026-10-10; implementation phases A–H not started; ready handoff archived superseded-before-execution 2026-10-11 | `docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md` |
+| F-15 Obsidian-fidelity editor (Rev 2) | frontend | Implementer (front-end programmer) | **live — opened 2026-10-13** (`@user`; ten decisions locked) — branch `F15-obsidian-fidelity-editor`; next = Plan Task 0.1; images deferred, math/Mermaid gated, TAG-002/004 await `BL-26` | `docs/handoffs/active/lane-frontend.md` + `docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md` |
 | F-02a Visible UI kit (stock shadcn) | frontend | Implementer (front-end programmer) | **completed** — `/kit` page; archived `H-2026-09-22-P1-F02A` | `docs/handoffs/active/lane-frontend.md` |
 | B-01 Domain port interfaces | backend | Implementer (back-end programmer) | **completed** (Commander-validated 2026-09-17) | `docs/handoffs/archive/H-2026-09-16-P1-B01-commander-implementer.md` |
 | S-02 Canonical HTTP / OpenAPI / SSE | backend | Implementer (back-end programmer) | **completed** | `docs/handoffs/archive/H-2026-09-17-P1-S02-implementer-implementer.md` |
@@ -504,8 +518,9 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (**F-06 retrieve**, `ready`, `lane: frontend`, human:
-  front-end programmer; F-15 editor redesign deferred back to `listed`)
+  `/implementer` (**F-15 Rev 2**, `ready`, `lane: frontend`, human:
+  front-end programmer; branch `F15-obsidian-fidelity-editor`; next = Plan
+  Task 0.1; F-06 completed and merged)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (**B-08** mock ask adapter + citation assembler, `ready`,
   `lane: backend`; human: back-end programmer)

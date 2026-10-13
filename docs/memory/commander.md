@@ -58,6 +58,12 @@
   workload for those 6 months
 - Rejected ADR-0001 categories return to Researcher evidence then
   Architect rewrite — Commander never invents AWS/OpenRouter/BYOK
+- Handoff status claims go stale — F-06's lane head said "not merged" on
+  2026-10-12 while `develop` already contained it. Before resequencing,
+  verify with `git merge-base --is-ancestor <branch> develop` and scan for
+  unmerged parallel work (`git log --oneline develop..<branch>`): a built
+  but unmerged lane branch (2026-10-13: `F07-ask`) can exist with no trace
+  on `develop`
   topology in the handoff
 - `@user` 2026-09-14: two developers, each with their own agents.
   Frontend owns D-* / F-*; Backend owns B-* (and recommended S-01);

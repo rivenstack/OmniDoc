@@ -73,7 +73,7 @@ handoff yet.
 | 0 Discovery | **closed** | Research, UX, ADRs, architecture |
 | Design close-out (D-01) | **closed; visuals historical** | Accepted 2026-09-16. As of 2026-09-22 not a build ticket. Contracts: `docs/design/system-ux.md`. Plan: `docs/design/now.md` |
 | Backend Stack Close-out | **closed** | R-BE → A-BE → U-BE → A-BE2; ADR-0005 `accepted` |
-| 1 Build | **in progress** — F-06 ready in the frontend head (F-15 governance merged; editor phases deferred); B-08 is now the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
+| 1 Build | **in progress** — F-15 Rev 2 is the live frontend slice (plan Phase 0 next; `@user`-directed 2026-10-13); F-06 completed and merged; B-08 is the live backend slice; B-06d offline implementation completed with operator live smoke deferred | Parallel FE / BE implementation + mocks |
 | 2 CX gate | blocked | `/phase-check` + `@user` on four journeys with mocks |
 | 3 Labelled live | gated | Operator OpenRouter free-tier after CX |
 | 4 Hosted demo | devops unassigned | AWS Free-plan 6-month window |
@@ -406,6 +406,12 @@ Depends: F-02, S-02 search, and B-07 **or** search fixtures.
 
 ### F-07 — Ask UI
 
+**Status:** queued — the immediate frontend slice is **F-15 Rev 2**
+(`@user` 2026-10-13). An ask slice exists **built and soft-stopped** on the
+unmerged branch `F07-ask` (blocked on B-08 landing + the `@user`
+visual/mobile pass); merging/sequencing it is a Commander/`@user` decision —
+see [`../handoffs/current.md`](../handoffs/current.md).
+
 **Short description:** ask-your-notes — composer, streaming answer,
 passage-level citations, refusal/partial/conflict as success.
 
@@ -543,16 +549,20 @@ card and still needs a reference.
 
 **Look:** Mintlify token layer (`border-border`, `bg-muted/50`, `text-foreground`); logical directionality utilities (`text-start`, `border-inline`).
 
-### F-15 — Obsidian-parity editor redesign
+### F-15 — Obsidian-fidelity editor (Rev 2)
 
 | | |
 |--|--|
-| **Status** | **listed — deferred** (governance G-1…G-4 complete 2026-10-10; ready handoff archived **superseded before execution** 2026-10-11 — no F-15 code exists; implementation awaits Commander resequencing behind F-06) |
+| **Status** | **live — opened 2026-10-13** (`@user` directed the Rev 2 plan as the immediate frontend slice; ten decisions locked 2026-10-13). Governance G-1…G-4 (2026-10-10) are inputs; the 2026-10-11 superseded-before-execution archive stays historical. **Next slice: Plan Phase 0** |
 | **Lane / agent** | `frontend` / `/implementer` (human: front-end programmer) |
+| **Branch** | `F15-obsidian-fidelity-editor` |
 | **Depends on** | F-13 (multi-mode capture, **completed**), F-14 (markdown & editor tables, **completed**) |
-| **Blocks** | Phase 2 CX gate (power-user capture journey) — deferred |
-| **Write path** | `packages/ui/src/capture/**`, `packages/ui/src/codemirror/**`, `packages/ui/package.json` (pinned deps only, after G-1) |
-| **Plan** | [`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md) |
+| **Blocks** | Phase 2 CX gate (power-user capture journey) — active slice |
+| **Write path** | `packages/ui/src/{capture,codemirror,markdown}/**` (markdown: the Task 2.7 comment plugin only), `packages/ui/package.json` + `docs/research/version-ledger.md` (Task 0.4 pins only), `docs/fidelity/**`, `docs/design/now.md` (Task 0.2 log half) — full list in [`../handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) |
+| **Plan** | [`docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../plans/2026-10-13_181100-obsidian-fidelity-editor.md) (Rev 2 — supersedes [Rev 1](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md), which stays historical) |
+
+*2026-10-13: `@user` directed F-15 Rev 2 as the immediate frontend slice;
+F-07 stays queued (see its row and [`../handoffs/current.md`](../handoffs/current.md)).*
 
 **Short description:** replace the ad-hoc CodeMirror 6 live preview with a single Obsidian-fidelity markdown editing engine — an extension factory parameterised by an `EditorSettings` object plus `Compartment`s, a live-preview extension pair (a `StateField` for block widgets and a viewport-scoped `ViewPlugin` for inline marks with `atomicRanges`), and **one command/toolbar surface** shared by the TipTap and CodeMirror adapters — then harden it (auto-pairing, multiple selections, smart lists, find/replace, folding, per-line direction, perf and a11y budgets).
 
@@ -562,7 +572,7 @@ card and still needs a reference.
 
 **Look:** no new visual language — the Mintlify token layer and the existing capture chrome carry over; retuning tokens re-skins the editor without touching screens.
 
-**Gated (not in this slice):** `[[wikilink]]` autocomplete (plan Phase E — `@user` 2026-10-10: literal text in v1), vim mode (F-3), and math/mermaid widgets (C-6) — each needs an explicit `@user` yes plus a ledger pin before any install.
+**Gated / deferred (not in this slice):** `[[wikilink]]` autocomplete (literal text in v1 — `@user` 2026-10-10), vim mode, math/Mermaid (Task 3.5 — design recorded), images (`EMBED-001…005`, Task 3.4 — design recorded), and tag click/autocomplete (Task 2.9 — parsing/styling only, pending `BL-26`) — each needs an explicit `@user` yes plus a ledger pin before any install.
 
 ---
 
@@ -920,8 +930,8 @@ D-01, S-01a, and S-01b are **completed**. Dual-lane heads are live.
 | ID | Handoff |
 |----|---------|
 | Commander index | [`docs/handoffs/current.md`](../handoffs/current.md) |
-| F-06 | **ready / live** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-11; S-02 search + B-07 completed) |
-| F-15 | **listed (deferred)** — governance G-1…G-4 complete; plan [`../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`](../plans/2026-10-10_104547-obsidian-parity-editor-redesign.md); ready handoff archived superseded-before-execution [`../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md`](../handoffs/archive/H-2026-10-10-P1-F15-superseded-before-execution.md) |
+| F-06 | **completed; merged to `develop`** (git-verified 2026-10-13 — `F06-retrieve` contained in `develop`, both at `7db930c`); consumed return head archived [`../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`](../handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md); `@user` visual/mobile pass on `/search` stays open |
+| F-15 | **live** — [`docs/handoffs/active/lane-frontend.md`](../handoffs/active/lane-frontend.md) (opened 2026-10-13; branch `F15-obsidian-fidelity-editor`; Rev 2 plan [`../plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../plans/2026-10-13_181100-obsidian-fidelity-editor.md); next slice = Plan Phase 0) |
 | F-14 | **completed** — archived [`../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md`](../handoffs/archive/H-2026-10-02-P1-F14-commander-implementer.md) (Outcome 2026-10-02) |
 | F-05 | **completed** 2026-10-11 (branch `F05-organize`) — Notes list over `listNotes` with URL-based server cursors; **updated 2026-10-12**: Inbox and Collections removed from the shell (no collections contract ⇒ identical lists); collections sub-slice recorded with backend needs as `BL-26` in [`feature-backlog.md`](./feature-backlog.md). Completed head archived: [`../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-10-11-P1-F05-commander-implementer.md); original ticket: [`../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md`](../handoffs/archive/H-2026-09-25-P1-F05-commander-implementer.md) |
 | B-05a Architect | **completed** — archived [`../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md`](../handoffs/archive/H-2026-10-06-P1-B05A-ARCH-commander-architect.md) (Architect closed 2026-10-06; Commander-accepted; Researcher archived [`../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md`](../handoffs/archive/H-2026-10-06-P1-B05A-commander-researcher.md)) |

@@ -10,7 +10,7 @@ human_owner: unassigned
 from: commander
 to: commander
 created: 2026-09-16
-updated: 2026-10-12
+updated: 2026-10-13
 ---
 
 # Phase 1 — Dual-lane integration index
@@ -18,7 +18,7 @@ updated: 2026-10-12
 ## Start Command
 
 ```text
-/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute B-06d, B-07, or B-08 implementation yourself.
+/commander Read docs/handoffs/current.md and the live lane heads under docs/handoffs/active/. Coordinate cross-lane dependencies only. Do not execute F-15 or B-08 implementation yourself.
 ```
 
 ## Objective
@@ -30,13 +30,15 @@ D-01, S-01a, S-01b, B-01, F-01, F-02, F-02a, F-03, F-04, S-02, B-02,
 B-03, B-04, B-04c Commander eval, B-04c Implementer closeout, **S-03**,
 **B-05a** (Researcher + Architect), **B-05b**, **B-05c**, **B-06**, the
 offline **B-06d** implementation slice, **B-07**, and **F-05** are
-**closed and archived**; **F-13/F-14** are reconciled to `completed`, and
-the parallel **F-15** governance stream was merged and deferred
-(2026-10-11). Two humans own parallel lanes:
+**closed and archived**; **F-06** is **completed and merged to `develop`**
+(git-verified 2026-10-13); **F-13/F-14** are reconciled to `completed`;
+the parallel **F-15** governance stream was merged 2026-10-11, and
+**F-15 Rev 2** is now the live frontend slice (`@user`, 2026-10-13). Two
+humans own parallel lanes:
 
 | Human | Lane head | Live task |
 |-------|-----------|-----------|
-| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-06 ready** — search port + `/search` screen over the frozen S-02 search contract (opened 2026-10-11 after the F-15 stream was reconciled; F-15 deferred) |
+| Front-end programmer | [`active/lane-frontend.md`](active/lane-frontend.md) | **F-15 Rev 2 ready** — Obsidian-fidelity editor, branch `F15-obsidian-fidelity-editor`; first slice = Plan Phase 0 ([Rev 2 plan](../plans/2026-10-13_181100-obsidian-fidelity-editor.md)); opened 2026-10-13 per `@user` |
 | Back-end programmer | [`active/lane-backend.md`](active/lane-backend.md) | **B-08 ready**; mock ask adapter + citation assembler is now the live backend slice |
 
 Commander keeps this index accurate, unblocks cross-lane deps, and does
@@ -44,16 +46,16 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Live lane pointers
 
-- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-06 ready**
-  (retrieve: one search port over the frozen S-02 search contract plus the
-  `/search` screen — server snippets, real Sample/Mine filter, honest
-  degraded notice, pivot to Ask; opened 2026-10-11 after the F-15 stream
-  was reconciled). F-05 is **completed and archived**; its collections
-  sub-slice is recorded as `BL-26` (`proposed`) in
-  [`../planning/feature-backlog.md`](../planning/feature-backlog.md), and
-  Inbox/Collections left the shell on 2026-10-12. **F-15's editor
-  redesign is deferred** (`listed`, governance G-1…G-4 complete) — do not
-  exit this head into editor phases.
+- Frontend: `docs/handoffs/active/lane-frontend.md` → **F-15 Rev 2 ready**
+  (Obsidian-fidelity editor; branch `F15-obsidian-fidelity-editor`; plan
+  [`../plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../plans/2026-10-13_181100-obsidian-fidelity-editor.md)
+  supersedes Rev 1; **first slice = Plan Phase 0**; owner `/implementer`;
+  opened 2026-10-13 per `@user`). **F-06** is **completed and merged** to
+  `develop` (git-verified 2026-10-13 — `F06-retrieve` is contained in
+  `develop`; both at `7db930c`); its consumed return head is archived at
+  [`archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`](archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md),
+  and the **`@user` visual/mobile pass on `/search` stays open**. F-05 is
+  completed; Collections stays `BL-26` (`proposed`).
 - Backend: `docs/handoffs/active/lane-backend.md` → **B-08 ready**.
   Commander accepted B-07, consumed the duplicate sequencing hold, and opened
   the dependency-ready ask/citation backend slice. The live backend work is now
@@ -78,14 +80,20 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 | **B-06** | **completed** (Commander-reviewed 2026-10-11) | Deterministic mock embeddings + real pgvector persistence/search landed; unblocked B-07/B-08 retrieval work |
 | **B-06d** | **offline implementation completed; operator live smoke deferred** | Local probe landed and was verified offline; the checked-in run stopped `blocked-before-io`. Account/terms/payment, key, route, charge, and live retrieval observations remain a separate operator gate |
 | **B-07** | **completed; Commander-validated PASS** | Lexical retrieval, deterministic hybrid fusion, and architecture §7 evidence are accepted; **F-06 live search consumes this** (sequenced 2026-10-11). B-08 is the live backend slice and B-12 remains unopened |
-| **F-06 retrieve deps** | **met** (S-02 search + B-07 completed) | `/search` port + screen dependency-ready; tests inject through the port (no `web → mocks` import) |
-| **F-15** (editor redesign) | **governance merged; superseded-before-execution** (2026-10-11) | Parallel stream's rewrite of `lane-frontend.md` reconciled into `develop`; F-15 returns to `listed` (G-1…G-4 complete); F-06 takes the head; archive `H-2026-10-10-P1-F15-superseded-before-execution.md` |
-| **Collections contract** | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05 is **completed**; its collections sub-slice is `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and Inbox/Collections were removed from the shell the same day. Remediation unchanged: an `@user`/Commander decision on whether to author the contract. |
+| **F-06** (retrieve) | **completed; merged to `develop`** (git-verified 2026-10-13 — branch contained; both at `7db930c`) | Search port + `/search` screen landed; **the `@user` visual/mobile pass on `/search` stays open** (no browser in the implementer session) |
+| **F-15 Rev 2** (editor redesign) | **live — opened 2026-10-13** | `@user` adopted the Rev 2 plan (ten decisions locked) and directed it as the immediate frontend slice; branch `F15-obsidian-fidelity-editor`; lane head = F-15 ready; next = Plan Task 0.1; governance G-1…G-4 are inputs. Deferred/gated sub-scopes: images (Task 3.4), math/Mermaid (Task 3.5), tag click/autocomplete (`BL-26`) |
+| **`BL-26`** — Collections (folders/tags) contract | **open** | S-02 has no `collections`/`tags` operation and `Note` has no collection/tag field. F-05 is **completed**; its collections sub-slice is `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and Inbox/Collections were removed from the shell the same day. Remediation unchanged: an `@user`/Commander decision. **Also the re-open trigger for F-15 `TAG-002`/`TAG-004`** (tag autocomplete + tag click stay deferred in Task 2.9). |
 | **Markdown serializer** (`BL-22`) | **open** | F-12 ships the sanitized render **consumer**; the canonical JSON→markdown producer that feeds it is unscheduled (B-11 is only the export port). Not a Phase 1 blocker — F-12 is testable against literal markdown strings. Java `pm-md-v1` is corpus SoT for chunking (B-05b); FE bridge remains editor tooling only. |
+| **F-12 render path** (F-15 Task 2.7) | **coordination note** | F-15 Task 2.7 adds one comment reading-path plugin under `packages/ui/src/markdown/**`; **F-12 stays the render-path authority** — keep the plugin additive; no contract/schema change |
+| **Attachment storage** (`EMBED-001…005`, `CLIP-004`) | **deferred** | No attachment storage contract exists; F-15 Task 3.4 records the image/embed designs only. Re-open trigger: attachment / `BL-26`-class storage work |
+| **F-07 Ask UI** (branch `F07-ask`) | **built, soft-stopped, not merged** — detected 2026-10-13 | Branch `F07-ask` (local + `origin`) is **2 commits ahead of `develop`** (`1d29050`, `b76a385`): an ask slice built + self-verified 2026-10-12, soft-stopped on B-08 landing + the `@user` visual/mobile pass. F-07 stays **queued** behind F-15 Rev 2 (`@user` 2026-10-13); merging/validating is a Commander/`@user` decision — do not merge or rebase without one |
 | I-* DevOps | Unassigned | Do not block Phase 1 mocks |
 
 ## Recently archived
 
+- F-06 **return head archived on resequencing** (2026-10-13 — F-15 Rev 2
+  took the frontend head; F-06 git-verified **merged to `develop`**):
+  `docs/handoffs/archive/H-2026-10-11-P1-F06-RETURN-implementer-commander.md`
 - F-15 Obsidian-parity editor redesign **superseded before execution**
   (2026-10-11 — governance G-1…G-4 merged to `develop`; implementation
   phases A–H never began; F-06 took the frontend head):
@@ -198,19 +206,18 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 
 ## Commander actions this cycle
 
-1. **F-06 (retrieve) is the live frontend ticket** (opened 2026-10-11 after
-   the F-15 stream was reconciled; F-05 completed and archived). Scope: one
-   search port over the frozen S-02 search contract plus the `/search`
-   screen. Dependency-ready: S-02 search and B-07 are completed. The
-   **Collections** (folders/tags) sub-slice is **not scheduled** — it is
-   `BL-26` (`proposed`, 2026-10-12) with its backend needs named, and
-   Inbox/Collections were removed from the shell the same day.
-2. **F-15 (Obsidian-parity editor redesign) is reconciled and deferred.**
-   Governance G-1…G-4 (editor pins, wikilink deferral, mode-contract sync,
-   F-13/F-14 reconciliation) merged to `develop`; the ready handoff was
-   archived **superseded before execution** (no F-15 code exists); F-15
-   returns to `listed` with its plan preserved. Do not execute editor
-   phases from the F-06 head.
+1. **F-15 Rev 2 is the live frontend ticket** (opened 2026-10-13 on `@user`
+   direction; ten decisions locked 2026-10-13). Scope: the Rev 2 plan,
+   executed one task per commit with both gates green; first slice = Plan
+   Phase 0; branch `F15-obsidian-fidelity-editor`. The earlier
+   "deferred — do not enter editor phases" instruction is **superseded by
+   this resequencing**.
+2. **F-06 (retrieve) is completed and merged** (git-verified 2026-10-13);
+   its consumed return head is archived. The **`@user` visual/mobile pass
+   on `/search` remains open** and must not be lost. **F-07 stays queued** —
+   a built, soft-stopped ask slice exists on the unmerged `F07-ask` branch
+   (B-08 + `@user` pass pending); sequencing it is a Commander/`@user`
+   decision, not an action to take here.
 3. **B-07 is accepted** (unchanged) and **B-08 is the live backend slice**
    (opened 2026-10-11): mock ask adapter + citation assembler on the frozen
    S-02 ask/SSE contract.
@@ -221,7 +228,8 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 5. **Open decision for `@user`:** whether to author and sequence the
    **Collections contract change** (a new backend track or an S-02 extension).
    F-05 is completed; the sub-slice is recorded as `BL-26` (`proposed`) with
-   its backend needs, and nothing in the product shows Collections.
+   its backend needs, and nothing in the product shows Collections. This is
+   **also the re-open trigger for F-15 `TAG-002`/`TAG-004`**.
 6. Each F-* step: structure from `system-ux.md`, references from `@user`,
    integration details per the tracks file.
 7. Update `context.md` when lane statuses change.
@@ -248,8 +256,9 @@ not serialize FE behind BE (or vice versa) when dependencies are clear.
 - **Collections contract** — open; the sub-slice is `BL-26` (`proposed`,
   2026-10-12) in `feature-backlog.md`, and Inbox/Collections are not in the
   shell; `@user` decides whether to author the contract
-- **F-15 editor redesign** — deferred (`listed`, governance complete);
-  editor phases A–H are not assigned to any live head
+- **F-15 Rev 2** — live (opened 2026-10-13); images deferred (Task 3.4
+  design-only), math/Mermaid gated (Task 3.5), tag click/autocomplete wait
+  on `BL-26`, and the Task 8.5 visual pass waits on `@user`
 
 ## Completion Instructions
 

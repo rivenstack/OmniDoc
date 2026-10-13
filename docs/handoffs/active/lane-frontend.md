@@ -1,87 +1,208 @@
 ---
-handoff_id: H-2026-10-11-P1-F06-RETURN
+handoff_id: H-2026-10-13-P1-F15
 affinity: implementation
 track: parallel
-status: blocked
+status: ready
 phase: "1"
-task: "F-06"
+task: "F-15"
 lane: frontend
 human_owner: front-end-programmer
-from: implementer
-to: commander
-created: 2026-10-11
-updated: 2026-10-12
-branch: F06-retrieve
-blocked_on: "Commander sequencing of the next frontend slice (F-07 is the next in sequence and this lane was forbidden to open it) plus the @user visual pass on /search"
+from: commander
+to: implementer
+created: 2026-10-13
+updated: 2026-10-13
+branch: F15-obsidian-fidelity-editor
 ---
 
-# Frontend lane — F-06 returned to Commander
+# Frontend lane — F-15 Obsidian-fidelity editor (Rev 2)
 
 ## Start Command
 
 ```text
-/commander Read docs/handoffs/active/lane-frontend.md and sequence the next
-frontend slice. F-06 is built and live-verified on branch `F06-retrieve`; the
-lane is blocked because the next slice in sequence (F-07 Ask UI) was explicitly
-outside the F-06 ticket and everything after it depends on F-07.
+/implementer Read docs/handoffs/active/lane-frontend.md and execute it exactly.
+F-15 Rev 2 begins at Plan Task 0.1 — one plan task per commit, both gates green
+(`npx vitest run` in packages/ui; `npx nx typecheck ui` at repo root) before the
+next task begins. Continue through the plan until a soft-stop.
 ```
 
-## Status
-
-**F-06 retrieve — built, live-verified, awaiting `@user`'s visual pass and
-Commander sequencing.** The ticket is archived with full evidence at
-[`docs/handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`](../archive/H-2026-10-11-P1-F06-commander-implementer.md)
-— read its **Outcome** section first; it carries what landed, the acceptance
-evidence, the bug found during the live check, and the gate numbers.
+## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
-**Branch:** `F06-retrieve` (not merged).
+`allowed_task_classes: F-15` only.
 
-## Why the lane is blocked, not re-sequenced
+Execute the **F-15 Rev 2 plan**
+([`docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../../plans/2026-10-13_181100-obsidian-fidelity-editor.md))
+task-by-task on branch `F15-obsidian-fidelity-editor`, **beginning at Plan
+Task 0.1**. One plan task per commit (the plan's execution note); **both gates
+green** before the next task begins — `npx vitest run` (cwd `packages/ui`) and
+`npx nx typecheck ui` (repo root). Continue consecutively through Phases 0–8
+until a soft-stop (below). Keep this lane head current per slice (see
+Completion instructions). `@user` locked ten decisions for Rev 2 on 2026-10-13
+(plan header) — do not re-decide them. The plan **supersedes Rev 1**
+(`docs/plans/2026-10-10_104547-obsidian-parity-editor-redesign.md`, historical
+only); governance G-1…G-4 (2026-10-10) are already-decided inputs — do not
+re-open them.
 
-1. **The next slice in sequence is F-07 (Ask UI)** — the F-06 ticket said
-   *"Do not open F-07/F-15 or Phase Check yourself"*, so choosing it is a
-   Commander decision, not the implementer's.
-2. **Everything after F-07 depends on it.** F-08 (dual-mode chrome) depends on
-   F-07; F-09 (labelled sample workspace) depends on F-07 + S-03 + B-09; F-11
-   (Playwright + axe journeys) depends on F-04–F-09 **and** the still
-   unauthorized `web → mocks` import exception. F-10 is a continuous
-   habitability pass with no dependency line, and a *full* pass belongs before
-   Phase 2, not ahead of F-07.
-3. **F-15 stays deferred** (`listed`, Commander-resequenced) and its
-   implementation phases must not start from this head.
-4. **F-05's Collections sub-slice is recorded, not scheduled** — S-02 has no
-   `collections`/`tags` operation. `@user` removed Inbox and Collections from
-   the shell on 2026-10-12 and recorded the sub-slice (with its backend needs)
-   as `BL-26` in [`../../planning/feature-backlog.md`](../../planning/feature-backlog.md);
-   it stays `proposed` until `@user` decides whether to author the contract.
+## Required Reading
 
-## Open items for Commander / `@user`
+1. **The plan** — [`docs/plans/2026-10-13_181100-obsidian-fidelity-editor.md`](../../plans/2026-10-13_181100-obsidian-fidelity-editor.md):
+   read it fully, especially **§0.4 negatives**, **§4 locked decisions and
+   deviations**, **§5 phases**, **§6 gates**, **§7 risks**. It is the contract;
+   this handoff points at it and does not duplicate it.
+2. `docs/design/system-ux.md` §2 — the mode / markdown-construct contract the
+   plan implements (three modes + lock, Obsidian-like editing behaviour, JSON
+   as durable SoT, one formatting surface, lossless construct round-trip).
+3. **The RE-Obsidian catalogue — the spec source:**
+   `/home/morty/Develop/riven-stack/RE-Obsidian/docs/research/reverse-engineering/obsidian-editor-1.14.4/` —
+   `behaviours.json` is canonical (114 entries, `OBS-1.14.4-<AREA>-<NNN>`);
+   `behaviours.md`, `documentation-map.md`, `coverage.md`, `reconciliation.md`
+   and `UNVERIFIED-HYPOTHESES.md` support it. `code/` is **illustrative only**
+   — §0.5 lists its known divergences; implement from the entries, not the
+   files.
+4. `docs/fidelity/**` artifacts as they land (vendored catalogue, parity
+   matrix, dispositions).
+5. `docs/design/now.md` (look/decision log only) and
+   `docs/memory/implementer.md`.
 
-| Item | Owner | Note |
-| --- | --- | --- |
-| **Visual/mobile pass on `/search`** | `@user` | The implementer session has no browser. Render path is verified through the real server; light/dark, focus rings and ~390px are **not** visually verified. |
-| Next frontend slice (F-07?) | Commander | F-07 needs S-03 and **B-08 or ask fixtures**; B-08 is the live backend slice. |
-| Local corpus labelling | Commander / backend | Every note in the local dev DB has `corpus_ownership` NULL, so **Sample and Mine both return nothing while All returns the hits**. That is the server's honest answer; the client must not infer ownership. Labelling notes at creation is backend/seed work. |
-| Collections contract | Commander / `@user` | S-02 has no `collections`/`tags` operation; the sub-slice is `BL-26` (`proposed`) in `feature-backlog.md`, and Inbox/Collections were removed from the shell on 2026-10-12. |
-| `web → mocks` import exception | Commander / `@user` | Still unauthorized; needed before in-app MSW/F-11. |
-| Suite load sensitivity | Commander / Phase Check | Fixed at its source this slice (`login.test.tsx`'s no-op `settle()`, `@user`-authorized). The remaining lesson is that the `ui` suite has no explicit worker cap: `packages/ui/vitest.config.ts` sets none, so a future slice that adds many jsdom test files can rediscover the same failure mode. Not changed here — outside the ticket. |
+## Inputs / evidence
 
-## Reading for whoever takes the next slice
+- Governance G-1…G-4 merged to `develop` 2026-10-11: editor package rows in
+  `docs/research/version-ledger.md` (`@codemirror/autocomplete` 6.20.3 /
+  `@codemirror/search` 6.7.2 are candidates to activate in Task 0.4);
+  wikilinks deferred (literal in v1); three capture modes + lock synced into
+  `system-ux.md`; F-13/F-14 reconciled to `completed`.
+- F-13 / F-14 completed — their user-facing behaviour is preserved;
+  `cm-editor.test.tsx`, `table-preview.test.tsx`, `capture-modes.test.tsx`,
+  `blocks.test.tsx`, and `markdown-bridge.test.ts` are the regression net.
+- F-12 sanitized render path (`packages/ui/src/markdown/`) is the reading view
+  (D-8); the Task 2.7 comment reading-path plugin extends it **additively**.
+- F-06 is completed and merged to `develop` (git-verified 2026-10-13), so this
+  lane starts from a clean head.
 
-1. `context.md` — live status lines for F-06
-2. [`docs/handoffs/archive/H-2026-10-11-P1-F06-commander-implementer.md`](../archive/H-2026-10-11-P1-F06-commander-implementer.md) — the F-06 Outcome
-3. `docs/design/now.md` — the `@user` look choices and the F-06 decision-log entries
-4. `docs/memory/implementer.md` — the F-06 lessons (optional-`null` contract fields, URL-held search state, Suspense placement, replay-stub verification)
-5. `docs/planning/implementation-tracks.md` — the F-07/F-08/F-09 rows before sequencing
+## Allowed Write Paths
 
-## Constraints that carry forward
+- `packages/ui/src/codemirror/**`
+- `packages/ui/src/capture/**`
+- `packages/ui/src/markdown/**` — **only** the Task 2.7 comment reading-path
+  plugin. **Coordination note:** the render path is **F-12**; keep the plugin
+  additive (no rewrite of the pipeline) and leave the F-12 public contract
+  (`Markdown`, `markdownSanitizeSchema`) intact.
+- `packages/ui/package.json` and `docs/research/version-ledger.md` — **only**
+  the Task 0.4 pins (versions re-verified at execution; vim/math/mermaid stay
+  uninstalled).
+- `docs/fidelity/**` — Task 0.1+ artifacts; regenerate
+  `obsidian-parity-matrix.md` at each phase close.
+- `docs/design/now.md` — **only** the Task 0.2 decision-log half. The tracks
+  half of Task 0.2 is **already done by Commander** (the F-15 row now points
+  at the Rev 2 plan) — do **not** edit
+  `docs/planning/implementation-tracks.md`.
 
-- Production AI/provider activation remains gated; no live OpenRouter.
+## Out of scope (forbidden)
+
+- `apps/api/**`, `docs/api/**` (**frozen S-02 contract**), and
+  `packages/contracts/**` — any contract change needs a new ticket plus a
+  Commander/`@user` decision.
+- The backend lane (`docs/handoffs/active/lane-backend.md`, B-08 is live) — do
+  not touch. Do not open F-07/F-08/F-09 or Phase Check from this head.
+- Anything outside the plan's named files without a new Commander ticket.
+- Images (deferred, decision 5) and math/Mermaid/Vim (gated, decision 9):
+  Tasks 3.4 / 3.5 land **design records only** — no code, no installs.
+- Tag click / tag autocomplete (`TAG-002` / `TAG-004`): parsing and styling
+  land in Task 2.9; the actions stay deferred pending `BL-26`.
+
+## Deliverables
+
+1. **Plan Phase 0 slice first** — Tasks 0.1 (vendored catalogue +
+   dispositions + parity matrix test + generated matrix), 0.2 (decision-log
+   half in `docs/design/now.md`), 0.3 (jsdom harness + construct fixtures),
+   0.4 (autocomplete/search pins).
+2. Then **Phases 1–8 consecutively** per the plan — one task per commit, each
+   ending green.
+3. `docs/fidelity/obsidian-parity-matrix.md` regenerated at each phase close.
+
+## Acceptance criteria
+
+- Plan §6 gate table: `npx vitest run` (`packages/ui`), `npx nx typecheck ui`,
+  `npx nx lint ui`, and the full
+  `pnpm nx run-many -t typecheck lint test build` at phase close — both
+  per-task gates green before the next task starts.
+- The parity matrix test fails when an entry ID is missing/duplicated, a
+  disposition is unknown, an `adopt`/`adapt` entry has no task, or a
+  `deviation`/`adapt` entry has no recorded reason.
+- Every **adopted/adapted** entry carries at least one test named by its
+  `OBS-1.14.4-…` ID; every **§0.4 negative** has an explicit negative test;
+  folded and unfolded states of each construct are both asserted.
+- Catalogue `partial` entries and unknowns stay marked (§4.4) — never
+  upgraded silently.
+- Directionality: `en` (LTR) is the only shipping locale — RTL stays
+  **deferred, not closed**. Logical CSS only, direction from the single locale
+  source, `bdi` isolation for identifiers/UGC. Never claim RTL locale support.
+- Accessibility is a hard acceptance surface (Task 8.3 +
+  `quality/ui-qa-checklist.md`); the recorded deviation D-4 (keyboard path for
+  every action) is verified as an improvement, never "fixed" back.
+
+## Soft-stop / escalate conditions
+
+Set `status: blocked` with a `blocked_on:` line, record a short Outcome, and
+return to Commander instead of crossing these boundaries:
+
+- **Plan Task 3.4 / 3.5** (images deferred; math/Mermaid gated) — land the
+  design-record commits per the plan and continue; do **not** implement,
+  install, or promote either. A need to promote is a Commander/`@user`
+  decision, not lane-local.
+- **`TAG-002` / `TAG-004` or any `BL-26` dependency** — tag autocomplete and
+  tag click wait for the collections/tags contract; do not invent a tag
+  source.
+- **Plan Task 8.5** — the visual/mobile pass needs `@user` (no browser in the
+  implementer session): soft-stop and return rather than claim it.
+- Anything requiring an **S-02 / contract change** or **cross-lane** work.
+- Any gate still **red after one bounded fix attempt** — do not iterate past
+  it.
+- Hard-stop (escalate immediately): write-path collision, ADR re-open
+  pressure, production AI/provider activation, or an RTL-locale claim.
+
+## Risks (summary — full detail in plan §7)
+
+- **Parser divergence (D-5):** constructs the Lezer grammar does not model get
+  a custom layer; the construct matrix and bridge round-trip are the guards.
+- **Two-engine drift:** every command is implemented twice (TipTap + CM6); the
+  registry test and mode-switch tests catch a missing adapter.
+- **Scope:** if the slice must shrink, cut at phase boundaries — never partial
+  tasks.
+- **Performance:** the table scanner and whole-document passes are the cost
+  drivers; viewport scoping (Task 3.3) and Task 8.4 are the mitigations.
+- **Parity honesty:** catalogue partials/unknowns stay marked; anything
+  OmniDoc's gates force is a recorded deviation, never a parity claim.
+- **Fold persistence staleness:** line-count guard, localStorage only, no
+  server coupling (§4.3); settings persistence stays prop/component state
+  (§4.1 deviation).
+
+## Constraints carried forward
+
+- Production AI/provider activation remains gated; no live OpenRouter, no
+  provider SDK in the client.
 - RTL locale remains **deferred** (readiness discipline required); `en` (LTR)
   is the only shipping locale — never claim RTL support.
-- No Node `apps/api`; the API is Java/Spring (ADR-0005).
-- Do not touch the frozen S-02 contract (`docs/api/**`,
-  `packages/contracts/**`) without an authorized contract change.
-- Exactly one primary owner per handoff; do not open F-07/F-15 or Phase Check
-  from this head without a Commander-issued ticket.
+- No Node `apps/api`; the API is Java/Spring (ADR-0005). Do not touch the
+  frozen S-02 contract (`docs/api/**`, `packages/contracts/**`) without an
+  authorized contract change.
+- The block never calls the API; link/search/tag actions arrive as props/ports.
+- Exactly one primary owner per handoff; F-07 and Phase Check do not open from
+  this head without a Commander-issued ticket.
+- MCPs (Figma / GSAP Master / Canva): this slice is behaviour-first — they are
+  not required. Consider them only where a widget/typography sub-task would
+  benefit; note auth/availability rather than blocking.
+
+## Completion instructions
+
+1. Stay on this head for the whole plan. Keep it accurate at each phase
+   boundary (status, current task pointer, gate evidence) — one live handoff
+   per lane; do not open a second frontend head. Archive a revision to
+   `docs/handoffs/archive/` only when Commander consumes a return or rotates
+   the lane (see `../README.md`).
+2. One plan task per commit; both gates green before the next task begins.
+3. On soft-stop: set `status: blocked`, add `blocked_on:`, write a short
+   Outcome, and return to Commander — this file is the record; never chat-only.
+4. On plan completion (Task 8.6): regenerate the matrix, run the full gate
+   (`pnpm nx run-many -t typecheck lint test build`), set `status: completed`,
+   and return to Commander for validation and archival.
