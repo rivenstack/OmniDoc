@@ -2,7 +2,10 @@
 
 **Owner:** `/researcher` (rows) · `/architect` (pins that become ADR decisions)
 **Created:** 2026-09-14
-**Last verified:** 2026-10-11 (B-06d AvalAI model/API evidence);
+**Last verified:** 2026-10-13 (F-15 Rev 2 Plan Task 0.4 — `@codemirror/autocomplete`
++ `@codemirror/search` activated as direct pins; both re-checked against the npm
+registry on 2026-10-13 and unchanged);
+2026-10-11 (B-06d AvalAI model/API evidence);
 2026-10-10 (F-15 editor package pins + `@codemirror/*` reconciliation);
 2026-10-06 (B-05a ingestion/chunking library pins);
 2026-09-15 (Java/Spring ADR-0005 pins); 2026-09-14 (FE/data/tooling)
@@ -162,18 +165,18 @@ ADR-0003.
 Pins recorded under the F-15 governance stream (G-1, 2026-10-10) and carried
 into the [Rev 2 plan](../plans/2026-10-13_181100-obsidian-fidelity-editor.md)
 at **Plan Task 0.4**. Versions re-verified against the npm registry on
-2026-10-10. **Nothing in this section is installed yet.** The two candidate
-pins become direct dependencies only at their plan-task activation
-(**Plan Task 0.4**); the gated rows must not appear in
-`packages/ui/package.json`. **F-15 Rev 2 was resequenced 2026-10-13**
+2026-10-10, and again on **2026-10-13** at activation (both pins unchanged).
+**Two rows are now installed** as direct dependencies of
+`packages/ui` — the rows below are marked `activated`. The gated rows must not
+appear in `packages/ui/package.json`. **F-15 Rev 2 was resequenced 2026-10-13**
 (Commander, `@user`-directed; branch `F15-obsidian-fidelity-editor`):
 implementation proceeds per the Rev 2 plan; the gated rows stay gated until an
 explicit `@user` yes plus a fresh pin.
 
 | Package | Version | Released | Verified | License | Status / role |
 |---|---|---|---|---|---|
-| `@codemirror/autocomplete` | **6.20.3** | 2026-06-03 | 2026-10-10 | MIT | **Candidate pin** (Architect confirmation pending). `closeBrackets()` for D-1 auto-pairing; completion source for Phase E wikilink/tag autocomplete (**deferred**, G-2). Already present transitively via `codemirror` 6.0.2 — must become a **direct** dependency to be importable under pnpm's strict layout |
-| `@codemirror/search` | **6.7.2** | 2026-08-31 | 2026-10-10 | MIT | **Candidate pin** (Architect confirmation pending). In-editor find/replace (F-1) |
+| `@codemirror/autocomplete` | **6.20.3** | 2026-06-03 | 2026-10-13 | MIT | **Direct pin — activated 2026-10-13** (Plan Task 0.4). `closeBrackets()` for auto-pairing (INPUT-001); completion source for the tag autocomplete that stays **deferred** (TAG-002, G-2). Was present transitively via `codemirror` 6.0.2; now declared in `packages/ui/package.json` and importable under pnpm's strict layout |
+| `@codemirror/search` | **6.7.2** | 2026-08-31 | 2026-10-13 | MIT | **Direct pin — activated 2026-10-13** (Plan Task 0.4). In-editor find/replace; the search-highlight interaction with the reveal engine is Plan Task 6.5 (REVEAL-003) |
 | `@replit/codemirror-indentation-markers` | 6.5.3 | 2024-07-15 | 2026-10-10 | MIT | **Candidate — decision at D-5.** Indent guides; evaluate against a small custom `ViewPlugin` first (reuse-before-custom). Last release 2024-07-15 is a maintenance signal to weigh |
 | `@replit/codemirror-vim` | 6.4.0 | 2026-07-29 | 2026-10-10 | MIT | **Gated — no** (`@user` 2026-10-10). Vim mode (F-3) stays conditional; not installed |
 | `katex` | 0.19.0 | 2026-10-01 | 2026-10-10 | MIT | **Gated — no** (`@user` 2026-10-10). Math widgets (C-6) stay conditional; not installed |
