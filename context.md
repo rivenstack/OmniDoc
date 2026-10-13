@@ -378,6 +378,27 @@ Program of record:
   records the design), math/Mermaid gated (Task 3.5), tag click/autocomplete
   deferred pending `BL-26`. **F-07 stays queued** — an unmerged, built ask
   slice on branch `F07-ask` is soft-stopped on B-08 + the `@user` pass
+- **2026-10-13:** **F-15 Rev 2 Plan Phase 0 complete** (frontend lane,
+  branch `F15-obsidian-fidelity-editor`, four commits `a9b951e`→`04bad23`,
+  one per plan task, both per-task gates green before each next task).
+  Parity is now machine-checked: the RE-Obsidian catalogue is vendored to
+  `docs/fidelity/obsidian-1.14.4.behaviours.json` (byte copy, sha256
+  `4c19f234…7fc8`), all 114 entries carry a disposition/task/note in
+  `packages/ui/src/codemirror/parity/dispositions.ts`, and
+  `docs/fidelity/obsidian-parity-matrix.md` is generated from both
+  (73 adopt · 15 adapt · 1 deviation · 12 defer · 8 gated · 5 out-of-scope);
+  the Rev 2 decisions and deviations are recorded in `docs/design/now.md`;
+  a jsdom `EditorView` harness plus a 25-document construct fixture corpus
+  landed under `parity/` and `__fixtures__/constructs/`; and
+  `@codemirror/autocomplete` 6.20.3 + `@codemirror/search` 6.7.2 are now
+  direct `packages/ui` pins (ledger rows activated, re-verified 2026-10-13).
+  Evidence: `ui` vitest **500/500**; `typecheck`/`lint` green;
+  `run-many --exclude api` all 4 JS projects green; frozen-lockfile install
+  green. The only red in the full gate is the pre-existing, environmental
+  `api:test` (`Connection to localhost:5432 refused` — Postgres not running),
+  untouched by this lane. Lane head stays live at
+  `docs/handoffs/active/lane-frontend.md`; **next = Plan Task 1.1**
+  (`EditorSettings` defaults). No soft-stop in effect
 - Production AI / OpenRouter live calls are **not** authorized
 - DevOps I-* remain **unassigned** (split later); local Compose Postgres
   is Backend-owned (B-02 completed)
@@ -518,9 +539,9 @@ Full F-01…F-11, B-01…B-12, S-02, S-03, I-01…I-09 lists:
 - **Commander index:** `docs/handoffs/current.md` (`to: commander`) —
   dual-lane board only; not an implementer work ticket
 - **Frontend lane:** `docs/handoffs/active/lane-frontend.md` →
-  `/implementer` (**F-15 Rev 2**, `ready`, `lane: frontend`, human:
-  front-end programmer; branch `F15-obsidian-fidelity-editor`; next = Plan
-  Task 0.1; F-06 completed and merged)
+  `/implementer` (**F-15 Rev 2**, `in-progress`, `lane: frontend`, human:
+  front-end programmer; branch `F15-obsidian-fidelity-editor`; Plan Phase 0
+  complete 2026-10-13; next = Plan Task 1.1; F-06 completed and merged)
 - **Backend lane:** `docs/handoffs/active/lane-backend.md` →
   `/implementer` (**B-08** mock ask adapter + citation assembler, `ready`,
   `lane: backend`; human: back-end programmer)
