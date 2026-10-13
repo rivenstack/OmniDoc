@@ -180,9 +180,14 @@ export {
   buildDecorations,
   commentMark,
   commentMarkerMark,
+  footrefMark,
   highlightColourOf,
   highlightMark,
+  inlineFootnoteMark,
+  footnoteMarkerMark,
+  isFootrefToken,
   renderedLinkMark,
+  scanFootnotes,
   scanHighlights,
   tagBeginMark,
   tagEndMark,
@@ -191,7 +196,7 @@ export {
   transparentMark,
   unresolvedMark,
 } from "./decorations";
-export type { HighlightColour, HighlightSpan } from "./decorations";
+export type { FootnoteSpan, HighlightColour, HighlightSpan } from "./decorations";
 export { COMMENT_DELIMITER, scanComments } from "./comment";
 export type { CommentRange } from "./comment";
 export { scanTags } from "./tags";
@@ -217,11 +222,13 @@ export {
   LINK_LIKE_KINDS,
   buildRegionIndex,
   classifyRegion,
+  linkLikeKindForFootnote,
   regionOfNode,
 } from "./taxonomy";
 export type {
   ConstructRegion,
   ExclusionKind,
+  FootnoteKind,
   InlineFormattingKind,
   LinkLikeKind,
   MarkedRegion,

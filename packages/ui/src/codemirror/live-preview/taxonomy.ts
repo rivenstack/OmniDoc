@@ -107,16 +107,37 @@ export const REGION_NODES: Readonly<Record<string, MarkedRegion>> = {
  * Parser node names whose whole range is a link-like span.
  *
  * `Link` covers the bracket text and the destination, which is the span the
- * artifact skips `%%` and `#` inside. `LinkReference` / `LinkLabel` are the
- * footnote-definition shape the GFM grammar produces for `[^note]: …`.
+ * artifact skips `%%` and `#` inside. `LinkMark` is the bracket token itself:
+ * it is listed here so a layer that *claims* a bracketed span — the task marker
+ * `[?]`, a footnote reference `[^name]` — can suppress the link reading of the
+ * brackets too, not only of the node around them. `LinkReference` / `LinkLabel`
+ * are the definition shape the GFM grammar produces for `[ref]: …`.
  */
 export const LINK_NODES: readonly string[] = [
   "Link",
+  "LinkMark",
   "LinkReference",
   "LinkLabel",
   "URL",
   "LinkTitle",
 ];
+
+/** The two footnote markers the editor models (`OBS-1.14.4-FOOT-001`). */
+export type FootnoteKind = "named" | "inline";
+
+/**
+ * How a footnote marker classifies for reveal purposes.
+ *
+ * `OBS-1.14.4-REVEAL-008` groups `footref` with the link-like kinds — which is
+ * why hovering a footnote reference behaves like hovering a link. `FOOT-001`
+ * then records the exclusion that matters: the clickable-token classifier
+ * requires a span to carry the footref marker **and not** the inline-footnote
+ * marker, so an *inline* footnote is never a link-like token and never takes
+ * part in navigation or hover. `null` is that exclusion, not an oversight.
+ */
+export function linkLikeKindForFootnote(kind: FootnoteKind): LinkLikeKind | null {
+  return kind === "named" ? "footref" : null;
+}
 
 /** The region a single node name marks, or `null` for prose nodes. */
 export function regionOfNode(name: string): MarkedRegion | null {

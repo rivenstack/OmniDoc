@@ -30,6 +30,7 @@ import { scanTags } from "./tags";
 import {
   LINK_NODES,
   buildRegionIndex,
+  type FootnoteKind,
   type RegionIndex,
   type Span,
 } from "./taxonomy";
@@ -130,6 +131,124 @@ export const HEADING_PATTERN = /^\s*(#{1,6})(\s+|$)/;
 export const HIDDEN_DELIMITER = Decoration.replace({});
 export const HIDDEN_BLOCK = Decoration.replace({});
 export { HIDDEN_MARKER } from "./widgets";
+
+/* ----------------------------------------------------------------- footnotes
+ * `OBS-1.14.4-FOOT-001`: the editor carries a dedicated inline-footnote flag.
+ * `^[` opens one, `]` closes it, and while it is open the span carries the
+ * footref marker *and* the inline-footnote marker — which is exactly what keeps
+ * it out of the clickable-token set, because that classifier requires footref
+ * **without** inline-footnote. So an inline footnote is parsed and styled but
+ * never interactive, and a *named* reference (`[^name]`) is the one that
+ * classifies link-like (`REVEAL-008`).
+ *
+ * The grammar mis-reads `[^name]` as a shortcut reference **link**, so the walk
+ * suppresses the link treatment inside a footnote span, the same way it does for
+ * a task marker. Navigation to the definition, and the hover preview, are both
+ * deferred: there is no footnote view to navigate to.
+ * ------------------------------------------------------------------------ */
+
+/** The two markers' opening sequences. */
+export const FOOTNOTE_NAMED_PATTERN = /\[\^([^\]]+)\]/g;
+export const FOOTNOTE_INLINE_OPEN = "^[";
+
+/** One footnote marker the text layer found. */
+export type FootnoteSpan = {
+  readonly from: number;
+  readonly to: number;
+  readonly kind: FootnoteKind;
+  /** For an inline footnote: the body between `^[` and `]`. */
+  readonly bodyFrom?: number;
+  readonly bodyTo?: number;
+};
+
+/**
+ * Every footnote marker in `[from, to)`.
+ *
+ * Line-based: both markers are inline constructs. **Only code and tables are
+ * excluded** — the link region is deliberately *not* an exclusion here, because
+ * the grammar classifies a named reference as a link; the footnote layer claims
+ * those nodes instead of skipping them.
+ */
+export function scanFootnotes(
+  doc: Text,
+  from: number,
+  to: number,
+  regions: RegionIndex,
+): FootnoteSpan[] {
+  const spans: FootnoteSpan[] = [];
+  const first = doc.lineAt(from).number;
+  const last = doc.lineAt(to).number;
+
+  for (let number = first; number <= last; number += 1) {
+    const line = doc.line(number);
+
+    // Named references first, so an inline scan cannot re-read their brackets.
+    const claimed: Span[] = [];
+    for (const match of line.text.matchAll(FOOTNOTE_NAMED_PATTERN)) {
+      if (match.index === undefined) continue;
+      const start = line.from + match.index;
+      const end = start + match[0].length;
+      if (start < from || end > to) continue;
+      if (regions.isExcluded(start, ["verbatim", "table"])) continue;
+      spans.push({ from: start, to: end, kind: "named" });
+      claimed.push({ from: start, to: end });
+    }
+
+    // Inline footnotes: `^[`, then the `]` that closes it.
+    let cursor = 0;
+    while (cursor < line.length) {
+      const open = line.text.indexOf(FOOTNOTE_INLINE_OPEN, cursor);
+      if (open < 0) break;
+      const bodyStart = open + FOOTNOTE_INLINE_OPEN.length;
+      const close = line.text.indexOf("]", bodyStart);
+      if (close < 0) {
+        // No closer on this line: the markers stay literal.
+        break;
+      }
+      const start = line.from + open;
+      const end = line.from + close + 1;
+      cursor = close + 1;
+
+      if (start < from || end > to) continue;
+      if (regions.isExcluded(start, ["verbatim", "table"])) continue;
+      if (claimed.some((span) => span.from < end && span.to > start)) continue;
+
+      spans.push({
+        from: start,
+        to: end,
+        kind: "inline",
+        bodyFrom: line.from + bodyStart,
+        bodyTo: line.from + close,
+      });
+    }
+  }
+
+  return spans;
+}
+
+/** A named reference — the marker that classifies link-like. */
+export const footrefMark = Decoration.mark({ class: "cm-live-footref" });
+
+/** An inline footnote: the whole construct. */
+export const inlineFootnoteMark = Decoration.mark({
+  class: "cm-live-inline-footnote",
+});
+
+/** The `^[` and `]` of an inline footnote — its formatting markers. */
+export const footnoteMarkerMark = Decoration.mark({
+  class: "cm-live-footnote-marker",
+});
+
+/**
+ * The classes that make a span a *footref token* (`FOOT-001`).
+ *
+ * A span is one only when it carries the footref marker **and not** the
+ * inline-footnote marker — the artifact's own predicate, as a function so the
+ * exclusion is testable rather than implied by which marks a branch emits.
+ */
+export function isFootrefToken(classes: readonly string[]): boolean {
+  return classes.includes("cm-live-footref") && !classes.includes("cm-live-inline-footnote");
+}
 
 /**
  * The text of a completed task.
@@ -445,19 +564,27 @@ export function buildDecorations(view: EditorView): DecorationSet {
     scanTaskMarkers(doc, from, to),
   );
   const taskLines = new Set(taskMarkers.map((marker) => marker.lineFrom));
+  // Footnotes run before the walk too: the grammar reads `[^name]` as a
+  // shortcut reference link, and the footnote layer is what claims it
+  // (`FOOT-001`).
+  const footnotes = view.visibleRanges.flatMap(({ from, to }) =>
+    scanFootnotes(doc, from, to, buildRegionIndex(state, from, to)),
+  );
   const linkNodeNames = new Set(LINK_NODES);
+  const inSpan = (node: NodeRange, spans: readonly Span[]) =>
+    spans.some((span) => span.from <= node.from && node.to <= span.to);
   const insideTaskMarker = (node: NodeRange) =>
-    linkNodeNames.has(node.name) &&
-    taskMarkers.some(
-      (marker) => marker.from <= node.from && node.to <= marker.to,
-    );
+    linkNodeNames.has(node.name) && inSpan(node, taskMarkers);
+  const insideFootnote = (node: NodeRange) =>
+    linkNodeNames.has(node.name) && inSpan(node, footnotes);
 
   const isRevealed = (span: Span) => spanRevealed(reveal, span);
 
   const decorate = (node: NodeRange) => {
-    // `[?]` is a task marker to the artifact and a link to the grammar; the
-    // task layer wins (plan §7 risk D-5).
-    if (insideTaskMarker(node)) return;
+    // `[?]` is a task marker to the artifact and a link to the grammar, and
+    // `[^name]` is a footnote reference to the artifact and a link to the
+    // grammar. Both layers win over the link reading (plan §7 risk D-5).
+    if (insideTaskMarker(node) || insideFootnote(node)) return;
 
     const rule = HIDE_RULES[node.name];
 
@@ -615,6 +742,27 @@ export function buildDecorations(view: EditorView): DecorationSet {
       ranges.push(tagMark.range(span.from, span.to));
       ranges.push(tagBeginMark.range(span.from, span.from + 1));
       ranges.push(tagEndMark.range(span.to - 1, span.to));
+    }
+  }
+
+  // Footnotes (`FOOT-001`). A named reference is the marker that classifies
+  // link-like; an inline footnote is parsed and styled but never interactive,
+  // which the two-marker body encodes: a footref token needs the footref mark
+  // *without* the inline-footnote one.
+  for (const span of footnotes) {
+    if (span.kind === "named") {
+      ranges.push(footrefMark.range(span.from, span.to));
+      continue;
+    }
+    ranges.push(inlineFootnoteMark.range(span.from, span.to));
+    ranges.push(footnoteMarkerMark.range(span.from, span.from + 2));
+    ranges.push(footnoteMarkerMark.range(span.to - 1, span.to));
+    if (span.bodyFrom !== undefined && span.bodyTo !== undefined) {
+      if (span.bodyFrom < span.bodyTo) {
+        // The body carries the footref marker *and* the inline-footnote one —
+        // the combination the clickable-token classifier rejects.
+        ranges.push(footrefMark.range(span.bodyFrom, span.bodyTo));
+      }
     }
   }
 

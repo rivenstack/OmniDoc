@@ -93,6 +93,15 @@ export const markdownLivePreviewTheme = EditorView.theme({
   },
   ".cm-live-tag-begin": { paddingInlineStart: "0.375rem" },
   ".cm-live-tag-end": { paddingInlineEnd: "0.375rem" },
+  // Footnotes (`OBS-1.14.4-FOOT-001`). A named reference is styled like the
+  // link-like marker it classifies as; an inline footnote reads as the same
+  // colour because it is the same construct in a different spelling. Whether
+  // the artifact renders either as a *superscript* reference was never
+  // established (`FOOT-001` unknowns), so no size or baseline change is
+  // invented here.
+  ".cm-live-footref": { color: "var(--primary)" },
+  ".cm-live-inline-footnote": { color: "var(--primary)" },
+  ".cm-live-footnote-marker": { opacity: "0.6" },
   // These three set padding, which CodeMirror's base theme also sets on
   // `.cm-line` with the shorthand — the compound selector is what makes the
   // preview's insets win (equal-specificity rules are resolved by order, and
