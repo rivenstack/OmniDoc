@@ -5,7 +5,7 @@ import { CodeMirrorEditor, type CodeMirrorEditorHandle } from "./cm-editor";
 import {
   TABLE_COMPLETE_MS,
   TABLE_IDLE_FLUSH_MS,
-} from "./markdown-live-preview";
+} from "./live-preview/table";
 
 /**
  * Markdown-mode table behaviour.

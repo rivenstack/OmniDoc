@@ -7,7 +7,6 @@ export {
   createEditorCompartments,
   editingExtensions,
   editorExtensions,
-  keymapExtensions,
   languageExtensions,
   livePreviewExtensions,
   settingsExtensions,
@@ -28,9 +27,13 @@ export {
 } from "./editor-settings";
 export type { EditorSettings } from "./editor-settings";
 export {
+  buildDecorations,
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
-} from "./markdown-live-preview";
+  selectionTouches,
+} from "./live-preview";
+export type { NodeRange } from "./live-preview";
+export { keymapExtensions } from "./keymap";
 export {
   TABLE_COMPLETE_MS,
   TABLE_IDLE_FLUSH_MS,

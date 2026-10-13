@@ -44,17 +44,18 @@
  * (gated — decision 9).
  */
 
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { history } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { bracketMatching } from "@codemirror/language";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { DEFAULT_EDITOR_SETTINGS, type EditorSettings } from "./editor-settings";
+import { keymapExtensions } from "./keymap";
 import {
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
   tableLivePreview,
-} from "./markdown-live-preview";
+} from "./live-preview";
 
 /** The two engines CodeMirror drives. Normal mode is TipTap's, not this one's. */
 export type EditorEngineMode = "text" | "markdown";
@@ -154,23 +155,10 @@ export function livePreviewExtensions(
  * The curated keymap slot.
  *
  * Task 6.2 replaces the contents with the artifact-parity binding set; the
- * compartment exists now so that swap is a reconfigure. `Escape` blurring the
- * editor is the surface's own behaviour (leaving the field on Escape), kept as
- * the last binding so a future `Escape` binding can take precedence.
+ * compartment exists now so that swap is a reconfigure. The bindings themselves
+ * live in `keymap.ts`.
  */
-export function keymapExtensions(): Extension {
-  return keymap.of([
-    ...defaultKeymap,
-    ...historyKeymap,
-    {
-      key: "Escape",
-      run: (view: EditorView) => {
-        view.dom.blur();
-        return true;
-      },
-    },
-  ]);
-}
+export { keymapExtensions };
 
 /**
  * The language slot: GFM Markdown, in **both** modes.
