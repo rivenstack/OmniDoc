@@ -56,8 +56,49 @@ Gate evidence, Phase 0 close:
   close); 114 rows, totals 73 adopt · 15 adapt · 1 deviation · 12 defer ·
   8 gated · 5 out-of-scope.
 
-**Next task pointer: Plan Task 1.1 — `EditorSettings` + defaults** (§4.1 table,
-`useTab: true`), then 1.2 → 1.5 to close Phase 1. No soft-stop is in effect.
+**Next task pointer: Plan Task 2.1 — construct taxonomy + region classification**
+(`live-preview/taxonomy.ts` + test), then 2.2 → 2.11 to close Phase 2. No
+soft-stop is in effect.
+
+**2026-10-13 — Plan Phase 1 complete.** Five tasks, one commit each, both
+per-task gates green before the next began; `npx nx lint ui` green throughout.
+
+| Task | Commit | What landed |
+|---|---|---|
+| 1.1 | `95566e3` | `editor-settings.ts` — `EditorSettings`, artifact-parity defaults (plan §4.1, `useTab: true`), the eight `SET-002` live-reconfigured keys, the three unmodelled artifact keys recorded with reasons, `normalizeTabSize` + `editorSettings()` |
+| 1.2 | `cec9846` | `capture/body-typography.ts` — one type scale consumed by the TipTap class string *and* the CM6 theme; `TAILWIND_TEXT_SIZES`/`TAILWIND_FONT_WEIGHTS` let the test resolve a utility's real value and pin it against the theme's `rem` |
+| 1.3 | `ae5dc7c` | `editor-extensions.ts` — extension factory + five compartments (`editing/settings/livePreview/keymap/language`); `cm-editor.tsx` gained a `settings` prop and reconfigure effects; `history()` deliberately outside every compartment (HIST-002) |
+| 1.4 | `af3afbf` | `live-preview/table/{index,interaction,widget,tools,scan}.ts` — pure move; block decorations stay in a `StateField` (documented at the new site) |
+| 1.5 | `fa9ffb5` | `live-preview/{index,decorations,widgets,theme}.ts` + `codemirror/keymap.ts`; `markdown-live-preview.ts` deleted; same public names re-exported |
+
+Gate evidence, Phase 1 close:
+
+- `npx vitest run` (`packages/ui`) — **531/531 pass**, 28 files.
+- `npx nx typecheck ui`, `npx nx lint ui` — green (lint carries the same 6
+  pre-existing warnings; no errors).
+- `pnpm nx run-many -t typecheck lint test build --exclude api` — **all 4 JS
+  projects green** (14 tasks).
+- Full `pnpm nx run-many -t typecheck lint test build` — 15/16 green; the only
+  red is `api:test` (one failing test, `Connection to localhost:5432 refused` —
+  Postgres not running). Documented pre-existing/environmental; untouched.
+- `docs/fidelity/obsidian-parity-matrix.md` regenerated at phase close by its
+  test — byte-identical (Phase 1 changed no disposition), so no matrix commit.
+- Both moves verified as **pure** moves by diffing the pre-split revision's
+  lines against the new files: the only differences are added `import`/`export`
+  lines, doc headers and `export` keywords.
+- `apps/web/next-env.d.ts` was reverted after the build (rewritten by
+  `web:build`, as recorded in repo memory).
+
+Deviations recorded (no behaviour change, no plan re-open):
+
+- Task 1.2's plan file list names `live-preview/theme.ts`, which this phase's
+  own ordering only creates in Task 1.5. The shared scale was therefore consumed
+  by the then-current theme home (`markdown-live-preview.ts`) plus
+  `cm-editor.tsx`'s base theme — same package, same lane; Task 1.5 moved the
+  theme with it, still on the same scale.
+- Task 1.5's "extract the keymap" gives the bindings their own `keymap.ts`;
+  Task 1.3 had already created the `keymap` compartment, so the swap point
+  existed one task earlier than the plan's sequencing assumed.
 
 ## Objective
 
