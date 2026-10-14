@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * A shadcn-style **context menu**.
@@ -15,9 +15,9 @@
  * on how the menu opens.
  */
 
-import * as React from "react"
-import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu"
-import { cn } from "../lib/utils"
+import * as React from "react";
+import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
+import { cn } from "../lib/utils";
 import {
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -26,18 +26,23 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from "./dropdown-menu"
+} from "./dropdown-menu";
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
-  return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />
+  return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
 }
 
 /** The area that opens the menu on right click — the rendered callout card. */
 function ContextMenuTrigger({ ...props }: ContextMenuPrimitive.Trigger.Props) {
-  return <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />
+  return (
+    <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />
+  );
 }
 
-function ContextMenuContent({ className, ...props }: ContextMenuPrimitive.Popup.Props) {
+function ContextMenuContent({
+  className,
+  ...props
+}: ContextMenuPrimitive.Popup.Props) {
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner className="isolate z-50 outline-none">
@@ -45,13 +50,13 @@ function ContextMenuContent({ className, ...props }: ContextMenuPrimitive.Popup.
           data-slot="context-menu-content"
           className={cn(
             "z-50 max-h-(--available-height) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-            className
+            className,
           )}
           {...props}
         />
       </ContextMenuPrimitive.Positioner>
     </ContextMenuPrimitive.Portal>
-  )
+  );
 }
 
 export {
@@ -65,4 +70,4 @@ export {
   DropdownMenuSub as ContextMenuSub,
   DropdownMenuSubContent as ContextMenuSubContent,
   DropdownMenuSubTrigger as ContextMenuSubTrigger,
-}
+};

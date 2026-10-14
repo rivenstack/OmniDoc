@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * The rendered callout (F-15 Rev 2, plan Task 3.2).
@@ -24,7 +24,7 @@
  *   selection change — that is the point.
  */
 
-import * as React from "react"
+import * as React from "react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -36,39 +36,39 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from "../../../components/context-menu"
-import { calloutIcon } from "./icons"
-import type { CalloutHandlers, CalloutNode } from "./model"
-import { calloutMenuItems } from "./menu"
-import { CalloutTypePalette } from "./palette"
-import { resolveCalloutType } from "./types"
+} from "../../../components/context-menu";
+import { calloutIcon } from "./icons";
+import type { CalloutHandlers, CalloutNode } from "./model";
+import { calloutMenuItems } from "./menu";
+import { CalloutTypePalette } from "./palette";
+import { resolveCalloutType } from "./types";
 
 export type CalloutBlockProps = {
-  readonly node: CalloutNode
+  readonly node: CalloutNode;
   /** A locked note renders the callout but wires no interaction. */
-  readonly editable: boolean
-  readonly handlers: CalloutHandlers
-}
+  readonly editable: boolean;
+  readonly handlers: CalloutHandlers;
+};
 
 /** One callout card, nested callouts included. */
 export function CalloutBlock({ node, editable, handlers }: CalloutBlockProps) {
-  const Icon = calloutIcon(resolveCalloutType(node.type).icon)
-  const foldable = node.fold === "+" || node.fold === "-"
+  const Icon = calloutIcon(resolveCalloutType(node.type).icon);
+  const foldable = node.fold === "+" || node.fold === "-";
 
   // `-003`: the collapsed state is React state, and nothing else.
-  const [collapsed, setCollapsed] = React.useState(node.fold === "-")
-  const [paletteOpen, setPaletteOpen] = React.useState(false)
+  const [collapsed, setCollapsed] = React.useState(node.fold === "-");
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
 
   // `-005`: the menu's checked item is compared against the **raw** source text,
   // so the radio group's value is empty when the raw type matches no item.
-  const items = calloutMenuItems(node.rawType)
-  const checked = items.find((item) => item.checked)?.type ?? ""
+  const items = calloutMenuItems(node.rawType);
+  const checked = items.find((item) => item.checked)?.type ?? "";
 
   const toggleFold = (event: React.MouseEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    if (foldable) setCollapsed((value) => !value)
-  }
+    event.preventDefault();
+    event.stopPropagation();
+    if (foldable) setCollapsed((value) => !value);
+  };
 
   return (
     <ContextMenu>
@@ -115,7 +115,7 @@ export function CalloutBlock({ node, editable, handlers }: CalloutBlockProps) {
           className="cm-live-callout-content"
           hidden={collapsed}
           onClick={() => {
-            if (editable) handlers.reveal(node)
+            if (editable) handlers.reveal(node);
           }}
         >
           {node.blocks.map((block) =>
@@ -136,13 +136,17 @@ export function CalloutBlock({ node, editable, handlers }: CalloutBlockProps) {
       </ContextMenuTrigger>
 
       <ContextMenuContent>
-        <ContextMenuItem onClick={() => handlers.edit(node)}>Edit</ContextMenuItem>
+        <ContextMenuItem onClick={() => handlers.edit(node)}>
+          Edit
+        </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>Callout type</ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuRadioGroup
               value={checked}
-              onValueChange={(value: unknown) => handlers.pickType(node, String(value))}
+              onValueChange={(value: unknown) =>
+                handlers.pickType(node, String(value))
+              }
             >
               {items.map((item) => (
                 <ContextMenuRadioItem key={item.type} value={item.type}>
@@ -151,9 +155,13 @@ export function CalloutBlock({ node, editable, handlers }: CalloutBlockProps) {
               ))}
             </ContextMenuRadioGroup>
             <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => setPaletteOpen(true)}>Other…</ContextMenuItem>
+            <ContextMenuItem onClick={() => setPaletteOpen(true)}>
+              Other…
+            </ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => handlers.remove(node)}>None</ContextMenuItem>
+            <ContextMenuItem onClick={() => handlers.remove(node)}>
+              None
+            </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
       </ContextMenuContent>
@@ -164,5 +172,5 @@ export function CalloutBlock({ node, editable, handlers }: CalloutBlockProps) {
         onPick={(type) => handlers.pickType(node, type)}
       />
     </ContextMenu>
-  )
+  );
 }

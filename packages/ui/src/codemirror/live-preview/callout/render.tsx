@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * The callout block widget (F-15 Rev 2, plan Task 3.2).
@@ -14,15 +14,18 @@
  * `CalloutHandlers`, and this file is what turns those into transactions.
  */
 
-
-import { WidgetType } from "@codemirror/view"
-import type { EditorView } from "@codemirror/view"
-import { flushSync } from "react-dom"
-import { createRoot, type Root } from "react-dom/client"
-import { CalloutBlock } from "./block"
-import { removeCallout, selectCalloutRange, setCalloutType } from "./menu"
-import { buildCalloutNode, type CalloutHandlers, type CalloutNode } from "./model"
-import { scanCallouts, type Callout } from "./parse"
+import { WidgetType } from "@codemirror/view";
+import type { EditorView } from "@codemirror/view";
+import { flushSync } from "react-dom";
+import { createRoot, type Root } from "react-dom/client";
+import { CalloutBlock } from "./block";
+import { removeCallout, selectCalloutRange, setCalloutType } from "./menu";
+import {
+  buildCalloutNode,
+  type CalloutHandlers,
+  type CalloutNode,
+} from "./model";
+import { scanCallouts, type Callout } from "./parse";
 
 /**
  * Bind the component's callbacks to the editor.
@@ -101,10 +104,10 @@ export class CalloutPreviewWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const host = document.createElement("div")
-    host.className = "cm-live-callout-widget"
-    this.mount(host, view)
-    return host
+    const host = document.createElement("div");
+    host.className = "cm-live-callout-widget";
+    this.mount(host, view);
+    return host;
   }
 
   /**
@@ -115,38 +118,44 @@ export class CalloutPreviewWidget extends WidgetType {
    * state (a folded callout stays folded) while the data is refreshed.
    */
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    this.mount(dom, view)
-    return true
+    this.mount(dom, view);
+    return true;
   }
 
   destroy(): void {
-    this.root?.unmount()
-    this.root = null
+    this.root?.unmount();
+    this.root = null;
   }
 
   /** Render (or re-render) the React tree for the current document. */
   private mount(host: HTMLElement, view: EditorView): void {
-    const doc = view.state.doc
-    const callouts = scanCallouts(doc)
+    const doc = view.state.doc;
+    const callouts = scanCallouts(doc);
     const callout = callouts.find(
       (candidate) => candidate.from === this.from && candidate.to === this.to,
-    )
+    );
     if (!callout) {
       // The range is gone (a mid-transaction render): show the raw source rather
       // than an empty card, and drop the React tree.
-      this.root?.unmount()
-      this.root = null
-      host.textContent = this.text
-      return
+      this.root?.unmount();
+      this.root = null;
+      host.textContent = this.text;
+      return;
     }
 
-    const node = buildCalloutNode(doc, callout, callouts)
-    const handlers = createCalloutHandlers(view)
-    this.root ??= createRoot(host)
+    const node = buildCalloutNode(doc, callout, callouts);
+    const handlers = createCalloutHandlers(view);
+    this.root ??= createRoot(host);
     // `flushSync` so the widget's DOM exists before CodeMirror measures it — a
     // concurrent render would leave an empty block for a frame.
     flushSync(() => {
-      this.root?.render(<CalloutBlock node={node} editable={this.editable} handlers={handlers} />)
-    })
+      this.root?.render(
+        <CalloutBlock
+          node={node}
+          editable={this.editable}
+          handlers={handlers}
+        />,
+      );
+    });
   }
 }

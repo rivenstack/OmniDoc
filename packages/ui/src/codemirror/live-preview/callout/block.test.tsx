@@ -13,9 +13,18 @@ import { flushSync } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
 import { CalloutBlock } from "./block";
 import { CALLOUT_ICONS } from "./icons";
-import { buildCalloutNode, type CalloutHandlers, type CalloutNode } from "./model";
+import {
+  buildCalloutNode,
+  type CalloutHandlers,
+  type CalloutNode,
+} from "./model";
 import { scanCallouts } from "./parse";
-import { CALLOUT_TYPES, CANONICAL_CALLOUT_TYPES, NOTE_CALLOUT_TYPE, resolveCalloutType } from "./types";
+import {
+  CALLOUT_TYPES,
+  CANONICAL_CALLOUT_TYPES,
+  NOTE_CALLOUT_TYPE,
+  resolveCalloutType,
+} from "./types";
 import { CALLOUT_PALETTE_TYPES, CalloutTypePalette } from "./palette";
 
 function doc(text: string): Text {
@@ -43,7 +52,9 @@ function mount(node: CalloutNode, handlers: CalloutHandlers, editable = true) {
   document.body.appendChild(host);
   const root: Root = createRoot(host);
   flushSync(() => {
-    root.render(<CalloutBlock node={node} editable={editable} handlers={handlers} />);
+    root.render(
+      <CalloutBlock node={node} editable={editable} handlers={handlers} />,
+    );
   });
   return {
     host,
@@ -84,9 +95,14 @@ describe("the type table (OBS-1.14.4-CALLOUT-001)", () => {
     // Tabler icons are `forwardRef` components, so they are objects rather than
     // plain functions — presence, not `typeof`, is what matters.
     for (const spec of CALLOUT_TYPES) {
-      expect(CALLOUT_ICONS[spec.icon as keyof typeof CALLOUT_ICONS], spec.id).toBeTruthy();
+      expect(
+        CALLOUT_ICONS[spec.icon as keyof typeof CALLOUT_ICONS],
+        spec.id,
+      ).toBeTruthy();
     }
-    expect(CALLOUT_ICONS[NOTE_CALLOUT_TYPE.icon as keyof typeof CALLOUT_ICONS]).toBeTruthy();
+    expect(
+      CALLOUT_ICONS[NOTE_CALLOUT_TYPE.icon as keyof typeof CALLOUT_ICONS],
+    ).toBeTruthy();
   });
 
   it("lists the base type plus every canonical type in the palette", () => {
@@ -94,37 +110,52 @@ describe("the type table (OBS-1.14.4-CALLOUT-001)", () => {
     for (const id of CANONICAL_CALLOUT_TYPES) {
       expect(CALLOUT_PALETTE_TYPES, id).toContain(id);
     }
-    expect(new Set(CALLOUT_PALETTE_TYPES).size).toBe(CALLOUT_PALETTE_TYPES.length);
+    expect(new Set(CALLOUT_PALETTE_TYPES).size).toBe(
+      CALLOUT_PALETTE_TYPES.length,
+    );
   });
 });
 
 describe("rendering the card (OBS-1.14.4-CALLOUT-002, -003)", () => {
   it("renders the title, a Tabler icon and the body text", () => {
     const handlers = stubHandlers();
-    const mounted = mount(nodeFor("> [!tip] A smart tip\n> Body text.\n"), handlers);
-
-    expect(must(mounted.host.querySelector(".cm-live-callout-title-text")).textContent).toBe(
-      "A smart tip",
+    const mounted = mount(
+      nodeFor("> [!tip] A smart tip\n> Body text.\n"),
+      handlers,
     );
+
+    expect(
+      must(mounted.host.querySelector(".cm-live-callout-title-text"))
+        .textContent,
+    ).toBe("A smart tip");
     // A real Tabler icon: an `<svg>` with the icon's own class.
     expect(mounted.host.querySelector("svg.cm-live-callout-icon")).toBeTruthy();
-    expect(must(mounted.host.querySelector(".cm-live-callout-content")).textContent).toContain(
-      "Body text.",
-    );
+    expect(
+      must(mounted.host.querySelector(".cm-live-callout-content")).textContent,
+    ).toContain("Body text.");
     mounted.unmount();
   });
 
   it("derives the title from the type when the marker line has none", () => {
-    const mounted = mount(nodeFor("> [!warning]\n> Body only.\n"), stubHandlers());
-    expect(must(mounted.host.querySelector(".cm-live-callout-title-text")).textContent).toBe(
-      "Warning",
+    const mounted = mount(
+      nodeFor("> [!warning]\n> Body only.\n"),
+      stubHandlers(),
     );
+    expect(
+      must(mounted.host.querySelector(".cm-live-callout-title-text"))
+        .textContent,
+    ).toBe("Warning");
     mounted.unmount();
   });
 
   it("keeps `data-callout` as written so an unknown type is not rewritten", () => {
-    const mounted = mount(nodeFor("> [!my-weird-type] T\n> Body\n"), stubHandlers());
-    const root = must(mounted.host.querySelector(".cm-live-callout")) as HTMLElement;
+    const mounted = mount(
+      nodeFor("> [!my-weird-type] T\n> Body\n"),
+      stubHandlers(),
+    );
+    const root = must(
+      mounted.host.querySelector(".cm-live-callout"),
+    ) as HTMLElement;
     expect(root.dataset.callout).toBe("my-weird-type");
     mounted.unmount();
   });
@@ -136,7 +167,9 @@ describe("rendering the card (OBS-1.14.4-CALLOUT-002, -003)", () => {
       ["> [!note] Plain", ""],
     ] as const) {
       const mounted = mount(nodeFor(`${line}\n> Body\n`), stubHandlers());
-      const root = must(mounted.host.querySelector(".cm-live-callout")) as HTMLElement;
+      const root = must(
+        mounted.host.querySelector(".cm-live-callout"),
+      ) as HTMLElement;
       expect(root.dataset.calloutFold).toBe(expected);
       mounted.unmount();
     }
@@ -147,19 +180,33 @@ describe("rendering the card (OBS-1.14.4-CALLOUT-002, -003)", () => {
     expect(plain.host.querySelector(".cm-live-callout-fold")).toBeNull();
     plain.unmount();
 
-    const expanded = mount(nodeFor("> [!note]+ Fold\n> Body\n"), stubHandlers());
+    const expanded = mount(
+      nodeFor("> [!note]+ Fold\n> Body\n"),
+      stubHandlers(),
+    );
     expect(
-      must(expanded.host.querySelector(".cm-live-callout-fold")).getAttribute("aria-expanded"),
+      must(expanded.host.querySelector(".cm-live-callout-fold")).getAttribute(
+        "aria-expanded",
+      ),
     ).toBe("true");
     expanded.unmount();
 
-    const collapsed = mount(nodeFor("> [!note]- Fold\n> Body\n"), stubHandlers());
-    expect(
-      must(collapsed.host.querySelector(".cm-live-callout")).classList.contains("is-collapsed"),
-    ).toBe(true);
-    expect((must(collapsed.host.querySelector(".cm-live-callout-content")) as HTMLElement).hidden).toBe(
-      true,
+    const collapsed = mount(
+      nodeFor("> [!note]- Fold\n> Body\n"),
+      stubHandlers(),
     );
+    expect(
+      must(collapsed.host.querySelector(".cm-live-callout")).classList.contains(
+        "is-collapsed",
+      ),
+    ).toBe(true);
+    expect(
+      (
+        must(
+          collapsed.host.querySelector(".cm-live-callout-content"),
+        ) as HTMLElement
+      ).hidden,
+    ).toBe(true);
     collapsed.unmount();
   });
 });
@@ -172,12 +219,18 @@ describe("fold is DOM-only (OBS-1.14.4-CALLOUT-003)", () => {
     const button = must(mounted.host.querySelector(".cm-live-callout-fold"));
 
     await act(async () => {
-      button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      button.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
     });
 
     expect(root.classList.contains("is-collapsed")).toBe(false);
     expect(
-      (must(mounted.host.querySelector(".cm-live-callout-content")) as HTMLElement).hidden,
+      (
+        must(
+          mounted.host.querySelector(".cm-live-callout-content"),
+        ) as HTMLElement
+      ).hidden,
     ).toBe(false);
     // No document mutation of any kind.
     expect(handlers.reveal).not.toHaveBeenCalled();
@@ -193,7 +246,9 @@ describe("fold is DOM-only (OBS-1.14.4-CALLOUT-003)", () => {
     const mounted = mount(node, handlers);
 
     await act(async () => {
-      must(mounted.host.querySelector(".cm-live-callout-content")).dispatchEvent(
+      must(
+        mounted.host.querySelector(".cm-live-callout-content"),
+      ).dispatchEvent(
         new MouseEvent("click", { bubbles: true, cancelable: true }),
       );
     });
@@ -204,11 +259,17 @@ describe("fold is DOM-only (OBS-1.14.4-CALLOUT-003)", () => {
 
   it("wires no interaction for a locked note", async () => {
     const handlers = stubHandlers();
-    const mounted = mount(nodeFor("> [!note]- Fold\n> Body\n"), handlers, false);
+    const mounted = mount(
+      nodeFor("> [!note]- Fold\n> Body\n"),
+      handlers,
+      false,
+    );
     const root = must(mounted.host.querySelector(".cm-live-callout"));
 
     await act(async () => {
-      must(mounted.host.querySelector(".cm-live-callout-content")).dispatchEvent(
+      must(
+        mounted.host.querySelector(".cm-live-callout-content"),
+      ).dispatchEvent(
         new MouseEvent("click", { bubbles: true, cancelable: true }),
       );
     });
@@ -226,15 +287,24 @@ describe("the context menu (OBS-1.14.4-CALLOUT-005)", () => {
 
     await act(async () => {
       must(mounted.host.querySelector(".cm-live-callout")).dispatchEvent(
-        new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 12, clientY: 34 }),
+        new MouseEvent("contextmenu", {
+          bubbles: true,
+          cancelable: true,
+          clientX: 12,
+          clientY: 34,
+        }),
       );
     });
 
     // Portalled to the body, not the widget — an editor-scoped menu would grow
     // the editor's scroll container.
-    const popup = document.body.querySelector('[data-slot="context-menu-content"]');
+    const popup = document.body.querySelector(
+      '[data-slot="context-menu-content"]',
+    );
     expect(popup).toBeTruthy();
-    expect(mounted.host.querySelector('[data-slot="context-menu-content"]')).toBeNull();
+    expect(
+      mounted.host.querySelector('[data-slot="context-menu-content"]'),
+    ).toBeNull();
     const text = must(popup).textContent ?? "";
     expect(text).toContain("Edit");
     expect(text).toContain("Callout type");
@@ -251,11 +321,13 @@ describe("the context menu (OBS-1.14.4-CALLOUT-005)", () => {
         new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
       );
     });
-    const edit = [...document.body.querySelectorAll('[data-slot="dropdown-menu-item"]')].find(
-      (item) => item.textContent === "Edit",
-    );
+    const edit = [
+      ...document.body.querySelectorAll('[data-slot="dropdown-menu-item"]'),
+    ].find((item) => item.textContent === "Edit");
     await act(async () => {
-      must(edit).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      must(edit).dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
     });
 
     expect(handlers.edit).toHaveBeenCalledWith(node);
@@ -265,12 +337,20 @@ describe("the context menu (OBS-1.14.4-CALLOUT-005)", () => {
 
 describe("nesting (OBS-1.14.4-CALLOUT-010)", () => {
   it("renders a nested callout inside its parent, each with its own icon", () => {
-    const node = nodeFor("> [!quote] Outer\n> > [!tip]+ Inner\n> > Inner body.\n");
+    const node = nodeFor(
+      "> [!quote] Outer\n> > [!tip]+ Inner\n> > Inner body.\n",
+    );
     const mounted = mount(node, stubHandlers());
 
     expect(mounted.host.querySelectorAll(".cm-live-callout")).toHaveLength(2);
-    expect(mounted.host.querySelectorAll("svg.cm-live-callout-icon")).toHaveLength(2);
-    expect(must(mounted.host.firstElementChild).querySelector(".cm-live-callout .cm-live-callout")).toBeTruthy();
+    expect(
+      mounted.host.querySelectorAll("svg.cm-live-callout-icon"),
+    ).toHaveLength(2);
+    expect(
+      must(mounted.host.firstElementChild).querySelector(
+        ".cm-live-callout .cm-live-callout",
+      ),
+    ).toBeTruthy();
     expect(mounted.host.textContent).toContain("Inner body.");
     mounted.unmount();
   });
@@ -284,14 +364,18 @@ describe("the type palette", () => {
     document.body.appendChild(host);
     const root = createRoot(host);
     flushSync(() => {
-      root.render(<CalloutTypePalette open onOpenChange={onOpenChange} onPick={onPick} />);
+      root.render(
+        <CalloutTypePalette open onOpenChange={onOpenChange} onPick={onPick} />,
+      );
     });
 
-    const item = [...document.body.querySelectorAll("[data-slot='command-item']")].find(
-      (entry) => entry.textContent?.includes("Warning"),
-    );
+    const item = [
+      ...document.body.querySelectorAll("[data-slot='command-item']"),
+    ].find((entry) => entry.textContent?.includes("Warning"));
     await act(async () => {
-      must(item).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      must(item).dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
     });
 
     expect(onPick).toHaveBeenCalledWith("warning");

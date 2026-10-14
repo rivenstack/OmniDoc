@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * Callout icons (F-15 Rev 2, plan Task 3.2).
@@ -30,8 +30,8 @@ import {
   IconSquareCheck,
   IconX,
   type IconProps,
-} from "@tabler/icons-react"
-import type { ComponentType } from "react"
+} from "@tabler/icons-react";
+import type { ComponentType } from "react";
 
 /** The icon names `CALLOUT_TYPES` refers to. */
 export type CalloutIconName =
@@ -47,10 +47,13 @@ export type CalloutIconName =
   | "bug"
   | "list"
   | "quote"
-  | "pencil"
+  | "pencil";
 
 /** Icon name → Tabler component. */
-export const CALLOUT_ICONS: Record<CalloutIconName, ComponentType<IconProps>> = {
+export const CALLOUT_ICONS: Record<
+  CalloutIconName,
+  ComponentType<IconProps>
+> = {
   "clipboard-list": IconClipboardList,
   info: IconInfoCircle,
   "check-circle": IconSquareCheck,
@@ -64,9 +67,9 @@ export const CALLOUT_ICONS: Record<CalloutIconName, ComponentType<IconProps>> = 
   list: IconList,
   quote: IconQuote,
   pencil: IconPencil,
-}
+};
 
 /** The Tabler component for an icon name, falling back to the pencil. */
 export function calloutIcon(name: string): ComponentType<IconProps> {
-  return CALLOUT_ICONS[name as CalloutIconName] ?? IconPencil
+  return CALLOUT_ICONS[name as CalloutIconName] ?? IconPencil;
 }

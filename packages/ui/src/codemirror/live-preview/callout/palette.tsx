@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * The "Other…" callout-type picker (F-15 Rev 2, plan Task 3.2).
@@ -13,10 +13,17 @@
  * help page (which calls it a `tip` alias).
  */
 
-import { Command, CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "../../../components/command"
-import { calloutIcon } from "./icons"
-import { defaultCalloutTitle } from "./parse"
-import { CALLOUT_TYPES, NOTE_CALLOUT_TYPE } from "./types"
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../../../components/command";
+import { calloutIcon } from "./icons";
+import { defaultCalloutTitle } from "./parse";
+import { CALLOUT_TYPES, NOTE_CALLOUT_TYPE } from "./types";
 
 /** The types the palette lists, in the help page's order. */
 export const CALLOUT_PALETTE_TYPES: readonly string[] = [
@@ -30,17 +37,21 @@ export const CALLOUT_PALETTE_TYPES: readonly string[] = [
   ...CALLOUT_TYPES.map((spec) => spec.id).filter(
     (id) => !["summary", "info", "todo", "tip", "important"].includes(id),
   ),
-]
+];
 
 export type CalloutTypePaletteProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   /** Called with the chosen type id; the caller writes it to the document. */
-  onPick: (type: string) => void
-}
+  onPick: (type: string) => void;
+};
 
 /** The searchable "all callout types" palette. */
-export function CalloutTypePalette({ open, onOpenChange, onPick }: CalloutTypePaletteProps) {
+export function CalloutTypePalette({
+  open,
+  onOpenChange,
+  onPick,
+}: CalloutTypePaletteProps) {
   return (
     <CommandDialog
       open={open}
@@ -53,24 +64,26 @@ export function CalloutTypePalette({ open, onOpenChange, onPick }: CalloutTypePa
         <CommandList>
           <CommandEmpty>No callout type found.</CommandEmpty>
           {CALLOUT_PALETTE_TYPES.map((type) => {
-            const spec = CALLOUT_TYPES.find((entry) => entry.id === type) ?? NOTE_CALLOUT_TYPE
-            const Icon = calloutIcon(spec.icon)
+            const spec =
+              CALLOUT_TYPES.find((entry) => entry.id === type) ??
+              NOTE_CALLOUT_TYPE;
+            const Icon = calloutIcon(spec.icon);
             return (
               <CommandItem
                 key={type}
                 value={type}
                 onSelect={() => {
-                  onPick(type)
-                  onOpenChange(false)
+                  onPick(type);
+                  onOpenChange(false);
                 }}
               >
                 <Icon className="size-4" aria-hidden />
                 {defaultCalloutTitle(type)}
               </CommandItem>
-            )
+            );
           })}
         </CommandList>
       </Command>
     </CommandDialog>
-  )
+  );
 }
