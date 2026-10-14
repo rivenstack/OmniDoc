@@ -24,6 +24,7 @@
 import { syntaxTree } from "@codemirror/language";
 import type { EditorState, Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
+import { codeBlockRevealSpan } from "./codeblock";
 import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
 import { scanTags } from "./tags";
@@ -85,12 +86,19 @@ const HIDE_RULES: Record<string, HideRule> = {
   StrikethroughMark: {
     context: (_node, { ancestorOf }) => ancestorOf(["Strikethrough"]),
   },
-  // Inline backticks unfold with their span; a fence unfolds with its own line.
+  // Inline backticks unfold with their span; a fence unfolds with the whole
+  // code block (`REVEAL-009` + `REVEAL-011`), so one caret touch anywhere inside
+  // the block shows all of its raw source rather than token by token.
   CodeMark: {
     context: (node, { doc, ancestorOf }) =>
-      ancestorOf(["InlineCode"]) ?? doc.lineAt(node.from),
+      ancestorOf(["InlineCode"]) ??
+      codeBlockRevealSpan(ancestorOf(["FencedCode"])) ??
+      doc.lineAt(node.from),
   },
-  CodeInfo: { context: (node, { doc }) => doc.lineAt(node.from) },
+  CodeInfo: {
+    context: (node, { doc, ancestorOf }) =>
+      codeBlockRevealSpan(ancestorOf(["FencedCode"])) ?? doc.lineAt(node.from),
+  },
   LinkMark: { context: (_node, { ancestorOf }) => ancestorOf(["Link"]) },
   URL: { context: (_node, { ancestorOf }) => ancestorOf(["Link"]) },
 };

@@ -199,6 +199,13 @@ export {
 export type { FootnoteSpan, HighlightColour, HighlightSpan } from "./decorations";
 export { COMMENT_DELIMITER, scanComments } from "./comment";
 export type { CommentRange } from "./comment";
+export {
+  CODE_BLOCK_FOLD_PHRASE,
+  FENCE_PATTERN,
+  codeBlockRevealSpan,
+  parseFence,
+} from "./codeblock";
+export type { Fence, FenceChar } from "./codeblock";
 export { scanTags } from "./tags";
 export type { TagSpan } from "./tags";
 export { markdownLivePreviewTheme } from "./theme";
