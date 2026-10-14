@@ -206,6 +206,7 @@ export {
   parseFence,
 } from "./codeblock";
 export type { Fence, FenceChar } from "./codeblock";
+export * from "./callout";
 export { scanTags } from "./tags";
 export type { TagSpan } from "./tags";
 export { markdownLivePreviewTheme } from "./theme";

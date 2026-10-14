@@ -53,6 +53,7 @@ import { DEFAULT_EDITOR_SETTINGS, type EditorSettings } from "./editor-settings"
 import { keymapExtensions } from "./keymap";
 import { linkActivationExtension } from "./links/activation";
 import {
+  calloutLivePreview,
   markdownLivePreviewPlugin,
   markdownLivePreviewTheme,
   tableLivePreview,
@@ -149,7 +150,12 @@ export function livePreviewExtensions(
   settings: EditorSettings,
 ): Extension {
   if (mode !== "markdown" || !settings.livePreview) return [];
-  return [tableLivePreview, markdownLivePreviewPlugin, markdownLivePreviewTheme];
+  return [
+    calloutLivePreview,
+    tableLivePreview,
+    markdownLivePreviewPlugin,
+    markdownLivePreviewTheme,
+  ];
 }
 
 /**

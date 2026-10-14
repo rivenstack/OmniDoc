@@ -213,6 +213,77 @@ export const markdownLivePreviewTheme = EditorView.theme({
     borderEndStartRadius: "0.375rem",
     borderEndEndRadius: "0.375rem",
   },
+  // Callouts (`OBS-1.14.4-CALLOUT-001`, `-008`). The type's colour is a CSS
+  // custom property the base rule consumes for the title, the icon stroke and a
+  // colour-mixed background — the artifact's own shape — but the *values* are
+  // OmniDoc token roles rather than the artifact's palette (the recorded `adapt`
+  // deviation). `data-callout` carries the type **as written**, so an unknown
+  // type falls through to the base rule without the attribute being rewritten.
+  //
+  // The artifact's 13 types use teal/blue/cyan/green/yellow/orange/red/purple/
+  // grey; the project's status palette has five hues (info, accent, success,
+  // warning, danger) plus neutral, so the families collapse: blue→info,
+  // teal/cyan→accent, green→success, yellow/orange→warning, red→danger,
+  // purple→accent, and `quote` keeps the artifact's literal grey.
+  ".cm-live-callout": {
+    "--cm-callout-colour": "var(--od-info-500)",
+    display: "block",
+    marginBlock: "0.75rem",
+    padding: "0.5rem 0.75rem",
+    borderInlineStart: "2px solid var(--cm-callout-colour)",
+    borderRadius: "0.375rem",
+    backgroundColor:
+      "color-mix(in srgb, var(--cm-callout-colour) 8%, transparent)",
+  },
+  ".cm-live-callout[data-callout='summary'], .cm-live-callout[data-callout='abstract'], .cm-live-callout[data-callout='tldr']":
+    { "--cm-callout-colour": "var(--od-accent-500)" },
+  ".cm-live-callout[data-callout='todo']": { "--cm-callout-colour": "var(--od-info-500)" },
+  ".cm-live-callout[data-callout='important'], .cm-live-callout[data-callout='tip'], .cm-live-callout[data-callout='hint']":
+    { "--cm-callout-colour": "var(--od-accent-500)" },
+  ".cm-live-callout[data-callout='success'], .cm-live-callout[data-callout='check'], .cm-live-callout[data-callout='done']":
+    { "--cm-callout-colour": "var(--od-success-500)" },
+  ".cm-live-callout[data-callout='question'], .cm-live-callout[data-callout='help'], .cm-live-callout[data-callout='faq']":
+    { "--cm-callout-colour": "var(--od-warning-500)" },
+  ".cm-live-callout[data-callout='warning'], .cm-live-callout[data-callout='caution'], .cm-live-callout[data-callout='attention']":
+    { "--cm-callout-colour": "var(--od-warning-500)" },
+  ".cm-live-callout[data-callout='fail'], .cm-live-callout[data-callout='failure'], .cm-live-callout[data-callout='missing'], .cm-live-callout[data-callout='error'], .cm-live-callout[data-callout='danger'], .cm-live-callout[data-callout='bug']":
+    { "--cm-callout-colour": "var(--od-danger-500)" },
+  ".cm-live-callout[data-callout='example']": { "--cm-callout-colour": "var(--od-accent-500)" },
+  // The artifact's literal quote grey (`CALLOUT-001`, `quoteColourLiteral`).
+  ".cm-live-callout[data-callout='quote'], .cm-live-callout[data-callout='cite']": {
+    "--cm-callout-colour": "#9e9e9e",
+  },
+  ".cm-live-callout-title": {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.375rem",
+    fontWeight: "600",
+    color: "var(--cm-callout-colour)",
+  },
+  ".cm-live-callout-icon": { flex: "none" },
+  // The chevron is a real button so the fold affordance has a keyboard path
+  // (`ui-qa-checklist.md` §1.1), even though the artifact's is pointer-only.
+  ".cm-live-callout-fold": {
+    display: "inline-flex",
+    alignItems: "center",
+    marginInlineStart: "auto",
+    padding: "0",
+    border: "none",
+    background: "transparent",
+    color: "inherit",
+    cursor: "pointer",
+    transition: "transform 120ms ease",
+  },
+  ".cm-live-callout-fold[aria-expanded='true']": { transform: "rotate(90deg)" },
+  ".cm-live-callout-fold:focus-visible": {
+    outline: "2px solid var(--ring)",
+    outlineOffset: "1px",
+  },
+  ".cm-live-callout-content": { marginBlockStart: "0.25rem" },
+  ".cm-live-callout-paragraph": { margin: "0.25rem 0" },
+  "@media (prefers-reduced-motion: reduce)": {
+    ".cm-live-callout-fold": { transition: "none" },
+  },
   // GFM tables: the table is a block widget, so its look is defined by the
   // widget rules below rather than by `.cm-line` classes — the source lines it
   // replaces are not laid out at all.

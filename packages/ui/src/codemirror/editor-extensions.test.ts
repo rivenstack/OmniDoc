@@ -80,9 +80,11 @@ describe("editor extension factory (Task 1.3)", () => {
 
 describe("live preview compartment", () => {
   it("installs the preview in Markdown mode with `livePreview` on", () => {
+    // Four pieces now: the callout block widgets (Task 3.2), the table widget,
+    // the decoration plugin and the theme.
     expect(
       livePreviewExtensions("markdown", DEFAULT_EDITOR_SETTINGS),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("installs nothing in Text mode", () => {

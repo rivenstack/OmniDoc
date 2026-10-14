@@ -25,6 +25,7 @@ import { syntaxTree } from "@codemirror/language";
 import type { EditorState, Range, Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { codeBlockRevealSpan } from "./codeblock";
+import { calloutState } from "./callout";
 import { scanComments } from "./comment";
 import { isRevealed as spanRevealed, revealContext } from "./reveal";
 import { scanTags } from "./tags";
@@ -586,13 +587,30 @@ export function buildDecorations(view: EditorView): DecorationSet {
   const insideFootnote = (node: NodeRange) =>
     linkNodeNames.has(node.name) && inSpan(node, footnotes);
 
+  // Callouts (`OBS-1.14.4-CALLOUT-004`): the grammar reads `[!type]` as a
+  // shortcut reference link, exactly as it does `[^name]`, so the marker span is
+  // claimed here — otherwise the link rules fold its brackets and the revealed
+  // raw source would lose the `[` and `]`. The same state call also answers
+  // which callouts are replaced by a widget, so the block filter below and the
+  // widget field cannot disagree.
+  const { callouts, replaced } = calloutState(state);
+  const calloutMarkers: Span[] = callouts.map((callout) => ({
+    from: callout.markerFrom,
+    to: callout.markerTo,
+  }));
+  const insideCalloutMarker = (node: NodeRange) =>
+    linkNodeNames.has(node.name) && inSpan(node, calloutMarkers);
+
   const isRevealed = (span: Span) => spanRevealed(reveal, span);
 
   const decorate = (node: NodeRange) => {
-    // `[?]` is a task marker to the artifact and a link to the grammar, and
+    // `[?]` is a task marker to the artifact and a link to the grammar,
     // `[^name]` is a footnote reference to the artifact and a link to the
-    // grammar. Both layers win over the link reading (plan §7 risk D-5).
-    if (insideTaskMarker(node) || insideFootnote(node)) return;
+    // grammar, and `[!type]` is a callout marker and a link to the grammar.
+    // All three layers win over the link reading (plan §7 risk D-5).
+    if (insideTaskMarker(node) || insideFootnote(node) || insideCalloutMarker(node)) {
+      return;
+    }
 
     const rule = HIDE_RULES[node.name];
 
@@ -777,5 +795,20 @@ export function buildDecorations(view: EditorView): DecorationSet {
   // `Decoration.set(..., true)` sorts (and merges) the collected ranges, so the
   // walk may emit nested ranges — a heading span, then the marks inside it — in
   // any order.
-  return Decoration.set(ranges, true);
+  //
+  // A callout that is currently replaced by its block widget (`REVEAL-004`'s
+  // sibling entry, `CALLOUT-004`) must not also carry inline decorations: a
+  // block replace and marks over the same text would overlap. So every range
+  // that falls inside a replaced callout is dropped here — the widget renders
+  // that content itself.
+  const visible =
+    replaced.length === 0
+      ? ranges
+      : ranges.filter(
+          (range) =>
+            !replaced.some(
+              (callout) => callout.from <= range.from && range.to <= callout.to,
+            ),
+        );
+  return Decoration.set(visible, true);
 }

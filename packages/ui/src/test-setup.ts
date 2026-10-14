@@ -62,3 +62,11 @@ if (typeof Element !== "undefined") {
     Element.prototype.scrollTo = () => undefined;
   }
 }
+
+/**
+ * React's `act(...)` refuses to run unless the environment opts in. Components
+ * rendered outside React's own tree — the live preview's callout widget opens a
+ * React root inside a CodeMirror widget — are driven through `act` in tests, so
+ * the flag has to be set here.
+ */
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
