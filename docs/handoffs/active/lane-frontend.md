@@ -175,6 +175,75 @@ regex literal, `FOLD-004`), then 3.2 → 3.5 to close Phase 3 (3.4 images and 3.
 math/Mermaid are design records only — no code, no installs). No soft-stop is in
 effect.
 
+**2026-10-14 — Plan Phase 3, Tasks 3.1 and 3.2 complete.** Two tasks, one commit
+each, both per-task gates green before the next began. `@user` verified both in
+the running dev server; 3.2 took a second pass on `@user` feedback (below).
+
+| Task | Commit | What landed |
+|---|---|---|
+| 3.1 | `fbc5af7` | `live-preview/codeblock/{fence,index}.ts` — the `REVEAL-009` fence pattern **literal** (+ `parseFence`), `CODE_BLOCK_FOLD_PHRASE` (`FOLD-004`), `codeBlockRevealSpan`; `decorations.ts` now reveals a fence's `CodeMark`/`CodeInfo` over the **whole `FencedCode` span** (`REVEAL-011`) |
+| 3.2 | `fb1e776` | `live-preview/callout/**` — `parse`/`types`/`model`/`menu`/`commands` (pure) + `icons.tsx`/`block.tsx`/`palette.tsx`/`render.tsx`/`index.ts` (React + widget); one block widget per callout with whole-block reveal, DOM-only fold, a nested type submenu and the command palette; plus a new `packages/ui/src/components/context-menu.tsx` and `IS_REACT_ACT_ENVIRONMENT` in `src/test-setup.ts` |
+
+Gate evidence, Tasks 3.1/3.2:
+
+- `npx vitest run` (`packages/ui`) — **805/805 pass**, 47 files.
+- `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
+  (lint carries the same 6 pre-existing warnings; no errors).
+- `npx nx build web --skip-nx-cache` — green (run because both tasks add
+  client-only modules; `apps/web/next-env.d.ts` reverted afterwards as usual).
+
+Deviations recorded (no behaviour change, no plan re-open):
+
+- **Task 3.1: "whole-block widget" is realised as whole-block reveal
+  granularity**, not a replacement widget. A block replace would make a code
+  block non-editable in place and break the F-13/F-14 net (`cm-editor.test.tsx`
+  pins three `.cm-live-code-block` lines and no ```` ``` ```` text). The block
+  keeps its editable line-level rendering; the fence tokens unfold over the
+  `FencedCode` node's own range (`REVEAL-011`'s accumulated span), so one caret
+  touch anywhere inside shows the whole raw source.
+- **Task 3.2: the rendered callout is a React component inside the CodeMirror
+  widget** (`createRoot` + `flushSync` in `toDOM`, `unmount` in `destroy`). That
+  is what lets the card use **Tabler** icons and the project's **shadcn** context
+  menu instead of hand-built DOM — `@user`-directed after the first
+  implementation.
+- **Task 3.2: `packages/ui/src/components/context-menu.tsx` is new**, which is
+  outside this lane's normal write paths. Added on `@user`'s explicit direction
+  (a portalled, global context menu, not an editor-scoped one). It is built on
+  Base UI's **`ContextMenu`** primitive — using `Menu` with a hand-rolled
+  `contextmenu` handler opens the menu but a hovered submenu immediately closes,
+  because the parent menu's internal hover state is never set.
+- **Task 3.2: the menu is Edit + a "Callout type" submenu** (types, then
+  `Other…`, then `None`), and `Other…` opens the project's **command palette**
+  rather than a text input — both `@user`-directed; the catalogue only fixes the
+  mutations.
+- **Task 3.2: type colours are token-role approximations.** The artifact's 13
+  types use teal/blue/cyan/green/yellow/orange/red/purple/grey; the project's
+  status palette has five hues, so the families collapse (blue→info,
+  teal/cyan→accent, green→success, yellow/orange→warning, red→danger,
+  purple→accent, `quote` keeps the artifact's literal `#9e9e9e`). This is the
+  declared `adapt` deviation; distinct hues would need new tokens in
+  `tokens.css`, which is a design-system change and was **not** made.
+- **Task 3.2: `important` stays canonical** (not a `tip` alias) and the
+  catalogue's 13-type set is used, while the help page's table (which `@user`
+  pasted) lists `important` as a `tip` alias. `CALLOUT-001` flags that conflict
+  and the artifact wins (plan §2: "13 canonical types with `important`
+  canonical"). Palette order follows the help page.
+- **Task 3.2 hardening after `@user` hit a runtime error:** a card's handlers used
+  to dispatch the offsets it was built with, which threw `RangeError: Selection
+  points outside of document` when the React tree outlived the state it was built
+  in. Handlers now resolve the callout against the **live** document, the reveal
+  is clamped into it, and the widget implements `updateDOM` so a reused DOM
+  re-renders instead of showing stale data. Two regression tests added.
+
+**Next task pointer: Plan Task 3.3 — tables: per-cell model, redirect,
+navigation, menu** (`TABLE-001`, `-007`, `MENU-002`, F-15 C-1 perf), then 3.4
+and 3.5, which are **design records only** (no code, no installs). No soft-stop is
+in effect. Note for the next slice: Task 3.3 modifies a 700-line
+`live-preview/table/interaction.ts` with a 456-line `table-preview.test.tsx`
+regression suite, and adds caret redirection plus a viewport-limited scanner —
+budget accordingly; the existing interaction already implements Tab/Shift-Tab/
+Enter/Escape/Up/Down cell navigation and `serializeMarkdownTable` write-back.
+
 ## Objective
 
 Owner: `/implementer`. **Lane:** `frontend`. **Human:** front-end programmer.
