@@ -351,11 +351,11 @@ Open item recorded (not fixed — outside Phase B's file list):
   `flushSync was called from inside a lifecycle method`. Cause: `CodeMirrorEditor`
   creates the `EditorView` inside `useEffect`, and the table (and callout) widget's
   `toDOM` calls `flushSync` synchronously inside that effect. The DOM ends up
-  correct; the fix would be to defer the widget's first render when the host is
-  already rendering (a coordination flag around the view creation) — a real, if
-  small, risk to CodeMirror's first measurement, so it wants `@user`'s direction
-  rather than a silent change. `@user` asked for the `createRoot` error only,
-  which is fixed.
+  correct. A fix (defer the widget's first render while the host is already
+  rendering, via a coordination flag around the view creation) was proposed to
+  `@user` and **declined on 2026-10-16**: it is dev-only console noise, and the
+  fix risks CodeMirror's first measurement. `@user` asked for the `createRoot`
+  error, which is fixed (`638b473`).
 
 **Next task pointer: Plan Task C.1 — caret redirection (TABLE-007)**
 (`table/selection.ts` pure redirect, `table/scan.ts` outer observer,
