@@ -314,6 +314,21 @@ two table defects** from that pass (recorded below, not re-decided).
 | `050041d` | **Task B.1** — `live-preview/theme.ts`'s table block replaced by an exported `TABLE_THEME_RULES` (spread into `markdownLivePreviewTheme`, so `table/theme.test.ts` can assert the _rules_): wrapper `outline: none` (B-1) with the toolbar rules deleted (B-3); `table` `width: max-content` / `max-width: 100%` (B-2); `th` with no fill (S1); a shared hairline `--border` cell box with `min-inline-size: 4rem` and `vertical-align: top`; and the nested cell editors normalised onto the document's own text (`font-family`/`line-height: inherit`, `padding: 0`, `outline: none`, caret `--foreground`) with `.cm-content { min-block-size: 1.5em }` in place of the old `:empty::before` trick. 10 structural tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `48d866a` | **Task B.2** — the column-sizing **contract**: the rendered table carries **no `colgroup` and no inline width**, so the browser's table layout sizes every column from its content, live.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
+A fifth commit closes the slice, `@user`-directed after the same visual pass:
+
+- `4b5dea6` **style(editor): let each cell's editable area fill the cell** — a
+  click anywhere in a cell (its edges, or the cell box below the text) must land
+  in that cell's editor, so `.cm-live-th`/`.cm-live-td` lost their `0.5rem`
+  padding and `.cm-live-table .cm-editor` is now `width: 100%; block-size: 100%`,
+  with the padding moved onto `.cm-content` (`box-sizing: border-box`). This
+  **supersedes B.1's `.cm-content { padding: 0 }`**; the text's 8px inset is
+  unchanged. Verified in the dev server: cell `92×36` with `padding: 0`, editor
+  and content `91×36`, line inset 8px, and corner clicks (3px in from the
+  top-left and the bottom-right) both focus the right cell. The "one cell wraps
+  so the row grows" case was **not** exercised (a long value widens the column
+  until the table hits `max-width: 100%`); `block-size: 100%` is the rule meant
+  to cover it.
+
 **B.2 was rewritten on `@user`'s direction (2026-10-16).** The plan's B.2 was
 first implemented as `table/measure.ts` (a pure `columnWidths(model, measure)`
 with an injectable measurer, floored at 64px and capped at 320px) driving a
@@ -337,7 +352,7 @@ in the E.2 close-out).
 
 Gate evidence, Phase B close:
 
-- `npx vitest run` (`packages/ui`) — **885/885 pass**, 50 files (Phase A close: 872).
+- `npx vitest run` (`packages/ui`) — **886/886 pass**, 50 files (Phase A close: 872).
 - `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
   (same 6 pre-existing warnings; no errors).
 - The `@user` plan §11 visual pass for the look is **in progress, not claimed**:
