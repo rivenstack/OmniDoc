@@ -1,0 +1,241 @@
+/**
+ * One table cell's editor (F-15 Task 3.3 Rev 2, plan Task A.2).
+ *
+ * `OBS-1.14.4-TABLE-001` is the model: a table is **one editor per cell**, and
+ * each of those editors holds the cell's **decoded** text (`\|` → `|`, a
+ * line-break tag → a newline) rather than the source the document stores. This
+ * class is that editor.
+ *
+ * ## Why a real `EditorView` and not `contenteditable`
+ *
+ * The previous implementation made each cell a `contenteditable` element and
+ * hand-rolled caret placement, key handling and text extraction. That worked, but
+ * a cell's content is markdown — `**bold**`, `` `code` ``, `[a](b)` — so the cell
+ * wants the same inline rendering the document has, the same caret movement over
+ * wrapped lines, and the same IME/composition handling. A nested `EditorView`
+ * gives all three from one implementation, and `A.3` scopes its live preview to
+ * the **inline** constructs so a cell never grows a block widget of its own.
+ *
+ * ## What it deliberately does not have
+ *
+ * - **No history.** Cells install no `history()` extension, so `undo` is a no-op
+ *   inside a cell and `Mod-z` is refused locally and delegated through
+ *   `onHistory`. Undo belongs to the document — one stack, the artifact's rule
+ *   (`HIST-002`) — and the plan's chosen policy is that a `Mod-z` in a cell
+ *   commits the cell edit and then undoes the write-back on the **outer** editor.
+ * - **No default keymap.** `Tab`, `Enter` and the arrow keys are handled here, so
+ *   binding CM's defaults as well would only give `Shift-Enter`, `Ctrl-A` and the
+ *   rest a second, unowned meaning inside a cell.
+ *
+ * ## Event isolation
+ *
+ * The cell's DOM sits inside the outer editor's content DOM. Consuming a key here
+ * (returning `true` from a `keymap` binding) is what keeps the outer editor from
+ * seeing it — CodeMirror skips an event whose `defaultPrevented` is already set
+ * (`eventBelongsToEditor`). The wrapper adds its own `stopPropagation` belt for
+ * pointer and input events (`grid.tsx`), because those are not keymap-mediated.
+ */
+
+import { markdown } from "@codemirror/lang-markdown";
+import { EditorState, type Extension } from "@codemirror/state";
+import { EditorView, keymap } from "@codemirror/view";
+
+/** The direction a caret left the cell's edge. */
+export type CellLeaveDirection = "left" | "right" | "up" | "down";
+
+/** The kind of history action a cell delegates to the document. */
+export type CellHistoryKind = "undo" | "redo";
+
+/** What a cell editor tells its owner. Every handler is optional. */
+export type CellEditorHandlers = {
+  /** The cell's text changed. Fired once per document change, never per keystroke policy. */
+  readonly onInput?: () => void;
+  /** Tab (`backwards: false`) or Shift-Tab (`true`) was pressed. */
+  readonly onTab?: (backwards: boolean) => void;
+  /** Enter (without Shift) was pressed. */
+  readonly onEnter?: () => void;
+  /** Escape was pressed: the caller commits and hands focus back to the editor. */
+  readonly onEscape?: () => void;
+  /**
+   * The caret reached a boundary and tried to move past it. Only fires when the
+   * caret really sits at the edge — mid-cell arrows stay native, so a multi-line
+   * cell scrolls its own lines before the selection leaves.
+   */
+  readonly onLeave?: (direction: CellLeaveDirection) => void;
+  /**
+   * `Mod-z` / `Mod-Shift-z` / `Mod-y`. The cell has no history of its own, so it
+   * reports the request instead of acting on it.
+   */
+  readonly onHistory?: (kind: CellHistoryKind) => void;
+};
+
+/** The class the cell host carries, so the theme can reach the nested editor. */
+export const CELL_EDITOR_CLASS = "cm-live-cell-editor";
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * The visual line around `pos`.
+ *
+ * `EditorView.lineBlockAt` answers with the line **block**, which is a visual
+ * line: a wrapped line is several blocks. Before the view has measured (jsdom
+ * never does) it can throw, and there the logical line is the visual line — so
+ * the fallback is exact rather than approximate.
+ */
+function visualLineAt(
+  view: EditorView,
+  pos: number,
+): { from: number; to: number } {
+  try {
+    const block = view.lineBlockAt(pos);
+    if (block.to >= block.from) return { from: block.from, to: block.to };
+  } catch {
+    // Not measured yet: fall through to the logical line.
+  }
+  const line = view.state.doc.lineAt(pos);
+  return { from: line.from, to: line.to };
+}
+
+/** One cell's editor: a scoped `EditorView` over the cell's decoded text. */
+export class CellEditor {
+  readonly view: EditorView;
+
+  constructor(
+    host: HTMLElement,
+    text: string,
+    private readonly handlers: CellEditorHandlers = {},
+    editable = true,
+  ) {
+    host.classList.add(CELL_EDITOR_CLASS);
+    this.view = new EditorView({
+      parent: host,
+      state: EditorState.create({
+        doc: text,
+        extensions: this.extensions(editable),
+      }),
+    });
+  }
+
+  /** The cell's decoded text — what a commit encodes and writes to the model. */
+  text(): string {
+    return this.view.state.doc.toString();
+  }
+
+  /**
+   * Replace the cell's text without touching any history.
+   *
+   * Only used when the model changed underneath the editor (a structural edit, or
+   * a rebuild that reused the host). A no-op when the text already matches, so a
+   * re-render cannot disturb a caret.
+   */
+  setText(text: string): void {
+    if (text === this.text()) return;
+    this.view.dispatch({
+      changes: { from: 0, to: this.view.state.doc.length, insert: text },
+    });
+  }
+
+  /**
+   * Focus the cell and put the caret at `offset` (the end by default).
+   *
+   * The selection is set before *and* after `focus()`: CodeMirror notices focus
+   * during an update, so a single dispatch before focusing can be overwritten by
+   * the focus transaction (the same jsdom quirk `callout/index.test.ts` records).
+   */
+  focus(offset?: number): void {
+    const length = this.view.state.doc.length;
+    const position = clamp(offset ?? length, 0, length);
+    this.view.dispatch({ selection: { anchor: position } });
+    this.view.focus();
+    this.view.dispatch({ selection: { anchor: position } });
+  }
+
+  /** Tear the nested editor down. */
+  destroy(): void {
+    this.view.destroy();
+  }
+
+  // ------------------------------------------------------------- internals
+
+  private extensions(editable: boolean): Extension[] {
+    return [
+      markdown(),
+      EditorView.lineWrapping,
+      EditorView.editable.of(editable),
+      keymap.of([
+        { key: "Tab", run: () => this.runTab(false) },
+        { key: "Shift-Tab", run: () => this.runTab(true) },
+        { key: "Enter", run: () => this.run(this.handlers.onEnter) },
+        { key: "Escape", run: () => this.run(this.handlers.onEscape) },
+        {
+          key: "ArrowLeft",
+          run: () => this.runLeave("left"),
+        },
+        {
+          key: "ArrowRight",
+          run: () => this.runLeave("right"),
+        },
+        { key: "ArrowUp", run: () => this.runLeave("up") },
+        { key: "ArrowDown", run: () => this.runLeave("down") },
+        { key: "Mod-z", run: () => this.runHistory("undo") },
+        { key: "Mod-Shift-z", run: () => this.runHistory("redo") },
+        { key: "Mod-y", run: () => this.runHistory("redo") },
+      ]),
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) this.handlers.onInput?.();
+      }),
+    ];
+  }
+
+  /** Run a zero-argument handler, reporting whether it consumed the key. */
+  private run(handler: (() => void) | undefined): boolean {
+    if (!handler) return false;
+    handler();
+    return true;
+  }
+
+  private runTab(backwards: boolean): boolean {
+    const handler = this.handlers.onTab;
+    if (!handler) return false;
+    handler(backwards);
+    return true;
+  }
+
+  private runHistory(kind: CellHistoryKind): boolean {
+    const handler = this.handlers.onHistory;
+    if (!handler) return false;
+    handler(kind);
+    return true;
+  }
+
+  /**
+   * Leave the cell only from the edge the arrow points past.
+   *
+   * A non-empty selection is always native: extending a selection with Shift is
+   * not a request to leave. Left/Right test the decoded offsets `0` and `length`;
+   * Up/Down test the first and last **visual** line, so a wrapped or multi-line
+   * cell moves its own caret first.
+   */
+  private runLeave(direction: CellLeaveDirection): boolean {
+    const handler = this.handlers.onLeave;
+    if (!handler) return false;
+    if (!this.atEdge(direction)) return false;
+    handler(direction);
+    return true;
+  }
+
+  private atEdge(direction: CellLeaveDirection): boolean {
+    const { doc, selection } = this.view.state;
+    const range = selection.main;
+    if (!range.empty) return false;
+    const position = range.head;
+
+    if (direction === "left") return position === 0;
+    if (direction === "right") return position === doc.length;
+
+    const line = visualLineAt(this.view, position);
+    return direction === "up" ? position === line.from : position === line.to;
+  }
+}
