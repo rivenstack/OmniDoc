@@ -339,6 +339,24 @@ describe("markdown mode tables", () => {
     expect(dom(view).querySelectorAll("th.cm-live-th")).toHaveLength(2);
   });
 
+  it("sizes the columns in CSS, with no measurement (B-2, @user-directed)", () => {
+    // `@user`-directed, 2026-10-16: the table sizes itself with the browser's
+    // own table layout — a `min-inline-size` per cell and `max-width: 100%` on
+    // the table (`theme.ts`). So there is no `colgroup`, no inline width, and
+    // nothing to recompute between a keystroke and the next commit: a column
+    // follows its content as it is typed. This test is the guard — a measured
+    // width appearing here would be a behaviour change, not a refactor.
+    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
+
+    expect(dom(view).querySelector("colgroup")).toBeNull();
+    for (const cell of dom(view).querySelectorAll<HTMLElement>(
+      ".cm-live-th, .cm-live-td",
+    )) {
+      expect(cell.getAttribute("style")).toBeNull();
+    }
+    expect(table(view).getAttribute("style")).toBeNull();
+  });
+
   it("makes each cell its own editing host", () => {
     // The wrapper is `contenteditable="false"` so the nested editors are
     // independent editing hosts rather than part of the outer editor's editable
