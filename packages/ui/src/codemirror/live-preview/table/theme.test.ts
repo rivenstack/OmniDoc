@@ -74,8 +74,10 @@ describe("table look", () => {
   it("B-2: pins no column to a computed width", () => {
     // `@user`-directed, 2026-10-16: **CSS only**. A pixel width would have to be
     // measured and recomputed — and a stale one is what wrapped a header while
-    // empty space sat beside it. So every width in the block shrink-to-fits, and
-    // a column's only floor is the `min-inline-size` below.
+    // empty space sat beside it. So every width in the block is either the
+    // table's/grid's `max-content` (they hug their columns, and a column's only
+    // floor is the `min-inline-size` below) or the cell editor's `100%` (it fills
+    // the cell it sits in). Nothing here is a calculated number.
     const widths = declarations().filter(
       (declaration) =>
         declaration.property === "width" ||
@@ -85,7 +87,7 @@ describe("table look", () => {
     expect(widths.length).toBeGreaterThan(0);
     for (const { selector, property, value } of widths) {
       expect(`${selector} { ${property}: ${value} }`).toMatch(
-        /: max-content \}$/,
+        /: (max-content|100%) \}$/,
       );
     }
   });
@@ -132,8 +134,26 @@ describe("table look", () => {
     expect(declarationsOf(".cm-live-table .cm-scroller").fontFamily).toBe(
       "inherit",
     );
-    expect(declarationsOf(".cm-live-table .cm-content").padding).toBe("0");
     expect(declarationsOf(".cm-live-table .cm-line").padding).toBe("0");
+  });
+
+  it("fills each cell with its editable area (@user-directed)", () => {
+    // `@user`-directed, 2026-10-16: the editable area is the **whole** cell, so
+    // a click anywhere in a cell lands in its editor. The cell box therefore
+    // carries no padding — the editor's own content div does, which is what
+    // keeps the text where it was.
+    for (const selector of [".cm-live-th", ".cm-live-td"]) {
+      expect(declarationsOf(selector).padding, selector).toBe("0");
+    }
+
+    const editor = declarationsOf(".cm-live-table .cm-editor");
+    expect(editor.width).toBe("100%");
+    expect(editor.blockSize).toBe("100%");
+
+    const content = declarationsOf(".cm-live-table .cm-content");
+    // The padding moved here, and the box stays inside the cell.
+    expect(content.padding).not.toBe("0");
+    expect(content.boxSizing).toBe("border-box");
   });
 
   it("gives an empty cell a line box", () => {

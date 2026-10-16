@@ -97,9 +97,14 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
   // The cell box, shared by the head and the body: the hairline grid, and B-2's
   // minimum width — the only floor a column needs, so an empty column stays
   // visible (and, once D.1 lands, clickable) instead of collapsing to nothing.
+  //
+  // The box carries **no padding** (`@user`, 2026-10-16): the editable area
+  // inside it fills the cell edge to edge (see the `.cm-editor` rule below), so
+  // a click anywhere in a cell lands in its editor. The cell's inner spacing is
+  // the editor's own padding, which keeps the look identical.
   ".cm-live-th, .cm-live-td": {
     border: "1px solid var(--border)",
-    padding: "0.5rem",
+    padding: "0",
     minInlineSize: "4rem",
     // A wrapped cell grows downwards. Without this the row's other cells would
     // float their content to the middle and the row would stop reading as a row.
@@ -116,9 +121,17 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
   // A cell editor must read as part of the document's own text, and the table
   // carries no focus ring of its own (B-1) — so the nested base theme's dotted
   // ring goes, along with its monospace scroller and its own insets.
+  //
+  // It also **is** the cell's content area: full width and full height of the
+  // box it sits in (`@user`, 2026-10-16), so the editable region is the whole
+  // cell rather than a strip inside it. At 100% of a table cell the height
+  // resolves against the row, so a short cell in a tall row stays clickable
+  // throughout; where it cannot resolve, the cell simply hugs its content.
   ".cm-live-table .cm-editor": {
     outline: "none",
     backgroundColor: "transparent",
+    width: "100%",
+    blockSize: "100%",
   },
   ".cm-live-table .cm-scroller": {
     // Inherited, not chosen: a cell is the document's own type, at whatever the
@@ -131,10 +144,14 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
   ".cm-live-table .cm-cursor": {
     borderLeftColor: "var(--foreground)",
   },
+  // The editable div: it carries the cell's inner spacing now that the cell box
+  // has none, so the text sits exactly where it did before while the editor
+  // reaches the cell's edges.
   ".cm-live-table .cm-content": {
-    padding: "0",
+    padding: "0.5rem",
+    boxSizing: "border-box",
     // An empty cell has no line box, so its row would collapse to the cell's
-    // padding and read as a sliver next to a filled row. The old implementation
+    // padding and read as a sliver next to a filled one. The old implementation
     // solved that with an `:empty::before` pseudo-element; a cell holds an
     // editor now, so the line box is the editor's to keep. The value is a
     // visual-pass item (§11-8).
