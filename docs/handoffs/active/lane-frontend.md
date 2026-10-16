@@ -10,7 +10,7 @@ human_owner: front-end-programmer
 from: commander
 to: implementer
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-16
 branch: F15-obsidian-fidelity-editor
 ---
 
@@ -243,6 +243,67 @@ in effect. Note for the next slice: Task 3.3 modifies a 700-line
 regression suite, and adds caret redirection plus a viewport-limited scanner —
 budget accordingly; the existing interaction already implements Tab/Shift-Tab/
 Enter/Escape/Up/Down cell navigation and `serializeMarkdownTable` write-back.
+
+**2026-10-16 — Table rebuild plan (Task 3.3 Rev 2), Phase A complete.** Four
+tasks, one commit each, both per-task gates green before the next began
+(`npx vitest run` in `packages/ui`; `npx nx typecheck ui --skip-nx-cache` at the
+repo root). The plan of record for this slice is
+[`docs/plans/2026-10-16_172806-table-rebuild-obsidian-ux.md`](../../plans/2026-10-16_172806-table-rebuild-obsidian-ux.md),
+which **supersedes Task 3.3 of the F-15 Rev 2 plan for the table slice**; its
+catalogue contract (`TABLE-001`, `TABLE-007`, `MENU-002`) and gates carry over.
+`@user` locked decisions B-1…B-8 and J-1/J-2 on 2026-10-16 (plan §1) — not
+re-decided.
+
+| Task | Commit | What landed |
+|---|---|---|
+| A.1 | `937083c` | `table/model.ts` — `decodeCell`/`encodeCell` (`\|`→`\|`, `<br>`→newline), the `TableModel` type, and **every** pure structural operation (row/column add·delete·move·duplicate, alignment, sort, J-1 header push, clear-cells) with their guards; wraps `markdown/table.ts` untouched |
+| A.2 | `bb6ffea` | `table/editor.ts` — `CellEditor`, one nested CM6 `EditorView` per cell holding decoded text: cell keymap (Tab/Shift-Tab/Enter/Escape/boundary arrows), **no history** (`Mod-z` delegated), `TABLE_IDLE_FLUSH_MS`, and the host→editor registry a rebuild uses to restore focus |
+| A.3 | `7df5fbd` | `buildDecorations(view, scope)` + `buildInlineDecorations(view)` in `live-preview/decorations.ts`; `table/editor.ts` installs the **inline-scoped** preview (A.3). Cells render the `REVEAL-008` inline kinds with the document's own classes and leave every block construct — `#`, `>`, fences, rules, comments, tags, tasks, a pipe block — as source |
+| A.4 | `77ec871` | `table/store.ts` (`TableStore`: model + active cell, `useSyncExternalStore`), `table/grid.tsx` (React grid, one nested editor per cell, the commit pipeline), `table/widget.ts` rewritten (React root via `createRoot` + `flushSync`, event isolation, `contenteditable="false"`, the single `written`-latched write, caret restore), `table/index.ts`; **deleted** `table/interaction.ts` and `table/tools.ts`; rewritten `table-preview.test.tsx`; `cm-editor.test.tsx` table test retargeted |
+
+Gate evidence, Phase A close:
+
+- `npx vitest run` (`packages/ui`) — **872/872 pass**, 49 files.
+- `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
+  (lint carries the same 6 pre-existing warnings; no errors).
+- `npx nx build web --skip-nx-cache` — green (run because A.4 adds a client-only
+  React island inside a CodeMirror widget; `apps/web/next-env.d.ts` reverted).
+- `pnpm nx run-many -t typecheck lint test build --exclude api` — **all 4 JS
+  projects green** (16 tasks).
+
+Deviations and gaps recorded (no behaviour change, no plan re-open):
+
+- **`table/widget.ts` keeps the plan's `.ts` extension and uses
+  `createElement(TableGrid, …)` instead of JSX** (the plan's §5 layout names
+  `widget.ts`; JSX there would have forced a `.tsx` rename). The grid's markup
+  stays in `grid.tsx`, which is the plan's own `.tsx`.
+- **`cm-editor.test.tsx`'s table test needed two edits, not the one the plan
+  names.** Item 3's `contentEditable` assertion became an inner
+  `.cm-editor`/`.cm-content` assertion as planned; item 2 also had to change,
+  because cells now render through the **inline live preview** (marks become
+  `span.cm-live-strong` …) rather than through the deleted
+  `renderCellMarkdown` (which emitted real `<strong>`/`<a>` elements). The
+  `.cm-live-table-wrapper` and `table.cm-live-table` assertions are unchanged.
+- **`TABLE_IDLE_FLUSH_MS` moved to `table/editor.ts`** (it was in the deleted
+  `interaction.ts`); the public surface in plan §5 is otherwise unchanged.
+- **Cells use `markdown({ base: markdownLanguage })`, not bare `markdown()`.**
+  `markdown()` defaults to **CommonMark**, which has no strikethrough and no
+  tables — a cell would have rendered `~~x~~` and a pipe block differently from
+  the document it sits in. The document editor uses the same GFM base.
+- **Observed, not claimed:** the plan's `@user` visual pass (§11) has **not**
+  been run. Nothing in Phase A is asserted as visually verified; the look is
+  B.1/B.2.
+- `@user`-directed (2026-10-16) behaviours implemented without a catalogue entry,
+  recorded so Phase Check sees them as directed: **no toolbar** (B-3), the
+  **decoded-cell model** with `\|`/`<br>` codec (B-8, `TABLE-001`), the
+  **content-width, min-cell-width** structure is B.2's (not yet landed), and
+  cells being **their own editing hosts**.
+
+**Next task pointer: Plan Task B.1 — Obsidian-style look from tokens**
+(`live-preview/theme.ts`'s `.cm-live-table-*` block + a new `table/theme.test.ts`),
+then B.2 → C.1…C.5 → D.1…D.3 → E.1/E.2. No soft-stop is in effect. Phase C.2
+(navigation matrix) and C.4/C.5 (selection) are what wire the Tab/Enter/arrow
+handlers A.2 already exposes but A.4 does not yet pass in.
 
 ## Objective
 
