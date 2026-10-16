@@ -171,9 +171,16 @@ export const CodeMirrorEditor = forwardRef<
       },
       ".cm-content": {
         caretColor: "var(--foreground)",
-        fontFamily:
-          mode === "text" ? BODY_CODE_FONT_FAMILY : "inherit",
+        fontFamily: mode === "text" ? BODY_CODE_FONT_FAMILY : "inherit",
         padding: "0.75rem 0",
+      },
+      // CodeMirror's own base theme sets `fontFamily: "monospace"` on the
+      // scroller, and the `inherit` above resolves *against* it — so every mode
+      // rendered its prose in monospace, whatever the page said. The scroller
+      // has to take the page's font for that `inherit` to mean what it says.
+      // Text mode is unaffected: `.cm-content` sets the code font explicitly.
+      ".cm-scroller": {
+        fontFamily: "inherit",
       },
       ".cm-line": {
         padding: "0",
