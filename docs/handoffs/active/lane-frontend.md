@@ -32,12 +32,12 @@ plan until a soft-stop.
 per-task gates green before the next began (`npx vitest run` in `packages/ui`;
 `npx nx typecheck ui` at the repo root); `npx nx lint ui` green throughout.
 
-| Task | Commit | What landed |
-|---|---|---|
-| 0.1 | `a9b951e` | Vendored catalogue `docs/fidelity/obsidian-1.14.4.behaviours.json` (byte copy, sha256 `4c19f234…7fc8`), `parity/dispositions.ts` (all 114 entries), `parity/matrix.ts` + `matrix.test.ts`, generated `docs/fidelity/obsidian-parity-matrix.md` |
-| 0.2 | `33ce08d` | `docs/design/now.md` decision log: lock date, the ten locked decisions, the §4 D-1…D-9 pointer. **Tracks half not edited — Commander already landed it** (the F-15 row already points at the Rev 2 plan) |
-| 0.3 | `8a44f6b` | `parity/harness.ts` (jsdom `EditorView` driver), `__fixtures__/constructs/*.md` (25 documents + typed `?raw` index), `parity/harness.test.ts` |
-| 0.4 | `04bad23` | `@codemirror/autocomplete` 6.20.3 + `@codemirror/search` 6.7.2 as direct pins; version-ledger rows activated (re-verified 2026-10-13) |
+| Task | Commit    | What landed                                                                                                                                                                                                                                    |
+| ---- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1  | `a9b951e` | Vendored catalogue `docs/fidelity/obsidian-1.14.4.behaviours.json` (byte copy, sha256 `4c19f234…7fc8`), `parity/dispositions.ts` (all 114 entries), `parity/matrix.ts` + `matrix.test.ts`, generated `docs/fidelity/obsidian-parity-matrix.md` |
+| 0.2  | `33ce08d` | `docs/design/now.md` decision log: lock date, the ten locked decisions, the §4 D-1…D-9 pointer. **Tracks half not edited — Commander already landed it** (the F-15 row already points at the Rev 2 plan)                                       |
+| 0.3  | `8a44f6b` | `parity/harness.ts` (jsdom `EditorView` driver), `__fixtures__/constructs/*.md` (25 documents + typed `?raw` index), `parity/harness.test.ts`                                                                                                  |
+| 0.4  | `04bad23` | `@codemirror/autocomplete` 6.20.3 + `@codemirror/search` 6.7.2 as direct pins; version-ledger rows activated (re-verified 2026-10-13)                                                                                                          |
 
 Gate evidence, Phase 0 close:
 
@@ -64,13 +64,13 @@ soft-stop is in effect.
 **2026-10-13 — Plan Phase 1 complete.** Five tasks, one commit each, both
 per-task gates green before the next began; `npx nx lint ui` green throughout.
 
-| Task | Commit | What landed |
-|---|---|---|
-| 1.1 | `95566e3` | `editor-settings.ts` — `EditorSettings`, artifact-parity defaults (plan §4.1, `useTab: true`), the eight `SET-002` live-reconfigured keys, the three unmodelled artifact keys recorded with reasons, `normalizeTabSize` + `editorSettings()` |
-| 1.2 | `cec9846` | `capture/body-typography.ts` — one type scale consumed by the TipTap class string *and* the CM6 theme; `TAILWIND_TEXT_SIZES`/`TAILWIND_FONT_WEIGHTS` let the test resolve a utility's real value and pin it against the theme's `rem` |
-| 1.3 | `ae5dc7c` | `editor-extensions.ts` — extension factory + five compartments (`editing/settings/livePreview/keymap/language`); `cm-editor.tsx` gained a `settings` prop and reconfigure effects; `history()` deliberately outside every compartment (HIST-002) |
-| 1.4 | `af3afbf` | `live-preview/table/{index,interaction,widget,tools,scan}.ts` — pure move; block decorations stay in a `StateField` (documented at the new site) |
-| 1.5 | `fa9ffb5` | `live-preview/{index,decorations,widgets,theme}.ts` + `codemirror/keymap.ts`; `markdown-live-preview.ts` deleted; same public names re-exported |
+| Task | Commit    | What landed                                                                                                                                                                                                                                      |
+| ---- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.1  | `95566e3` | `editor-settings.ts` — `EditorSettings`, artifact-parity defaults (plan §4.1, `useTab: true`), the eight `SET-002` live-reconfigured keys, the three unmodelled artifact keys recorded with reasons, `normalizeTabSize` + `editorSettings()`     |
+| 1.2  | `cec9846` | `capture/body-typography.ts` — one type scale consumed by the TipTap class string _and_ the CM6 theme; `TAILWIND_TEXT_SIZES`/`TAILWIND_FONT_WEIGHTS` let the test resolve a utility's real value and pin it against the theme's `rem`            |
+| 1.3  | `ae5dc7c` | `editor-extensions.ts` — extension factory + five compartments (`editing/settings/livePreview/keymap/language`); `cm-editor.tsx` gained a `settings` prop and reconfigure effects; `history()` deliberately outside every compartment (HIST-002) |
+| 1.4  | `af3afbf` | `live-preview/table/{index,interaction,widget,tools,scan}.ts` — pure move; block decorations stay in a `StateField` (documented at the new site)                                                                                                 |
+| 1.5  | `fa9ffb5` | `live-preview/{index,decorations,widgets,theme}.ts` + `codemirror/keymap.ts`; `markdown-live-preview.ts` deleted; same public names re-exported                                                                                                  |
 
 Gate evidence, Phase 1 close:
 
@@ -104,22 +104,22 @@ Deviations recorded (no behaviour change, no plan re-open):
 **2026-10-13 — Plan Phase 2 complete.** Eleven tasks, one commit each, both
 per-task gates green before the next began (`npx vitest run` in `packages/ui`;
 `npx nx typecheck ui --skip-nx-cache` at the repo root — note the `--skip-nx-cache`,
-without which a gate can report the *previous* task's success). `@user` verified
+without which a gate can report the _previous_ task's success). `@user` verified
 each visible task in the running dev server before its commit.
 
-| Task | Commit | What landed |
-|---|---|---|
-| 2.1 | `df45987` | `live-preview/taxonomy.ts` — the five inline-formatting and six link-like kinds (`REVEAL-008`), the `prose \| table \| verbatim` regions, and `buildRegionIndex` — the shared answer the text layer asks for prose boundaries and code/link exclusions |
-| 2.2 | `70b2e8a` | `live-preview/reveal.ts` — inclusive predicate (`REVEAL-001`), focused ranges only (`REVEAL-002`), accumulated spans with whole-line spans for heading/quote/escape (`REVEAL-011`); `decorations.ts` now asks it instead of carrying its own copy |
-| 2.3 | `07920bd` | `live-preview/policy.ts` — the three map-only guards (`REVEAL-006`, `IME-002`) and the five deferral delays (`REVEAL-010`); the plugin follows them, with integration tests proving the deferral is observable |
-| 2.4 | `7120abe` | three identity-distinct hidden-range singletons (`REVEAL-004`), `renderedLinkMark` with `tabindex`/`draggable` (`REVEAL-005`, `A11Y-002`), transparent and unresolved marks |
-| 2.5 | `a342992` | inline formatting; `==highlight==` via a text layer (the grammar models nothing for it), colour emoji parsed, default otherwise |
-| 2.6 | `2af2c1f` | headings/rules/quote border as the artifact's widget (`REVEAL-007`); `HEADING_PATTERN` landed regex-only (`FOLD-002`) |
-| 2.7 | `c26f193` | comments: LP styled and **never hidden** (`COMMENT-001`), the toggle/stream-state quirks (`COMMENT-002`); reading path inline+block rules (`COMMENT-003`, `-004`) as a source stage in `Markdown` |
-| 2.8 | `90f220c` | task checkbox: the `x`/space toggle (`TASK-001`), the project's own `Checkbox` look, detection by the artifact's predicate (so `[?]`/`[-]` are tasks, not links) |
-| 2.9 | `405a466` | tags: exclusion-class pattern, longest prefix, numeric rule (`TAG-001`), three-part class split (`TAG-003`), one character class (`TAG-005`); click/autocomplete deferred (`BL-26`) |
-| 2.10 | `5ff11a0` | external-link gate chain (`LINK-002`…`-005`, `-010`, `-011`) and the renderer scheme gate (`LINK-009`, D-2) |
-| 2.11 | `a833451` | footnotes: named refs styled and link-like, inline parsed/styled but never interactive (`FOOT-001`) |
+| Task | Commit    | What landed                                                                                                                                                                                                                                            |
+| ---- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2.1  | `df45987` | `live-preview/taxonomy.ts` — the five inline-formatting and six link-like kinds (`REVEAL-008`), the `prose \| table \| verbatim` regions, and `buildRegionIndex` — the shared answer the text layer asks for prose boundaries and code/link exclusions |
+| 2.2  | `70b2e8a` | `live-preview/reveal.ts` — inclusive predicate (`REVEAL-001`), focused ranges only (`REVEAL-002`), accumulated spans with whole-line spans for heading/quote/escape (`REVEAL-011`); `decorations.ts` now asks it instead of carrying its own copy      |
+| 2.3  | `07920bd` | `live-preview/policy.ts` — the three map-only guards (`REVEAL-006`, `IME-002`) and the five deferral delays (`REVEAL-010`); the plugin follows them, with integration tests proving the deferral is observable                                         |
+| 2.4  | `7120abe` | three identity-distinct hidden-range singletons (`REVEAL-004`), `renderedLinkMark` with `tabindex`/`draggable` (`REVEAL-005`, `A11Y-002`), transparent and unresolved marks                                                                            |
+| 2.5  | `a342992` | inline formatting; `==highlight==` via a text layer (the grammar models nothing for it), colour emoji parsed, default otherwise                                                                                                                        |
+| 2.6  | `2af2c1f` | headings/rules/quote border as the artifact's widget (`REVEAL-007`); `HEADING_PATTERN` landed regex-only (`FOLD-002`)                                                                                                                                  |
+| 2.7  | `c26f193` | comments: LP styled and **never hidden** (`COMMENT-001`), the toggle/stream-state quirks (`COMMENT-002`); reading path inline+block rules (`COMMENT-003`, `-004`) as a source stage in `Markdown`                                                      |
+| 2.8  | `90f220c` | task checkbox: the `x`/space toggle (`TASK-001`), the project's own `Checkbox` look, detection by the artifact's predicate (so `[?]`/`[-]` are tasks, not links)                                                                                       |
+| 2.9  | `405a466` | tags: exclusion-class pattern, longest prefix, numeric rule (`TAG-001`), three-part class split (`TAG-003`), one character class (`TAG-005`); click/autocomplete deferred (`BL-26`)                                                                    |
+| 2.10 | `5ff11a0` | external-link gate chain (`LINK-002`…`-005`, `-010`, `-011`) and the renderer scheme gate (`LINK-009`, D-2)                                                                                                                                            |
+| 2.11 | `a833451` | footnotes: named refs styled and link-like, inline parsed/styled but never interactive (`FOOT-001`)                                                                                                                                                    |
 
 Gate evidence, Phase 2 close:
 
@@ -179,10 +179,10 @@ effect.
 each, both per-task gates green before the next began. `@user` verified both in
 the running dev server; 3.2 took a second pass on `@user` feedback (below).
 
-| Task | Commit | What landed |
-|---|---|---|
-| 3.1 | `fbc5af7` | `live-preview/codeblock/{fence,index}.ts` — the `REVEAL-009` fence pattern **literal** (+ `parseFence`), `CODE_BLOCK_FOLD_PHRASE` (`FOLD-004`), `codeBlockRevealSpan`; `decorations.ts` now reveals a fence's `CodeMark`/`CodeInfo` over the **whole `FencedCode` span** (`REVEAL-011`) |
-| 3.2 | `fb1e776` | `live-preview/callout/**` — `parse`/`types`/`model`/`menu`/`commands` (pure) + `icons.tsx`/`block.tsx`/`palette.tsx`/`render.tsx`/`index.ts` (React + widget); one block widget per callout with whole-block reveal, DOM-only fold, a nested type submenu and the command palette; plus a new `packages/ui/src/components/context-menu.tsx` and `IS_REACT_ACT_ENVIRONMENT` in `src/test-setup.ts` |
+| Task | Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1  | `fbc5af7` | `live-preview/codeblock/{fence,index}.ts` — the `REVEAL-009` fence pattern **literal** (+ `parseFence`), `CODE_BLOCK_FOLD_PHRASE` (`FOLD-004`), `codeBlockRevealSpan`; `decorations.ts` now reveals a fence's `CodeMark`/`CodeInfo` over the **whole `FencedCode` span** (`REVEAL-011`)                                                                                                           |
+| 3.2  | `fb1e776` | `live-preview/callout/**` — `parse`/`types`/`model`/`menu`/`commands` (pure) + `icons.tsx`/`block.tsx`/`palette.tsx`/`render.tsx`/`index.ts` (React + widget); one block widget per callout with whole-block reveal, DOM-only fold, a nested type submenu and the command palette; plus a new `packages/ui/src/components/context-menu.tsx` and `IS_REACT_ACT_ENVIRONMENT` in `src/test-setup.ts` |
 
 Gate evidence, Tasks 3.1/3.2:
 
@@ -197,7 +197,7 @@ Deviations recorded (no behaviour change, no plan re-open):
 - **Task 3.1: "whole-block widget" is realised as whole-block reveal
   granularity**, not a replacement widget. A block replace would make a code
   block non-editable in place and break the F-13/F-14 net (`cm-editor.test.tsx`
-  pins three `.cm-live-code-block` lines and no ```` ``` ```` text). The block
+  pins three `.cm-live-code-block` lines and no ` ``` ` text). The block
   keeps its editable line-level rendering; the fence tokens unfold over the
   `FencedCode` node's own range (`REVEAL-011`'s accumulated span), so one caret
   touch anywhere inside shows the whole raw source.
@@ -230,7 +230,7 @@ Deviations recorded (no behaviour change, no plan re-open):
   canonical"). Palette order follows the help page.
 - **Task 3.2 hardening after `@user` hit a runtime error:** a card's handlers used
   to dispatch the offsets it was built with, which threw `RangeError: Selection
-  points outside of document` when the React tree outlived the state it was built
+points outside of document` when the React tree outlived the state it was built
   in. Handlers now resolve the callout against the **live** document, the reveal
   is clamped into it, and the widget implements `updateDOM` so a reused DOM
   re-renders instead of showing stale data. Two regression tests added.
@@ -254,12 +254,12 @@ catalogue contract (`TABLE-001`, `TABLE-007`, `MENU-002`) and gates carry over.
 `@user` locked decisions B-1…B-8 and J-1/J-2 on 2026-10-16 (plan §1) — not
 re-decided.
 
-| Task | Commit | What landed |
-|---|---|---|
-| A.1 | `937083c` | `table/model.ts` — `decodeCell`/`encodeCell` (`\|`→`\|`, `<br>`→newline), the `TableModel` type, and **every** pure structural operation (row/column add·delete·move·duplicate, alignment, sort, J-1 header push, clear-cells) with their guards; wraps `markdown/table.ts` untouched |
-| A.2 | `bb6ffea` | `table/editor.ts` — `CellEditor`, one nested CM6 `EditorView` per cell holding decoded text: cell keymap (Tab/Shift-Tab/Enter/Escape/boundary arrows), **no history** (`Mod-z` delegated), `TABLE_IDLE_FLUSH_MS`, and the host→editor registry a rebuild uses to restore focus |
-| A.3 | `7df5fbd` | `buildDecorations(view, scope)` + `buildInlineDecorations(view)` in `live-preview/decorations.ts`; `table/editor.ts` installs the **inline-scoped** preview (A.3). Cells render the `REVEAL-008` inline kinds with the document's own classes and leave every block construct — `#`, `>`, fences, rules, comments, tags, tasks, a pipe block — as source |
-| A.4 | `77ec871` | `table/store.ts` (`TableStore`: model + active cell, `useSyncExternalStore`), `table/grid.tsx` (React grid, one nested editor per cell, the commit pipeline), `table/widget.ts` rewritten (React root via `createRoot` + `flushSync`, event isolation, `contenteditable="false"`, the single `written`-latched write, caret restore), `table/index.ts`; **deleted** `table/interaction.ts` and `table/tools.ts`; rewritten `table-preview.test.tsx`; `cm-editor.test.tsx` table test retargeted |
+| Task | Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A.1  | `937083c` | `table/model.ts` — `decodeCell`/`encodeCell` (`\|`→`\|`, `<br>`→newline), the `TableModel` type, and **every** pure structural operation (row/column add·delete·move·duplicate, alignment, sort, J-1 header push, clear-cells) with their guards; wraps `markdown/table.ts` untouched                                                                                                                                                                                                           |
+| A.2  | `bb6ffea` | `table/editor.ts` — `CellEditor`, one nested CM6 `EditorView` per cell holding decoded text: cell keymap (Tab/Shift-Tab/Enter/Escape/boundary arrows), **no history** (`Mod-z` delegated), `TABLE_IDLE_FLUSH_MS`, and the host→editor registry a rebuild uses to restore focus                                                                                                                                                                                                                  |
+| A.3  | `7df5fbd` | `buildDecorations(view, scope)` + `buildInlineDecorations(view)` in `live-preview/decorations.ts`; `table/editor.ts` installs the **inline-scoped** preview (A.3). Cells render the `REVEAL-008` inline kinds with the document's own classes and leave every block construct — `#`, `>`, fences, rules, comments, tags, tasks, a pipe block — as source                                                                                                                                        |
+| A.4  | `77ec871` | `table/store.ts` (`TableStore`: model + active cell, `useSyncExternalStore`), `table/grid.tsx` (React grid, one nested editor per cell, the commit pipeline), `table/widget.ts` rewritten (React root via `createRoot` + `flushSync`, event isolation, `contenteditable="false"`, the single `written`-latched write, caret restore), `table/index.ts`; **deleted** `table/interaction.ts` and `table/tools.ts`; rewritten `table-preview.test.tsx`; `cm-editor.test.tsx` table test retargeted |
 
 Gate evidence, Phase A close:
 
@@ -296,14 +296,73 @@ Deviations and gaps recorded (no behaviour change, no plan re-open):
 - `@user`-directed (2026-10-16) behaviours implemented without a catalogue entry,
   recorded so Phase Check sees them as directed: **no toolbar** (B-3), the
   **decoded-cell model** with `\|`/`<br>` codec (B-8, `TABLE-001`), the
-  **content-width, min-cell-width** structure is B.2's (not yet landed), and
-  cells being **their own editing hosts**.
+  **content-width, min-cell-width** structure is B.2's (landed in Phase B —
+  see below), and cells being **their own editing hosts**.
 
-**Next task pointer: Plan Task B.1 — Obsidian-style look from tokens**
-(`live-preview/theme.ts`'s `.cm-live-table-*` block + a new `table/theme.test.ts`),
-then B.2 → C.1…C.5 → D.1…D.3 → E.1/E.2. No soft-stop is in effect. Phase C.2
-(navigation matrix) and C.4/C.5 (selection) are what wire the Tab/Enter/arrow
-handlers A.2 already exposes but A.4 does not yet pass in.
+**2026-10-16 — Plan Phase B complete, plus three `@user`-reported defects.** Four
+commits, each with both per-task gates green before the next began
+(`npx vitest run` in `packages/ui`; `npx nx typecheck ui --skip-nx-cache` at the
+repo root); `npx nx lint ui --skip-nx-cache` green throughout. `@user` verified
+every visible step in the running dev server (note `Table UX 1791025828988`,
+Markdown mode) before the commits landed — and **redirected B.2** and **reported
+two table defects** from that pass (recorded below, not re-decided).
+
+| Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `d919b8a` | **fix** — the Markdown editor rendered _all_ prose in monospace. CodeMirror's own base theme sets `.cm-scroller { font-family: monospace }`, and `cm-editor.tsx`'s `.cm-content { font-family: inherit }` resolved against it. One rule (`.cm-scroller { font-family: inherit }`) puts the document back on the page font (Inter); `mode: "text"` is unaffected because it sets the code font on `.cm-content` directly. **`@user`-approved**, and outside this plan's file list — found while verifying B.1's cells.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `638b473` | **fix** — two table defects `@user` hit. (1) _Cell text was lost_ when the caret moved to another cell: `grid.tsx`'s model→editor sync effect depended on `cell`, a **fresh object every render**, so any re-render folded the last _committed_ model value back over the uncommitted text; the deps are now primitives (`model, row, col`), so only a model change can touch an editor. (2) _`ReactDOMClient.createRoot() on a container that has already been passed to createRoot()`_ on every write-back: CodeMirror calls `WidgetType.updateDOM` on a **new** widget with the **old** element for a same-class, non-`eq` replacement (exactly a write-back), and `widget.ts`'s `this.root ??= createRoot(host)` built a **second** React root on that element — two trees fighting over one container. `updateDOM` is now deliberately **not** implemented (one element, one root, one widget; the rebuilt grid comes from the markdown the write produced) and `destroy()` unmounts in a microtask, so no unmount runs inside React's render. Knock-on fixed in the same commit: `writeDoc` now **captures the view before dispatching**, because the write destroys the widget (and clears `this.view`) as part of CodeMirror's update. Regression tests for both, plus a test that a write-back leaves exactly one wrapper/table and logs no `createRoot` error. |
+| `050041d` | **Task B.1** — `live-preview/theme.ts`'s table block replaced by an exported `TABLE_THEME_RULES` (spread into `markdownLivePreviewTheme`, so `table/theme.test.ts` can assert the _rules_): wrapper `outline: none` (B-1) with the toolbar rules deleted (B-3); `table` `width: max-content` / `max-width: 100%` (B-2); `th` with no fill (S1); a shared hairline `--border` cell box with `min-inline-size: 4rem` and `vertical-align: top`; and the nested cell editors normalised onto the document's own text (`font-family`/`line-height: inherit`, `padding: 0`, `outline: none`, caret `--foreground`) with `.cm-content { min-block-size: 1.5em }` in place of the old `:empty::before` trick. 10 structural tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `48d866a` | **Task B.2** — the column-sizing **contract**: the rendered table carries **no `colgroup` and no inline width**, so the browser's table layout sizes every column from its content, live.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+**B.2 was rewritten on `@user`'s direction (2026-10-16).** The plan's B.2 was
+first implemented as `table/measure.ts` (a pure `columnWidths(model, measure)`
+with an injectable measurer, floored at 64px and capped at 320px) driving a
+`<colgroup>` of measured pixel widths, plus `measure.test.ts` and a `grid.test.tsx`
+proving "recompute on commit, never per keystroke". `@user` verified it in the
+browser and rejected it: _"You are using a JavaScript function to measure the
+column sizes… significant delay to apply new size when I finish my writing.
+Besides it's breaking the sentence 'Head 2Second' while there is a huge space and
+the column can expand. Use pure css for this… No JS calculations."_ So
+`measure.ts`, `measure.test.ts`, `grid.test.tsx`, the `<colgroup>` and the grid's
+`measure` prop were **deleted** (`grid.tsx` is byte-identical to Phase A again),
+and the sizing is now entirely the theme's `max-content` / `max-width: 100%` /
+`min-inline-size: 4rem`. Verified live: `colgroup` 0, inline styles 0, cells
+92/116/75px in a 714px wrapper, and typing a long value widened its column
+75px → 130px **before any commit** — the delay `@user` reported is gone.
+`theme.test.ts` pins it (every `width`/`inline-size` in the block is
+`max-content`; the cell floor is `4rem`) and B.2's own commit is the DOM guard.
+Consequence for E.2: the plan's B.2 deliverable is a **CSS-only** contract, not a
+measurer — the plan text should be read that way (a §12-style pointer, or a line
+in the E.2 close-out).
+
+Gate evidence, Phase B close:
+
+- `npx vitest run` (`packages/ui`) — **885/885 pass**, 50 files (Phase A close: 872).
+- `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
+  (same 6 pre-existing warnings; no errors).
+- The `@user` plan §11 visual pass for the look is **in progress, not claimed**:
+  `@user` has verified the table's sizing, focus ring, header fill, hairline grid,
+  cell font and the two fixed defects in the dev server; the remaining §11 items
+  (grip/`+`/menu geometry, selection tints, wrap thresholds) belong to C/D.
+
+Open item recorded (not fixed — outside Phase B's file list):
+
+- **Two dev-only console warnings on a mode switch** (Normal ↔ Markdown):
+  `flushSync was called from inside a lifecycle method`. Cause: `CodeMirrorEditor`
+  creates the `EditorView` inside `useEffect`, and the table (and callout) widget's
+  `toDOM` calls `flushSync` synchronously inside that effect. The DOM ends up
+  correct; the fix would be to defer the widget's first render when the host is
+  already rendering (a coordination flag around the view creation) — a real, if
+  small, risk to CodeMirror's first measurement, so it wants `@user`'s direction
+  rather than a silent change. `@user` asked for the `createRoot` error only,
+  which is fixed.
+
+**Next task pointer: Plan Task C.1 — caret redirection (TABLE-007)**
+(`table/selection.ts` pure redirect, `table/scan.ts` outer observer,
+`table/grid.tsx` focus handoff), then C.2 → C.5 → D.1…D.3 → E.1/E.2. No soft-stop
+is in effect. Note for C.1: `table/widget.ts`'s `restoreFocus` is the existing,
+now-tested caret-handoff path (`data-table-from` lookup), and C.2 is what finally
+passes `onLeave`/`onTab`/`onEnter` — A.2 exposes them, A.4 does not yet wire them.
 
 ## Objective
 
