@@ -55,6 +55,8 @@ type Helpers = {
   doc: Text;
   /** Nearest enclosing node with one of `names`, or `null`. */
   ancestorOf: (names: readonly string[]) => NodeRange | null;
+  /** True for the inline-scoped walk a table cell uses (plan Task A.3). */
+  inline: boolean;
 };
 
 type HideRule = {
@@ -90,11 +92,17 @@ const HIDE_RULES: Record<string, HideRule> = {
   // Inline backticks unfold with their span; a fence unfolds with the whole
   // code block (`REVEAL-009` + `REVEAL-011`), so one caret touch anywhere inside
   // the block shows all of its raw source rather than token by token.
+  //
+  // The fence half belongs to the document walk only: `FencedCode` is a
+  // block-level construct, so in a cell (`inline: true`) a backtick run that
+  // opens a fence is plain source and nothing folds it.
   CodeMark: {
-    context: (node, { doc, ancestorOf }) =>
-      ancestorOf(["InlineCode"]) ??
-      codeBlockRevealSpan(ancestorOf(["FencedCode"])) ??
-      doc.lineAt(node.from),
+    context: (node, { doc, ancestorOf, inline }) => {
+      const code = ancestorOf(["InlineCode"]);
+      if (code) return code;
+      if (inline) return null;
+      return codeBlockRevealSpan(ancestorOf(["FencedCode"])) ?? doc.lineAt(node.from);
+    },
   },
   CodeInfo: {
     context: (node, { doc, ancestorOf }) =>
@@ -103,6 +111,33 @@ const HIDE_RULES: Record<string, HideRule> = {
   LinkMark: { context: (_node, { ancestorOf }) => ancestorOf(["Link"]) },
   URL: { context: (_node, { ancestorOf }) => ancestorOf(["Link"]) },
 };
+
+/**
+ * Node names only the **document** walk decorates.
+ *
+ * `REVEAL-008` splits the construct vocabulary into the inline and link-like
+ * kinds; every block-level construct sits outside both, so a table cell — one
+ * line of markdown rendered through the inline walk — leaves these as source.
+ * That is the mechanism behind the plan's "block constructs in a cell produce
+ * no block widgets": a heading stays `# title`, a quote stays `> text`, a fence
+ * stays raw, and a pipe block stays text rather than becoming a nested table.
+ */
+const DOCUMENT_ONLY_NODES: ReadonlySet<string> = new Set([
+  "ATXHeading1",
+  "ATXHeading2",
+  "ATXHeading3",
+  "Blockquote",
+  "FencedCode",
+  "HeaderMark",
+  "HorizontalRule",
+  "ListItem",
+  "ListMark",
+  "QuoteMark",
+  "CodeInfo",
+]);
+
+/** Which constructs a decoration walk recognises. */
+export type DecorationScope = "document" | "inline";
 
 /** A token that is currently unfolded — dimmed so it reads as syntax. */
 const SYNTAX = Decoration.mark({ class: "cm-live-syntax" });
@@ -547,8 +582,18 @@ const inlineCodeDeco = Decoration.mark({ class: "cm-live-code" });
  * Build the decoration set for the current view.
  *
  * Exported so the plugin that owns it (and its tests) can call it directly.
+ *
+ * `scope` selects the construct vocabulary. `"document"` is the whole preview;
+ * `"inline"` is what a table cell gets (plan Task A.3) — the `REVEAL-008`
+ * inline kinds only, with every block-level construct (headings, quotes, lists,
+ * fences, rules, comments, tags, task markers) left as raw source. Both are the
+ * *same walk*, so a cell cannot drift from the document's inline rendering.
  */
-export function buildDecorations(view: EditorView): DecorationSet {
+export function buildDecorations(
+  view: EditorView,
+  scope: DecorationScope = "document",
+): DecorationSet {
+  const inlineOnly = scope === "inline";
   const { state } = view;
   const { doc, selection } = state;
   const ranges: Range<Decoration>[] = [];
@@ -612,6 +657,9 @@ export function buildDecorations(view: EditorView): DecorationSet {
       return;
     }
 
+    // A cell renders the inline vocabulary and nothing else (plan Task A.3).
+    if (inlineOnly && DOCUMENT_ONLY_NODES.has(node.name)) return;
+
     const rule = HIDE_RULES[node.name];
 
     if (rule) {
@@ -621,7 +669,11 @@ export function buildDecorations(view: EditorView): DecorationSet {
         }
         return null;
       };
-      const context = rule.context(node, { doc, ancestorOf });
+      const context = rule.context(node, {
+        doc,
+        ancestorOf,
+        inline: inlineOnly,
+      });
 
       if (!context) return;
 
@@ -721,6 +773,11 @@ export function buildDecorations(view: EditorView): DecorationSet {
   // The text layer for constructs the grammar does not model. Highlight is the
   // inline-formatting one, so it is recognised in prose only — the region index
   // answers where prose ends (code, tables and links are excluded).
+  //
+  // Highlight is one of the eleven `REVEAL-008` kinds, so it runs in both
+  // scopes; comments, task checkboxes and tags sit outside the vocabulary and
+  // run only in the document walk (`COMMENT-001` says it for comments: a cell
+  // shows the raw `%%…%%`).
   const regions = buildRegionIndex(state, view.viewport.from, view.viewport.to);
   for (const { from, to } of view.visibleRanges) {
     for (const span of scanHighlights(doc, from, to, regions)) {
@@ -731,6 +788,8 @@ export function buildDecorations(view: EditorView): DecorationSet {
       ranges.push(delimiter.range(span.from, span.contentFrom));
       ranges.push(delimiter.range(span.contentTo, span.to));
     }
+
+    if (inlineOnly) continue;
 
     // Comments: marked, never hidden — and no reveal test, on purpose.
     for (const span of scanComments(doc, from, to, regions)) {
@@ -774,7 +833,8 @@ export function buildDecorations(view: EditorView): DecorationSet {
   // Footnotes (`FOOT-001`). A named reference is the marker that classifies
   // link-like; an inline footnote is parsed and styled but never interactive,
   // which the two-marker body encodes: a footref token needs the footref mark
-  // *without* the inline-footnote one.
+  // *without* the inline-footnote one. Both are inline constructs, so they run
+  // in a cell too.
   for (const span of footnotes) {
     if (span.kind === "named") {
       ranges.push(footrefMark.range(span.from, span.to));
@@ -811,4 +871,15 @@ export function buildDecorations(view: EditorView): DecorationSet {
             ),
         );
   return Decoration.set(visible, true);
+}
+
+/**
+ * The inline-scoped walk: the construct set a table cell renders (plan Task A.3).
+ *
+ * A thin, deliberately named wrapper, so the cell's extension and its tests ask
+ * for `REVEAL-008`'s inline half by name rather than by remembering an option
+ * value.
+ */
+export function buildInlineDecorations(view: EditorView): DecorationSet {
+  return buildDecorations(view, "inline");
 }

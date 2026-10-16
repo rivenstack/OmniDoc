@@ -36,9 +36,16 @@
  * pointer and input events (`grid.tsx`), because those are not keymap-mediated.
  */
 
-import { markdown } from "@codemirror/lang-markdown";
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorState, type Extension } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import {
+  EditorView,
+  ViewPlugin,
+  keymap,
+  type DecorationSet,
+  type ViewUpdate,
+} from "@codemirror/view";
+import { buildInlineDecorations } from "../decorations";
 
 /** The direction a caret left the cell's edge. */
 export type CellLeaveDirection = "left" | "right" | "up" | "down";
@@ -75,6 +82,46 @@ export const CELL_EDITOR_CLASS = "cm-live-cell-editor";
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * The cell's inline live preview (plan Task A.3).
+ *
+ * A cell is markdown, so `**bold**` and `` `code` `` should look the way they do
+ * in the document — and unfold the same way when the caret touches them
+ * (`REVEAL-001`/`-002`). What a cell must **not** get is the document's
+ * block-level behaviour: a `#`, a `>`, a fence or a pipe block has to stay raw
+ * source rather than becoming a widget inside a table cell. `buildInlineDecorations`
+ * is the same walk scoped to `REVEAL-008`'s inline half, so the two can never
+ * disagree about how `**bold**` looks.
+ *
+ * Mark decorations are fine from a plugin; only *block* decorations are refused
+ * (which is why the document's preview keeps its block widgets in a `StateField`).
+ * A cell has none, so a plain `ViewPlugin` is enough — and unlike the document's
+ * preview it needs no pointer/composition deferral, because nothing it emits can
+ * move text under the cursor.
+ */
+const inlineLivePreview: Extension = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = buildInlineDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+      if (
+        update.docChanged ||
+        update.selectionSet ||
+        update.focusChanged ||
+        update.viewportChanged ||
+        update.transactions.some((transaction) => transaction.reconfigured)
+      ) {
+        this.decorations = buildInlineDecorations(update.view);
+      }
+    }
+  },
+  { decorations: (plugin) => plugin.decorations },
+);
 
 /**
  * The visual line around `pos`.
@@ -161,7 +208,12 @@ export class CellEditor {
 
   private extensions(editable: boolean): Extension[] {
     return [
-      markdown(),
+      // The same GFM base the document uses (`editor-extensions.ts`): plain
+      // `markdown()` defaults to **CommonMark**, which has no strikethrough and
+      // no tables — so a cell would render `~~x~~` and a pipe block differently
+      // from the document it sits in.
+      markdown({ base: markdownLanguage }),
+      inlineLivePreview,
       EditorView.lineWrapping,
       EditorView.editable.of(editable),
       keymap.of([

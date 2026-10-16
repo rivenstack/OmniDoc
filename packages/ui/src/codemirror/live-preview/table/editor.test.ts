@@ -1,26 +1,36 @@
-// The per-cell table editor — F-15 Task 3.3 Rev 2, plan Task A.2.
+// The per-cell table editor — F-15 Task 3.3 Rev 2, plan Tasks A.2 and A.3.
 //
 // `OBS-1.14.4-TABLE-001` says a table is **one editor per cell** holding the
 // cell's **decoded** text. This suite proves that primitive on its own, before
 // anything composes it into a grid: mount, read, type, and the cell keymap's
 // boundary behaviour.
 //
+// Task A.3 adds the second half: a cell renders the `REVEAL-008` **inline**
+// constructs and nothing else, so `**bold**` looks like it does in the document
+// while a `#`, a `>`, a fence or a pipe block stays raw source
+// (`COMMENT-001` names the same exclusion for comments).
+//
 // The `Mod-z` policy (no history in a cell; the request is delegated) is the
 // plan's chosen policy (`§11-4`), recorded here as directed — never a parity
 // claim.
 
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { undo } from "@codemirror/commands";
+import { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createHarness,
   keyEvent,
   type EditorHarness,
 } from "../../parity/harness";
+import { markdownLivePreviewPlugin } from "../index";
 import {
   CellEditor,
   CELL_EDITOR_CLASS,
   type CellEditorHandlers,
 } from "./editor";
+
+const LANGUAGE = markdown({ base: markdownLanguage });
 
 let editor: CellEditor | null = null;
 let host: HTMLElement | null = null;
@@ -329,5 +339,181 @@ describe("no history inside a cell (plan §11-4, @user-directed)", () => {
   it("does not consume Mod-z when nothing is listening", () => {
     const cell = mountCell("abc", {});
     expect(press(cell, "Mod-z")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------- A.3: cell preview
+
+/** Let CodeMirror's deferred work (focus, measure) run. */
+function flush(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Focus the cell with the caret at `offset` and settle.
+ *
+ * The cell's preview gates unfolding on `view.hasFocus`, which CodeMirror only
+ * notices during an update — so a dispatch has to follow `focus()`, and in jsdom
+ * the DOM's own focus state settles a turn later (the pattern
+ * `callout/index.test.ts` records as `focusSettled`).
+ */
+async function revealAt(cell: CellEditor, offset: number): Promise<void> {
+  cell.view.focus();
+  cell.view.dispatch({ selection: { anchor: offset } });
+  await flush();
+  cell.view.dispatch({ selection: { anchor: offset } });
+  await flush();
+}
+
+/** One decoration, flattened so a test can ask about kind and block-ness. */
+type FlatDecoration = {
+  from: number;
+  to: number;
+  kind: "mark" | "replace" | "widget" | "line";
+  block: boolean;
+};
+
+/** Every decoration the view's state carries, flattened. */
+function flatten(view: EditorView): FlatDecoration[] {
+  const out: FlatDecoration[] = [];
+  const length = view.state.doc.length;
+  for (const source of view.state.facet(EditorView.decorations)) {
+    const set = typeof source === "function" ? source(view) : source;
+    set.between(0, length, (from, to, value) => {
+      const own = value as unknown as Record<string, unknown>;
+      const isPoint = Object.hasOwn(own, "isReplace");
+      const kind: FlatDecoration["kind"] = isPoint
+        ? own.isReplace === true
+          ? "replace"
+          : "widget"
+        : Object.hasOwn(own, "tagName")
+          ? "mark"
+          : "line";
+      out.push({ from, to, kind, block: isPoint && own.block === true });
+    });
+  }
+  return out;
+}
+
+describe("a cell renders the inline vocabulary only (plan Task A.3)", () => {
+  const INLINE =
+    "**bold** *it* ~~del~~ `code` [link](https://example.com) ==mark==";
+
+  it("REVEAL-008: renders every inline kind with the document's own classes", () => {
+    const cell = mountCell(INLINE);
+    // The comparison target: the same text, walked by the **document** preview.
+    harness = createHarness({
+      doc: INLINE,
+      extensions: [LANGUAGE, markdownLivePreviewPlugin],
+    });
+
+    const selectors = [
+      ".cm-live-strong",
+      ".cm-live-em",
+      ".cm-live-strike",
+      ".cm-live-code",
+      ".cm-live-highlight",
+      ".cm-live-link",
+    ];
+    for (const selector of selectors) {
+      const inCell = cell.view.contentDOM.querySelector(selector);
+      const inDocument = harness.view.contentDOM.querySelector(selector);
+      expect(inCell, `cell is missing ${selector}`).not.toBeNull();
+      expect(inDocument, `document is missing ${selector}`).not.toBeNull();
+      expect(inCell?.textContent).toBe(inDocument?.textContent);
+    }
+    // The delimiters folded away in the cell, exactly as in the document.
+    expect(cell.view.contentDOM.textContent).not.toContain("**");
+    expect(cell.view.contentDOM.textContent).not.toContain("==");
+  });
+
+  it("REVEAL-001/002: reveals a construct's source when the caret touches it", async () => {
+    const cell = mountCell("a **bold** b");
+
+    expect(cell.view.contentDOM.textContent).toContain("bold");
+    expect(cell.view.contentDOM.textContent).not.toContain("**");
+
+    // The caret inside the emphasised span — the inclusive predicate, focused.
+    await revealAt(cell, 4);
+
+    expect(cell.view.contentDOM.textContent).toContain("**bold**");
+    expect(
+      cell.view.contentDOM.querySelector(".cm-live-syntax"),
+    ).not.toBeNull();
+  });
+
+  it("REVEAL-002: an unfocused cell never unfolds", async () => {
+    const cell = mountCell("a **bold** b");
+    cell.view.dispatch({ selection: { anchor: 4 } });
+    await flush();
+
+    expect(cell.view.contentDOM.textContent).not.toContain("**");
+  });
+
+  it("leaves block constructs as source, with no widget of any kind", () => {
+    const samples = [
+      "# Heading",
+      "> quoted paragraph",
+      "- list item",
+      "```\ncode\n```",
+      "---",
+    ];
+    for (const sample of samples) {
+      const cell = mountCell(sample);
+      const flat = flatten(cell.view);
+      expect(
+        flat.filter((decoration) => decoration.kind === "widget"),
+        `widget for ${sample}`,
+      ).toEqual([]);
+      expect(
+        flat.filter((decoration) => decoration.block),
+        `block decoration for ${sample}`,
+      ).toEqual([]);
+      // The source is still there, verbatim.
+      expect(cell.view.contentDOM.textContent).toContain(sample.split("\n")[0]);
+      // Reset between samples so `afterEach` only has the last one to clean.
+      cell.destroy();
+      host?.remove();
+      editor = null;
+      host = null;
+    }
+  });
+
+  it("negative: a pipe block in a cell is never a nested table", () => {
+    const cell = mountCell("| a | b |\n| --- | --- |\n| 1 | 2 |");
+
+    // No block widget — and in particular no second table widget, which only
+    // the document's `tableLivePreview` extension could produce.
+    expect(flatten(cell.view).filter((decoration) => decoration.block)).toEqual(
+      [],
+    );
+    expect(
+      cell.view.contentDOM.querySelector("table.cm-live-table"),
+    ).toBeNull();
+    expect(cell.view.contentDOM.textContent).toContain("| a | b |");
+  });
+
+  it("COMMENT-001: a cell shows the raw comment source", () => {
+    const cell = mountCell("before %%hidden%% after");
+    expect(cell.view.contentDOM.textContent).toContain("%%hidden%%");
+    expect(cell.view.contentDOM.querySelector(".cm-live-comment")).toBeNull();
+  });
+
+  it("negative: the document walk still renders block constructs", () => {
+    // The scope option must not change the document path — the guard for the
+    // "existing LP suites stay green" half of the task.
+    harness = createHarness({
+      doc: "# Heading\n\n> quote\n",
+      extensions: [LANGUAGE, markdownLivePreviewPlugin],
+    });
+    expect(harness.view.contentDOM.querySelector(".cm-live-h1")).not.toBeNull();
+    // The heading marker folded; the quote draws its border glyph.
+    expect(harness.view.contentDOM.textContent).not.toContain("#");
+    expect(
+      harness.view.contentDOM.querySelector(".cm-line.cm-live-quote"),
+    ).not.toBeNull();
+    expect(
+      harness.view.contentDOM.querySelector(".cm-live-quote-border"),
+    ).not.toBeNull();
   });
 });

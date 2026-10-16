@@ -178,6 +178,7 @@ export {
   HIGHLIGHT_EMOJI,
   HIGHLIGHT_MARKER,
   buildDecorations,
+  buildInlineDecorations,
   commentMark,
   commentMarkerMark,
   footrefMark,
@@ -197,6 +198,7 @@ export {
   unresolvedMark,
 } from "./decorations";
 export type { FootnoteSpan, HighlightColour, HighlightSpan } from "./decorations";
+export type { DecorationScope } from "./decorations";
 export { COMMENT_DELIMITER, scanComments } from "./comment";
 export type { CommentRange } from "./comment";
 export {
