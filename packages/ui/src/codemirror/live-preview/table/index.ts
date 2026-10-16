@@ -1,21 +1,33 @@
 /**
- * The live preview's table support (F-15 Rev 2, Task 1.4).
+ * The live preview's table support (F-15 Task 3.3 Rev 2 — table rebuild).
  *
- * The table half of the old 1,722-line `markdown-live-preview.ts` module, split
- * into its parts with no logic change:
+ * The table is a block widget over a per-cell model, and this module is its
+ * public surface:
  *
- * - `scan.ts` — find the table blocks, complete a typed delimiter row, install
- *   the block decorations.
- * - `widget.ts` — the block widget CodeMirror renders in place of the source.
- * - `interaction.ts` — the editable model behind that widget.
- * - `tools.ts` — cell rendering and the helper toolbar.
+ * - `scan.ts` — find the table blocks, complete a typed delimiter row, install the
+ *   block decorations.
+ * - `model.ts` — the decoded-cell codec and every pure structural operation.
+ * - `editor.ts` — one nested CodeMirror editor per cell.
+ * - `store.ts` / `grid.tsx` — the widget's state and the React grid.
+ * - `widget.ts` — the block widget, the event isolation and the one document write.
  *
- * The public names are unchanged so the split is invisible to callers.
+ * `interaction.ts` and `tools.ts` — the `contenteditable`-cell model and its
+ * toolbar — were **replaced** by the per-cell editors and the grid (plan §1
+ * decision B-8: rewrite, not patch). The names below are the ones callers
+ * (`live-preview/index.ts`, `codemirror/index.ts`, `callout/commands.ts`) import,
+ * so the rebuild is invisible to them.
  */
 
-export { TABLE_COMPLETE_MS, fenceChar, findTableBlocks, tableLivePreview } from "./scan";
-export { TABLE_IDLE_FLUSH_MS, TableInteraction } from "./interaction";
-export type { TableCellRef } from "./interaction";
+export {
+  TABLE_COMPLETE_MS,
+  fenceChar,
+  findTableBlocks,
+  tableLivePreview,
+} from "./scan";
+export { TABLE_IDLE_FLUSH_MS } from "./editor";
+export type { TableCellRef } from "./model";
 export { TablePreviewWidget } from "./widget";
-export { TABLE_TOOL_ICONS, renderCellMarkdown, tableToolButton } from "./tools";
-export { parseMarkdownTable, serializeMarkdownTable } from "../../../markdown/table";
+export {
+  parseMarkdownTable,
+  serializeMarkdownTable,
+} from "../../../markdown/table";

@@ -223,18 +223,24 @@ describe("CodeMirrorEditor", () => {
     expect(dom.querySelectorAll("td.cm-live-td")).toHaveLength(4);
     expect(dom.querySelector(".cm-live-table-wrapper")).toBeTruthy();
 
-    // 2. Cell inline markdown is rendered to real DOM elements
-    expect(dom.querySelector("strong.cm-live-strong")?.textContent).toBe("Bold");
-    expect(dom.querySelector("em.cm-live-em")?.textContent).toBe("Italic");
-    expect(dom.querySelector("code.cm-live-code")?.textContent).toBe("code");
-    expect(dom.querySelector("del.cm-live-strike")?.textContent).toBe("strike");
-    const linkEl = dom.querySelector("a.cm-live-link") as HTMLAnchorElement | null;
+    // 2. Cell inline markdown is rendered to real DOM elements. The cells render
+    // through the inline-scoped live preview, so each construct is a CodeMirror
+    // mark (a `span` carrying the same class the document preview uses) rather
+    // than a hand-built element.
+    expect(dom.querySelector(".cm-live-strong")?.textContent).toBe("Bold");
+    expect(dom.querySelector(".cm-live-em")?.textContent).toBe("Italic");
+    expect(dom.querySelector(".cm-live-code")?.textContent).toBe("code");
+    expect(dom.querySelector(".cm-live-strike")?.textContent).toBe("strike");
+    const linkEl = dom.querySelector(".cm-live-link") as HTMLElement | null;
     expect(linkEl?.textContent).toBe("link");
-    expect(linkEl?.getAttribute("href")).toBe("https://example.com");
 
-    // 3. Cells are contenteditable for direct editing
+    // 3. Each cell hosts its own nested editor, so the cell is an editable
+    // surface the outer editor does not own.
     const firstCell = dom.querySelector("td.cm-live-td") as HTMLElement | null;
-    expect(firstCell?.contentEditable).toBe("true");
+    expect(firstCell?.querySelector(".cm-editor")).toBeTruthy();
+    expect(
+      firstCell?.querySelector(".cm-content")?.getAttribute("contenteditable"),
+    ).toBe("true");
 
     // 4. When focused with cursor, the table remains as an interactive table widget (does NOT unfold to raw text lines)
     act(() => {

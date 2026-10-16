@@ -1,20 +1,22 @@
+// Markdown-mode table behaviour — F-15 Task 3.3 Rev 2, plan Task A.4.
+//
+// The table is a block widget whose DOM is React and whose cells are nested
+// CodeMirror editors (plan §1 decision B-8: the old `contenteditable`-cell
+// implementation was replaced, not patched). These tests drive the real path end
+// to end: mount the editor, reach a cell's nested `EditorView` through the DOM,
+// type into it, and read the markdown the document ends up holding.
+//
+// The entries in play are `OBS-1.14.4-TABLE-001` (one editor per cell holding
+// decoded text, always rendered) and `TABLE-007` (the table never unfolds). The
+// `B-*` behaviours (no toolbar, cells as their own editing hosts) are
+// `@user`-directed (plan §1), recorded as directed — never parity claims.
+
 import { createRef } from "react";
 import { act, render } from "@testing-library/react";
+import { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeMirrorEditor, type CodeMirrorEditorHandle } from "./cm-editor";
-import {
-  TABLE_COMPLETE_MS,
-  TABLE_IDLE_FLUSH_MS,
-} from "./live-preview/table";
-
-/**
- * Markdown-mode table behaviour.
- *
- * The table is a block widget, so its cells are ordinary DOM rather than
- * document positions. These tests drive that DOM directly — the gestures are
- * exactly the ones the widget's own listeners implement, so they exercise the
- * real path from a keystroke to the source the document ends up holding.
- */
+import { TABLE_COMPLETE_MS, TABLE_IDLE_FLUSH_MS } from "./live-preview/table";
 
 type View = NonNullable<ReturnType<CodeMirrorEditorHandle["getEditorView"]>>;
 
@@ -53,47 +55,65 @@ function cellAt(view: View, row: number, col: number): HTMLElement {
   return cell as HTMLElement;
 }
 
-function tools(view: View): HTMLButtonElement[] {
-  return Array.from(
-    dom(view).querySelectorAll<HTMLButtonElement>(".cm-live-table-tool"),
+/** The nested editor's content DOM inside one cell. */
+function cellContent(view: View, row: number, col: number): HTMLElement {
+  const content = cellAt(view, row, col).querySelector<HTMLElement>(
+    ".cm-content",
   );
+  if (!content) throw new Error(`no nested editor at ${row}:${col}`);
+  return content;
 }
 
-/** Press a helper-toolbar control the way the widget listens for it. */
-function pressTool(view: View, label: string) {
-  const button = tools(view).find(
-    (candidate) => candidate.getAttribute("aria-label") === label,
-  );
-  if (!button) throw new Error(`no "${label}" tool`);
+/** One cell's nested `EditorView`, found through the DOM (public API only). */
+function cellEditor(view: View, row: number, col: number): EditorView {
+  const editor = EditorView.findFromDOM(cellContent(view, row, col));
+  if (!editor) throw new Error(`no nested view at ${row}:${col}`);
+  return editor;
+}
+
+/** The decoded text one cell currently holds. */
+function cellText(view: View, row: number, col: number): string {
+  return cellEditor(view, row, col).state.doc.toString();
+}
+
+/** Replace a cell's whole text as a user input event. */
+function typeInto(view: View, row: number, col: number, text: string): void {
+  const editor = cellEditor(view, row, col);
   act(() => {
-    button.dispatchEvent(
-      new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
-    );
+    editor.dispatch({
+      changes: { from: 0, to: editor.state.doc.length, insert: text },
+      userEvent: "input.type",
+    });
   });
 }
 
-/** Put the caret at the end of the document (the last line's end). */
-function caretToEnd(view: View) {
+/** Focus a cell's nested editor. */
+function focusCell(view: View, row: number, col: number): void {
+  const editor = cellEditor(view, row, col);
+  act(() => {
+    editor.focus();
+  });
+}
+
+/** Blur a cell's nested editor — the focus-out commit point. */
+async function blurCell(view: View, row: number, col: number): Promise<void> {
+  const content = cellContent(view, row, col);
+  await act(async () => {
+    content.blur();
+    await Promise.resolve();
+  });
+}
+
+/** Let any deferred task (CodeMirror's deferral, React's scheduling) run. */
+async function settle(): Promise<void> {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+function caretToEnd(view: View): void {
   act(() => {
     view.dispatch({ selection: { anchor: view.state.doc.length } });
-  });
-}
-
-function press(view: View, target: HTMLElement, key: string) {
-  act(() => target.focus());
-  act(() => {
-    target.dispatchEvent(
-      new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
-    );
-  });
-}
-
-/** Focus a cell and replace its raw source. */
-function typeInto(view: View, row: number, col: number, text: string) {
-  const cell = cellAt(view, row, col);
-  act(() => cell.focus());
-  act(() => {
-    cell.textContent = text;
   });
 }
 
@@ -102,15 +122,18 @@ afterEach(() => {
 });
 
 describe("markdown mode tables", () => {
-  it("renders a table whose delimiter row is narrower than its header", () => {
-    // The exact case: three headers, then a bare `| --- |`.
+  it("TABLE-001: renders a table whose delimiter row is narrower than its header", () => {
     const { view } = mount("| Head 1 | Head 2 | Head 3 |\n| --- |");
 
     expect(dom(view).querySelector("table.cm-live-table")).not.toBeNull();
     expect(dom(view).querySelectorAll("th.cm-live-th")).toHaveLength(3);
+    // One nested editor per cell — that is the model (`TABLE-001`).
+    expect(dom(view).querySelectorAll(".cm-live-th .cm-editor")).toHaveLength(
+      3,
+    );
   });
 
-  it("still renders the table with the caret at the start of the document", () => {
+  it("TABLE-007: still renders the table with the caret at the start of the document", () => {
     // A note that opens with a table must not greet the reader with raw pipes.
     const { view } = mount("| a | b |\n| --- |\n| 1 | 2 |");
     expect(view.state.selection.main.head).toBe(0);
@@ -133,7 +156,6 @@ describe("markdown mode tables", () => {
     caretToEnd(view);
     expect(dom(view).querySelector("table.cm-live-table")).toBeNull();
 
-    // Moving the caret off the row settles it.
     act(() => {
       view.dispatch({ selection: { anchor: 0 } });
     });
@@ -159,53 +181,43 @@ describe("markdown mode tables", () => {
     }
   });
 
-  it("leaves a table alone in a locked note", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |", true);
-
-    expect(table(view)).not.toBeNull();
+  it("has no helper toolbar (B-3, @user-directed)", () => {
+    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
     expect(dom(view).querySelector(".cm-live-table-toolbar")).toBeNull();
-    for (const cell of dom(view).querySelectorAll<HTMLElement>(
-      ".cm-live-th, .cm-live-td",
-    )) {
-      expect(cell.contentEditable).not.toBe("true");
-    }
+    expect(dom(view).querySelector(".cm-live-table-tool")).toBeNull();
+    expect(dom(view).querySelector('[role="toolbar"]')).toBeNull();
   });
 
-  it("renders cell markdown, and reveals the source while the cell is edited", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| **bold** | `code` |");
-
-    expect(dom(view).querySelector("strong.cm-live-strong")?.textContent).toBe(
-      "bold",
-    );
-    const cell = cellAt(view, 1, 0);
-
-    act(() => cell.focus());
-    // The source, not the rendered form: this is what the user edits.
-    expect(cell.textContent).toBe("**bold**");
-    expect(cell.classList.contains("cm-live-cell-editing")).toBe(true);
-
-    act(() => cell.blur());
-    expect(dom(view).querySelector("strong.cm-live-strong")?.textContent).toBe(
-      "bold",
+  it("reads a cell's decoded text, with an escaped pipe and a code-span pipe", () => {
+    const { view } = mount("| a | b |\n| --- | --- |\n| x \\| y | `p|q` |");
+    expect(cellText(view, 1, 0)).toBe("x | y");
+    expect(cellText(view, 1, 1)).toBe("`p|q`");
+    // The inline preview already renders the code span inside the cell.
+    expect(cellAt(view, 1, 1).querySelector(".cm-live-code")?.textContent).toBe(
+      "p|q",
     );
   });
 
-  it("writes an edited cell back as markdown when the table is left", () => {
+  it("writes an edited cell back as markdown when the table is left", async () => {
     const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
 
+    focusCell(view, 1, 1);
     typeInto(view, 1, 1, "**two**");
-    act(() => cellAt(view, 1, 1).blur());
+    await blurCell(view, 1, 1);
+    await settle();
 
     expect(view.state.doc.toString()).toBe(
       "| a | b |\n| --- | --- |\n| 1 | **two** |",
     );
   });
 
-  it("escapes a pipe typed into a cell so it stays one cell", () => {
+  it("escapes a pipe typed into a cell so it stays one cell", async () => {
     const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
 
+    focusCell(view, 1, 0);
     typeInto(view, 1, 0, "x | y");
-    act(() => cellAt(view, 1, 0).blur());
+    await blurCell(view, 1, 0);
+    await settle();
 
     expect(view.state.doc.toString()).toBe(
       "| a | b |\n| --- | --- |\n| x \\| y | 2 |",
@@ -214,23 +226,19 @@ describe("markdown mode tables", () => {
     expect(dom(view).querySelectorAll("td.cm-live-td")).toHaveLength(2);
   });
 
-  it("keeps an existing escape, and escapes a bare pipe left in a code span", () => {
+  it("keeps an existing escape, and escapes a bare pipe left in a code span", async () => {
     const { view } = mount("| a | b |\n| --- | --- |\n| x \\| y | `p|q` |");
 
-    expect(cellAt(view, 1, 0).textContent).toBe("x | y");
-    expect(dom(view).querySelectorAll("code.cm-live-code")).toHaveLength(1);
-    expect(dom(view).querySelector("code.cm-live-code")?.textContent).toBe(
-      "p|q",
-    );
+    focusCell(view, 1, 0);
+    await blurCell(view, 1, 0);
+    await settle();
 
     // Touching the cell writes it back, which escapes the bare pipe in the code
     // span. The reader still sees `p|q`; the source is now GFM-valid.
-    act(() => cellAt(view, 1, 0).focus());
-    act(() => cellAt(view, 1, 0).blur());
     expect(view.state.doc.toString()).toBe(
       "| a | b |\n| --- | --- |\n| x \\| y | `p\\|q` |",
     );
-    expect(dom(view).querySelector("code.cm-live-code")?.textContent).toBe(
+    expect(cellAt(view, 1, 1).querySelector(".cm-live-code")?.textContent).toBe(
       "p|q",
     );
   });
@@ -239,13 +247,9 @@ describe("markdown mode tables", () => {
     vi.useFakeTimers();
     try {
       const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-      const cell = cellAt(view, 1, 0);
 
-      act(() => cell.focus());
-      act(() => {
-        cell.textContent = "typed";
-        cell.dispatchEvent(new Event("input", { bubbles: true }));
-      });
+      focusCell(view, 1, 0);
+      typeInto(view, 1, 0, "typed");
 
       // Typing alone must not touch the document — that is what keeps the DOM
       // (and the caret) alive across a keystroke.
@@ -258,7 +262,7 @@ describe("markdown mode tables", () => {
       });
 
       // The pause writes it out, so a note typed into and then abandoned still
-      // reaches autosave — and the caret is put back in the rebuilt widget.
+      // reaches autosave — and the caret is back in the rebuilt widget.
       expect(view.state.doc.toString()).toBe(
         "| a | b |\n| --- | --- |\n| typed | 2 |",
       );
@@ -274,136 +278,66 @@ describe("markdown mode tables", () => {
     expect(cellAt(view, 0, 1).style.textAlign).toBe("right");
   });
 
-  it("offers the row and column helper tools with accessible names", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-    expect(tools(view).map((tool) => tool.getAttribute("aria-label"))).toEqual([
-      "Insert row above",
-      "Insert row below",
-      "Delete row",
-      "Insert column left",
-      "Insert column right",
-      "Delete column",
-      "Delete table",
-    ]);
-    expect(
-      dom(view).querySelector('[role="toolbar"][aria-label="Table actions"]'),
-    ).not.toBeNull();
-  });
-
-  it("inserts and deletes rows from the helper tools", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-
-    // No cell focused yet, so the tool claims the first one and inserts below
-    // the header it is in.
-    pressTool(view, "Insert row below");
-    expect(view.state.doc.toString()).toBe(
-      "| a | b |\n| --- | --- |\n|  |  |\n| 1 | 2 |",
-    );
-    expect(dom(view).querySelectorAll("td.cm-live-td")).toHaveLength(4);
-
-    // The new row is now the focused one, so deleting removes it again.
-    pressTool(view, "Delete row");
-    expect(view.state.doc.toString()).toBe(
-      "| a | b |\n| --- | --- |\n| 1 | 2 |",
-    );
-  });
-
-  it("inserts and deletes columns from the helper tools", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-
-    // Active cell is column 0, so the new column lands between a and b.
-    pressTool(view, "Insert column right");
-    expect(view.state.doc.toString()).toBe(
-      "| a |  | b |\n| --- | --- | --- |\n| 1 |  | 2 |",
-    );
-
-    pressTool(view, "Delete column");
-    expect(view.state.doc.toString()).toBe(
-      "| a | b |\n| --- | --- |\n| 1 | 2 |",
-    );
-  });
-
-  it("deletes the whole table and the line it occupied", () => {
-    const { view } = mount("intro\n\n| a | b |\n| --- | --- |\n| 1 | 2 |");
-
-    pressTool(view, "Delete table");
-    expect(view.state.doc.toString()).toBe("intro\n");
-    expect(dom(view).querySelector("table.cm-live-table")).toBeNull();
-  });
-
-  it("adds a row when Tab leaves the last cell", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-
-    press(view, cellAt(view, 1, 1), "Tab");
-
-    expect(view.state.doc.toString()).toBe(
-      "| a | b |\n| --- | --- |\n| 1 | 2 |\n|  |  |",
-    );
-  });
-
-  it("moves between cells on Tab without touching the document", () => {
-    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-
-    press(view, cellAt(view, 0, 0), "Tab");
-
-    expect(view.state.doc.toString()).toBe(
-      "| a | b |\n| --- | --- |\n| 1 | 2 |",
-    );
-    expect(document.activeElement?.getAttribute("data-col")).toBe("1");
-  });
-
   it("renders a table that has no body rows", () => {
     const { view } = mount("| a | b |\n| --- | --- |");
     expect(dom(view).querySelectorAll("td.cm-live-td")).toHaveLength(0);
     expect(dom(view).querySelectorAll("th.cm-live-th")).toHaveLength(2);
   });
 
-  it("isolates its cells from the editor's editing host", () => {
-    // The table sits inside CodeMirror's `contenteditable="true"` content DOM.
-    // A nested editing host cannot hold focus inside another one in Chromium —
-    // clicking a cell focused it only for the browser to hand focus straight
-    // back to the editor. `contenteditable="false"` on the table makes each
-    // cell an independent editing host.
+  it("makes each cell its own editing host", () => {
+    // The wrapper is `contenteditable="false"` so the nested editors are
+    // independent editing hosts rather than part of the outer editor's editable
+    // region — which is what lets a cell hold the caret at all.
     const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-    expect(table(view).getAttribute("contenteditable")).toBe("false");
-    expect(cellAt(view, 1, 0).contentEditable).toBe("true");
+    expect(
+      dom(view)
+        .querySelector(".cm-live-table-wrapper")
+        ?.getAttribute("contenteditable"),
+    ).toBe("false");
+    expect(cellContent(view, 1, 0).getAttribute("contenteditable")).toBe(
+      "true",
+    );
   });
+
   it("keeps pointer and key events inside the table away from the editor", () => {
     // CodeMirror's own `mousedown` handler starts a mouse selection and takes
-    // focus back; it does not consult `WidgetType.ignoreEvent`, so a click on a
-    // cell used to blur it and swallow the edit. Events from inside the table
-    // must therefore never reach the editor's content DOM.
+    // focus back; it does not consult `WidgetType.ignoreEvent`. Events from
+    // inside the table must therefore never reach the editor's content DOM —
+    // while still reaching the cell they started in.
     const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
-    const seen: string[] = [];
-    for (const type of ["mousedown", "click", "keydown", "beforeinput"]) {
-      dom(view).addEventListener(type, () => seen.push(type));
+    const types = ["mousedown", "click", "keydown", "beforeinput"];
+    const outer: string[] = [];
+    const inner: string[] = [];
+    for (const type of types) {
+      dom(view).addEventListener(type, () => outer.push(type));
+    }
+    const content = cellContent(view, 1, 0);
+    for (const type of types) {
+      content.addEventListener(type, () => inner.push(type));
     }
 
-    const cell = cellAt(view, 1, 0);
-    for (const type of ["mousedown", "click", "keydown", "beforeinput"]) {
+    for (const type of types) {
       act(() => {
-        cell.dispatchEvent(
+        content.dispatchEvent(
           new Event(type, { bubbles: true, cancelable: true }),
         );
       });
     }
 
-    expect(seen).toEqual([]);
-    // The cell's own handlers still ran, so the event was stopped at the
-    // wrapper — not swallowed before it reached the cell.
-    expect(cell.classList.contains("cm-live-cell-editing")).toBe(true);
+    expect(outer).toEqual([]);
+    // Stopped at the wrapper, not swallowed before it reached the cell.
+    expect(inner).toEqual(types);
   });
 
   it("lets a cell hold focus while the editor is focused", () => {
-    // The companion guard to the test above: with the editor focused, focusing
-    // a cell must leave the cell as the active element.
+    // The companion guard to the test above: with the editor focused, focusing a
+    // cell must leave the cell as the active element.
     const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
     act(() => view.focus());
 
-    const cell = cellAt(view, 1, 0);
-    act(() => cell.focus());
+    focusCell(view, 1, 0);
 
-    expect(document.activeElement).toBe(cell);
+    expect(document.activeElement).toBe(cellContent(view, 1, 0));
   });
 
   it("stops the table being editable as soon as the note is locked", () => {
@@ -420,15 +354,17 @@ describe("markdown mode tables", () => {
     const view = handleRef.current?.getEditorView();
     if (!view) throw new Error("CodeMirror view did not mount");
 
-    expect(cellAt(view, 1, 0).contentEditable).toBe("true");
-    expect(dom(view).querySelector(".cm-live-table-toolbar")).not.toBeNull();
+    expect(cellContent(view, 1, 0).getAttribute("contenteditable")).toBe(
+      "true",
+    );
 
     utils.rerender(<CodeMirrorEditor {...props} readOnly />);
 
-    // A cell sets `contentEditable` on itself, which outranks a non-editable
-    // ancestor — so the widget has to be rebuilt, not merely relabelled.
-    expect(cellAt(view, 1, 0).contentEditable).not.toBe("true");
-    expect(dom(view).querySelector(".cm-live-table-toolbar")).toBeNull();
+    // Each cell editor is built with the editable flag, so the widget has to be
+    // rebuilt, not merely relabelled.
+    expect(cellContent(view, 1, 0).getAttribute("contenteditable")).toBe(
+      "false",
+    );
     // The table itself keeps rendering: a locked note reads as a document.
     expect(dom(view).querySelector("table.cm-live-table")).not.toBeNull();
     expect(dom(view).querySelectorAll("th.cm-live-th")).toHaveLength(2);
@@ -446,11 +382,51 @@ describe("markdown mode tables", () => {
     const utils = render(<CodeMirrorEditor {...props} readOnly />);
     const view = handleRef.current?.getEditorView();
     if (!view) throw new Error("CodeMirror view did not mount");
-    expect(cellAt(view, 1, 0).contentEditable).not.toBe("true");
+    expect(cellContent(view, 1, 0).getAttribute("contenteditable")).toBe(
+      "false",
+    );
 
     utils.rerender(<CodeMirrorEditor {...props} />);
 
-    expect(cellAt(view, 1, 0).contentEditable).toBe("true");
-    expect(dom(view).querySelector(".cm-live-table-toolbar")).not.toBeNull();
+    expect(cellContent(view, 1, 0).getAttribute("contenteditable")).toBe(
+      "true",
+    );
+  });
+
+  it("rebuilds the cell editors when the note is locked", () => {
+    const markdown = "| a | b |\n| --- | --- |\n| 1 | 2 |";
+    const handleRef = createRef<CodeMirrorEditorHandle>();
+    const props = {
+      ref: handleRef,
+      value: markdown,
+      onChange: vi.fn(),
+      mode: "markdown" as const,
+    };
+    const utils = render(<CodeMirrorEditor {...props} />);
+    const view = handleRef.current?.getEditorView();
+    if (!view) throw new Error("CodeMirror view did not mount");
+    const before = cellEditor(view, 1, 0);
+
+    utils.rerender(<CodeMirrorEditor {...props} readOnly />);
+
+    expect(cellEditor(view, 1, 0)).not.toBe(before);
+    expect(dom(view).querySelectorAll("table.cm-live-table")).toHaveLength(1);
+    expect(dom(view).querySelectorAll(".cm-live-td .cm-editor")).toHaveLength(
+      2,
+    );
+  });
+
+  it("leaves a locked table with no affordances at all", () => {
+    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |", true);
+
+    expect(table(view)).not.toBeNull();
+    expect(dom(view).querySelector(".cm-live-table-toolbar")).toBeNull();
+    for (const cell of dom(view).querySelectorAll<HTMLElement>(
+      ".cm-live-th, .cm-live-td",
+    )) {
+      expect(
+        cell.querySelector(".cm-content")?.getAttribute("contenteditable"),
+      ).not.toBe("true");
+    }
   });
 });

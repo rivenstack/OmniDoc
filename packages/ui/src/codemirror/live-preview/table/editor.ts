@@ -79,6 +79,31 @@ export type CellEditorHandlers = {
 /** The class the cell host carries, so the theme can reach the nested editor. */
 export const CELL_EDITOR_CLASS = "cm-live-cell-editor";
 
+/**
+ * How long a cell waits after the last keystroke before the table is written.
+ *
+ * Editing a cell never touches the document per keystroke — that is what keeps
+ * the widget (and the caret) alive. The write happens when the table is left, on
+ * Escape, on a structural edit, and after this much idle time, so a note typed
+ * into and then abandoned still reaches autosave.
+ */
+export const TABLE_IDLE_FLUSH_MS = 600;
+
+/**
+ * The editor mounted in each cell host.
+ *
+ * A write rebuilds the widget, which means the *new* grid owns the cell editors
+ * and the old one is gone — yet the caret has to land back in the same cell. The
+ * rebuilt DOM is reachable from the document, but its `CellEditor` instances are
+ * not, so the host element itself carries the link.
+ */
+const editorsByHost = new WeakMap<HTMLElement, CellEditor>();
+
+/** The cell editor mounted in `host`, if any (a rebuilt widget keeps the caret). */
+export function cellEditorFor(host: HTMLElement): CellEditor | undefined {
+  return editorsByHost.get(host);
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -150,7 +175,7 @@ export class CellEditor {
   readonly view: EditorView;
 
   constructor(
-    host: HTMLElement,
+    private readonly host: HTMLElement,
     text: string,
     private readonly handlers: CellEditorHandlers = {},
     editable = true,
@@ -163,6 +188,7 @@ export class CellEditor {
         extensions: this.extensions(editable),
       }),
     });
+    editorsByHost.set(host, this);
   }
 
   /** The cell's decoded text — what a commit encodes and writes to the model. */
@@ -201,6 +227,7 @@ export class CellEditor {
 
   /** Tear the nested editor down. */
   destroy(): void {
+    editorsByHost.delete(this.host);
     this.view.destroy();
   }
 
