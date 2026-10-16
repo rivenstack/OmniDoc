@@ -319,7 +319,9 @@ describe("markdown mode tables", () => {
       "| a | b |\n| --- | --- |\n| typed | 2 |",
     );
     // One widget, one tree: the write replaced its predecessor.
-    expect(dom(view).querySelectorAll(".cm-live-table-wrapper")).toHaveLength(1);
+    expect(dom(view).querySelectorAll(".cm-live-table-wrapper")).toHaveLength(
+      1,
+    );
     expect(dom(view).querySelectorAll("table.cm-live-table")).toHaveLength(1);
     const roots = errors.mock.calls.filter((call) =>
       String(call[0]).includes("createRoot"),
