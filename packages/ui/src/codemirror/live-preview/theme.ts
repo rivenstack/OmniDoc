@@ -31,6 +31,121 @@ const HIGHLIGHT_TINTS = {
 } as const;
 
 /**
+ * The table's look (F-15 Task 3.3 Rev 2, plan Task B.1).
+ *
+ * `@user`-directed, 2026-10-16 (plan §1) — recorded as **directed**, never as a
+ * parity claim: §2's captures (S1–S3) set the target, and the entries the
+ * behaviour below must keep are `OBS-1.14.4-TABLE-001`/`-007`.
+ *
+ * Exported rather than inlined into {@link markdownLivePreviewTheme} so
+ * `table/theme.test.ts` can assert the *rules*: jsdom has no layout, so the only
+ * honest test of a look is what the stylesheet says.
+ *
+ * Three decisions shape it:
+ *
+ * - **No focus outline** (B-1). The wrapper stays focusable — a wide table must
+ *   stay keyboard-scrollable (`ui-qa-checklist.md` §6.4) — but draws no ring:
+ *   the caret and the selection highlight are the focus affordances. That is why
+ *   the rule sets `outline: none` rather than simply omitting an outline: the
+ *   project's global `:focus-visible` contract would otherwise paint one.
+ * - **Content width, not full width** (B-2). The table hugs its columns and caps
+ *   at the note's own width, with a minimum inline size per cell so an empty
+ *   column stays visible and clickable. Sizing is the **browser's own table
+ *   layout** — `@user`-directed 2026-10-16 after the first pass measured the
+ *   columns in JavaScript: no `colgroup`, no inline widths, no measurement, and
+ *   so no delay between typing and a column resizing.
+ * - **No header fill** (S1). The header row is bold text on the body's own
+ *   background, separated by the same hairline grid as every other cell.
+ *
+ * The nested cell editors are `EditorView`s of their own, so they arrive with
+ * CodeMirror's base theme: a monospace scroller, a `4px 0` / `0 2px 0 6px` inset
+ * and a `1px dotted` focus ring. None of that belongs to a table cell, and the
+ * rules below are what take it back.
+ *
+ * Every colour is an existing token role — no new `tokens.css` entries. The
+ * affordance and selection tints (C.4, D.1, D.2) are visual-pass items (§11).
+ */
+export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
+  // The scroll container: still the escape hatch for a genuinely wide table.
+  ".cm-live-table-wrapper": {
+    position: "relative",
+    overflowX: "auto",
+    maxWidth: "100%",
+    marginBlock: "0.75rem",
+    // B-1. See the doc comment: an omission would not be enough.
+    outline: "none",
+  },
+  // The grid is the positioning context for the affordances (the hover grip and
+  // the `+`, D.1/D.2) and hugs the table, so pinning something to its edge is
+  // pinning it to the table's edge.
+  ".cm-live-table-grid": {
+    position: "relative",
+    width: "max-content",
+    maxWidth: "100%",
+  },
+  // B-2. `max-content` (not `100%`) is what makes the table hug its columns;
+  // `max-width: 100%` keeps a long one inside the note, where its content wraps
+  // rather than running off the page. Between them the browser's own table
+  // layout distributes the space — there is nothing to measure and nothing to
+  // recompute when a cell is edited.
+  ".cm-live-table": {
+    width: "max-content",
+    maxWidth: "100%",
+    borderCollapse: "collapse",
+    fontSize: "0.875rem",
+  },
+  // The cell box, shared by the head and the body: the hairline grid, and B-2's
+  // minimum width — the only floor a column needs, so an empty column stays
+  // visible (and, once D.1 lands, clickable) instead of collapsing to nothing.
+  ".cm-live-th, .cm-live-td": {
+    border: "1px solid var(--border)",
+    padding: "0.5rem",
+    minInlineSize: "4rem",
+    // A wrapped cell grows downwards. Without this the row's other cells would
+    // float their content to the middle and the row would stop reading as a row.
+    verticalAlign: "top",
+  },
+  // S1: bold, no filled bar — the header is a row, not a surface.
+  ".cm-live-th": {
+    fontWeight: "600",
+    textAlign: "start",
+  },
+  ".cm-live-td": {
+    textAlign: "start",
+  },
+  // A cell editor must read as part of the document's own text, and the table
+  // carries no focus ring of its own (B-1) — so the nested base theme's dotted
+  // ring goes, along with its monospace scroller and its own insets.
+  ".cm-live-table .cm-editor": {
+    outline: "none",
+    backgroundColor: "transparent",
+  },
+  ".cm-live-table .cm-scroller": {
+    // Inherited, not chosen: a cell is the document's own type, at whatever the
+    // surrounding text resolves to.
+    fontFamily: "inherit",
+    lineHeight: "inherit",
+  },
+  // The document's editor tints its caret; a cell's is the base theme's black,
+  // which would be invisible in the dark theme.
+  ".cm-live-table .cm-cursor": {
+    borderLeftColor: "var(--foreground)",
+  },
+  ".cm-live-table .cm-content": {
+    padding: "0",
+    // An empty cell has no line box, so its row would collapse to the cell's
+    // padding and read as a sliver next to a filled row. The old implementation
+    // solved that with an `:empty::before` pseudo-element; a cell holds an
+    // editor now, so the line box is the editor's to keep. The value is a
+    // visual-pass item (§11-8).
+    minBlockSize: "1.5em",
+  },
+  ".cm-live-table .cm-line": {
+    padding: "0",
+  },
+};
+
+/**
  * Presentation for the live preview, deliberately kept in step with the
  * typography the capture surface applies to TipTap (Normal). The type values
  * are imported from `capture/body-typography.ts` — one source for both engines
@@ -237,7 +352,9 @@ export const markdownLivePreviewTheme = EditorView.theme({
   },
   ".cm-live-callout[data-callout='summary'], .cm-live-callout[data-callout='abstract'], .cm-live-callout[data-callout='tldr']":
     { "--cm-callout-colour": "var(--od-accent-500)" },
-  ".cm-live-callout[data-callout='todo']": { "--cm-callout-colour": "var(--od-info-500)" },
+  ".cm-live-callout[data-callout='todo']": {
+    "--cm-callout-colour": "var(--od-info-500)",
+  },
   ".cm-live-callout[data-callout='important'], .cm-live-callout[data-callout='tip'], .cm-live-callout[data-callout='hint']":
     { "--cm-callout-colour": "var(--od-accent-500)" },
   ".cm-live-callout[data-callout='success'], .cm-live-callout[data-callout='check'], .cm-live-callout[data-callout='done']":
@@ -248,11 +365,14 @@ export const markdownLivePreviewTheme = EditorView.theme({
     { "--cm-callout-colour": "var(--od-warning-500)" },
   ".cm-live-callout[data-callout='fail'], .cm-live-callout[data-callout='failure'], .cm-live-callout[data-callout='missing'], .cm-live-callout[data-callout='error'], .cm-live-callout[data-callout='danger'], .cm-live-callout[data-callout='bug']":
     { "--cm-callout-colour": "var(--od-danger-500)" },
-  ".cm-live-callout[data-callout='example']": { "--cm-callout-colour": "var(--od-accent-500)" },
-  // The artifact's literal quote grey (`CALLOUT-001`, `quoteColourLiteral`).
-  ".cm-live-callout[data-callout='quote'], .cm-live-callout[data-callout='cite']": {
-    "--cm-callout-colour": "#9e9e9e",
+  ".cm-live-callout[data-callout='example']": {
+    "--cm-callout-colour": "var(--od-accent-500)",
   },
+  // The artifact's literal quote grey (`CALLOUT-001`, `quoteColourLiteral`).
+  ".cm-live-callout[data-callout='quote'], .cm-live-callout[data-callout='cite']":
+    {
+      "--cm-callout-colour": "#9e9e9e",
+    },
   ".cm-live-callout-title": {
     display: "flex",
     alignItems: "center",
@@ -284,85 +404,10 @@ export const markdownLivePreviewTheme = EditorView.theme({
   "@media (prefers-reduced-motion: reduce)": {
     ".cm-live-callout-fold": { transition: "none" },
   },
-  // GFM tables: the table is a block widget, so its look is defined by the
-  // widget rules below rather than by `.cm-line` classes — the source lines it
-  // replaces are not laid out at all.
-  ".cm-live-table-wrapper": {
-    position: "relative",
-    overflowX: "auto",
-    maxWidth: "100%",
-    marginBlock: "0.75rem",
-    outline: "none",
-  },
-  // The scroll container is focusable so a wide table can be scrolled by
-  // keyboard, which is only discoverable if the focus ring is visible.
-  ".cm-live-table-wrapper:focus-visible": {
-    outline: "2px solid var(--ring)",
-    outlineOffset: "2px",
-    borderRadius: "0.375rem",
-  },
-  ".cm-live-table-toolbar": {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: "0.125rem",
-    marginBlockEnd: "0.25rem",
-  },
-  ".cm-live-table-tool": {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    inlineSize: "1.5rem",
-    blockSize: "1.5rem",
-    padding: "0",
-    border: "1px solid transparent",
-    borderRadius: "0.25rem",
-    background: "transparent",
-    color: "var(--muted-foreground)",
-    cursor: "pointer",
-  },
-  ".cm-live-table-tool:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--foreground)",
-  },
-  ".cm-live-table-tool:focus-visible": {
-    outline: "2px solid var(--ring)",
-    outlineOffset: "1px",
-  },
-  ".cm-live-table": {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "0.875rem",
-  },
-  ".cm-live-th": {
-    border: "1px solid var(--border)",
-    backgroundColor: "var(--muted)",
-    padding: "0.5rem",
-    fontWeight: "600",
-    textAlign: "start",
-  },
-  ".cm-live-td": {
-    border: "1px solid var(--border)",
-    padding: "0.5rem",
-    textAlign: "start",
-  },
-  // An empty cell has no line box, so the row would collapse to its padding —
-  // an empty row reads as a thin sliver next to a filled one. An inline-block
-  // pseudo-element gives the cell a line box (at the inherited line-height)
-  // without adding content the user can select, edit, or delete.
-  ".cm-live-th:empty::before, .cm-live-td:empty::before": {
-    content: '""',
-    display: "inline-block",
-  },
-  // A cell being edited shows its markdown source; the tint says "this is
-  // source, not the rendered result" without moving the layout. The browser's
-  // default focus ring is dropped because the tint is the focus affordance.
-  ".cm-live-th:focus, .cm-live-td:focus": {
-    outline: "none",
-  },
-  ".cm-live-cell-editing": {
-    backgroundColor: "var(--accent)",
-    boxShadow: "inset 0 0 0 2px var(--ring)",
-    outline: "none",
-  },
+  // Tables: the table is a block widget, so its look is defined by the widget
+  // rules rather than by `.cm-line` classes — the source lines it replaces are
+  // not laid out at all. The rules live in `TABLE_THEME_RULES` above so
+  // `table/theme.test.ts` can read them; spreading them here keeps the document
+  // and the per-cell editors on one stylesheet.
+  ...TABLE_THEME_RULES,
 });
