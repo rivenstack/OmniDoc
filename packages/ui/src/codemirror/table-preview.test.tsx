@@ -272,6 +272,61 @@ describe("markdown mode tables", () => {
     }
   });
 
+  it("keeps a cell's uncommitted text when the caret moves to another cell", async () => {
+    vi.useFakeTimers();
+    try {
+      const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
+
+      focusCell(view, 1, 0);
+      typeInto(view, 1, 0, "typed");
+
+      // The model only catches up on a commit, so moving the caret inside the
+      // table must not fold the *committed* value back over what was typed —
+      // `@user` lost a cell's text to exactly this on 2026-10-16.
+      focusCell(view, 1, 1);
+      expect(cellText(view, 1, 0)).toBe("typed");
+
+      // And the commit that follows still writes it.
+      await act(async () => {
+        vi.advanceTimersByTime(TABLE_IDLE_FLUSH_MS + 10);
+      });
+      expect(view.state.doc.toString()).toBe(
+        "| a | b |\n| --- | --- |\n| typed | 2 |",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("renders a rebuilt table into one React root, with no duplicate tree", async () => {
+    // A write rebuilds the widget. CodeMirror may hand a *new* widget the *old*
+    // DOM element (`WidgetType.updateDOM`), and a second React root on a
+    // container that already has one throws
+    // "You are calling ReactDOMClient.createRoot() on a container that has
+    // already been passed to createRoot() before" and leaves two trees fighting
+    // over one element (`@user`, 2026-10-16).
+    const errors = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const { view } = mount("| a | b |\n| --- | --- |\n| 1 | 2 |");
+
+    focusCell(view, 1, 0);
+    typeInto(view, 1, 0, "typed");
+    await blurCell(view, 1, 0);
+    await settle();
+
+    expect(view.state.doc.toString()).toBe(
+      "| a | b |\n| --- | --- |\n| typed | 2 |",
+    );
+    // One widget, one tree: the write replaced its predecessor.
+    expect(dom(view).querySelectorAll(".cm-live-table-wrapper")).toHaveLength(1);
+    expect(dom(view).querySelectorAll("table.cm-live-table")).toHaveLength(1);
+    const roots = errors.mock.calls.filter((call) =>
+      String(call[0]).includes("createRoot"),
+    );
+    expect(roots).toEqual([]);
+  });
+
   it("applies the alignment the delimiter row spells", () => {
     const { view } = mount("| a | b |\n| :- | -: |\n| 1 | 2 |");
     expect(cellAt(view, 0, 0).style.textAlign).toBe("");

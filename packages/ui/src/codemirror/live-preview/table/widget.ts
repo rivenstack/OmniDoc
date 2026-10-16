@@ -130,12 +130,28 @@ export class TablePreviewWidget extends WidgetType {
   }
 
   destroy(): void {
-    this.root?.unmount();
-    this.root = null;
+    this.disposeRoot();
     this.store = null;
     this.view = null;
   }
 
+  /**
+   * One element, one root, one widget — so there is deliberately **no**
+   * `updateDOM`.
+   *
+   * CodeMirror calls `updateDOM` on a *new* widget with the *old* element
+   * whenever a block widget of the same class is replaced by one that is not
+   * `eq` — which is exactly what a write-back is. Inheriting that element looks
+   * attractive (the cell editors would survive), but the element already carries
+   * the previous widget's React root: a second `createRoot` on it throws
+   * "You are calling ReactDOMClient.createRoot() on a container that has already
+   * been passed to createRoot() before" and leaves two trees fighting over one
+   * element, and reusing the root instead would leave the grid's callbacks — and
+   * this widget's own `written` latch — pointing at the write that has already
+   * happened. Taking CodeMirror's default (`false`) makes it redraw through
+   * {@link toDOM}, so the rebuilt grid is built from the markdown the write just
+   * produced and the caret is put back by {@link restoreFocus} (plan §4.7).
+   */
   toDOM(view: EditorView): HTMLElement {
     const wrapper = document.createElement("div");
     wrapper.className = "cm-live-table-wrapper tableWrapper";
@@ -158,15 +174,19 @@ export class TablePreviewWidget extends WidgetType {
   }
 
   /**
-   * Reuse a host CodeMirror built for an equal table.
+   * Drop this widget's React tree, outside React's own work.
    *
-   * `eq` only returns true when nothing about the table changed, so this is a
-   * re-render rather than a data refresh — but it keeps the *same* React root, so
-   * the cell editors and their carets survive.
+   * A note's editor is torn down from a React lifecycle — a mode switch, a route
+   * change — so unmounting synchronously throws "Attempted to synchronously
+   * unmount a root while React was already rendering". A microtask runs once the
+   * current render has finished, which is soon enough for a tree whose DOM is
+   * already gone.
    */
-  updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    this.mount(dom, view);
-    return true;
+  private disposeRoot(): void {
+    const root = this.root;
+    this.root = null;
+    if (!root) return;
+    queueMicrotask(() => root.unmount());
   }
 
   /** Render (or re-render) the React grid for this widget's markdown. */
@@ -176,8 +196,7 @@ export class TablePreviewWidget extends WidgetType {
     if (!model) {
       // Not a table any more (a mid-transaction render): show the source rather
       // than an empty block, and drop the React tree.
-      this.root?.unmount();
-      this.root = null;
+      this.disposeRoot();
       this.store = null;
       host.textContent = this.markdown;
       return;
@@ -236,9 +255,13 @@ export class TablePreviewWidget extends WidgetType {
     focus?: TableCellRef & { offset?: number },
   ): void {
     const run = () => {
-      if (!this.view?.dom.isConnected) return;
-      this.view.dispatch({ changes });
-      if (focus) this.restoreFocus(focus);
+      // The view is captured **before** the dispatch: the write replaces this
+      // widget, so CodeMirror destroys it as part of the update — clearing
+      // `this.view` — and the caret would then have nowhere to go.
+      const view = this.view;
+      if (!view?.dom.isConnected) return;
+      view.dispatch({ changes });
+      if (focus) this.restoreFocus(focus, view);
     };
     if (this.view && viewIsIdle(this.view)) run();
     else setTimeout(run, 0);
@@ -251,8 +274,10 @@ export class TablePreviewWidget extends WidgetType {
    * in the **live** widget — found by the table's start offset, which the
    * replacement preserves.
    */
-  private restoreFocus(focus: TableCellRef & { offset?: number }): void {
-    const view = this.view;
+  private restoreFocus(
+    focus: TableCellRef & { offset?: number },
+    view: EditorView | null = this.view,
+  ): void {
     if (!view) return;
     const wrapper = view.dom.querySelector<HTMLElement>(
       `.cm-live-table-wrapper[data-table-from="${this.from}"]`,

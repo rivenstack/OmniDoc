@@ -276,14 +276,21 @@ function TableCell({
     // (`TablePreviewWidget.eq`).
   }, []);
 
-  // Model → editor, and only when the model object itself changed. A re-render
-  // from focus or hover hands the *same* object back, so nothing is overwritten.
+  // Model → editor, and only when the **model** changed.
+  //
+  // The dependency list is deliberately made of primitives: `cell` is a fresh
+  // object on every render, so depending on it re-runs this effect after *any*
+  // re-render — and the model lags the editor until a commit, so the effect would
+  // then fold the committed value back over what the user is typing. Moving the
+  // caret to another cell is enough to trigger it (`@user` lost a cell's text to
+  // exactly that on 2026-10-16).
+  const { row, col } = cell;
   React.useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    const text = cellText(model, cell);
+    const text = cellText(model, { row, col });
     if (editor.text() !== text) editor.setText(text);
-  }, [model, cell]);
+  }, [model, row, col]);
 
   const focused =
     active !== null && active.row === cell.row && active.col === cell.col;
