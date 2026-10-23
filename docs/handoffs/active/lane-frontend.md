@@ -379,27 +379,63 @@ is in effect. Note for C.1: `table/widget.ts`'s `restoreFocus` is the existing,
 now-tested caret-handoff path (`data-table-from` lookup), and C.2 is what finally
 passes `onLeave`/`onTab`/`onEnter` — A.2 exposes them, A.4 does not yet wire them.
 
-**2026-10-23 — Plan Task C.5 landed (working tree only, not committed).**
-B-6: a `Prec.high` `Backspace` binding in `table/scan.ts` fires only for an empty
-selection at offset 0 of the line after a rendered table; the first press calls
-`selectWholeTableRendered`, the grid marks the wrapper `data-table-selected`, and
-the second press deletes through the widget's existing `removeTable` path
-(block + preceding newline, caret in the outer editor). B-7: a capture-phase
-`keydown` on the grid resolves Backspace/Delete over a range (partial → `clearCells`
-+ focus in the anchor; whole-table → delete the table) and a printable character
-(clear the range, type into the anchor, one write — policy §11-3). `onHistory` is
-wired end to end: the grid folds its editors into the store, the widget commits,
-then `undo`/`redo` (`@codemirror/commands`) run on the **outer** view on a
-deferred task (policy §11-4). New suite:
-`table/selection-semantics.test.tsx` (12 tests, all `B-6`/`B-7`).
+**2026-10-23 — Table rebuild plan, Phase C complete.** Five tasks, one commit
+each, both per-task gates green before the next began (`npx vitest run` in
+`packages/ui`; `npx nx typecheck ui --skip-nx-cache` at the repo root);
+`npx nx lint ui --skip-nx-cache` green throughout. `@user` verified every visible
+step in the running dev server and reported three rounds of real defects, all
+fixed inside the task that owned them (recorded below, not re-decided).
 
-Gate evidence (C.5, uncommitted):
+| Commit    | What landed                                                                                                                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `8b154c5` | **C.1** — `table/selection.ts` (`redirectTableCaret`, pure), the deferred `TableCaretRedirector` in `scan.ts`, and one shared `focusTableRenderedCell` DOM lookup in `widget.ts`. 15 `TABLE-007` tests.                                         |
+| `03dbfd5` | **C.2** — `table/structure.ts` navigation half, the full §4.5 matrix wired through `grid.tsx`/`widget.ts` (`onLeaveTable`, leading/trailing line creation, the tail strip), the endpoint **direction rule**, in-cell arrow motion (`@codemirror/commands`), and the high-precedence `ArrowUp`/`ArrowDown`/`ArrowRight` keymap for entries from the adjacent lines. 24 tests. |
+| `192129a` | **C.3** — the `MENU-002` command layer in `structure.ts` (row/column add·delete·move·duplicate, alignment, sort, delete-table) with availability helpers and focus targets; `grid.runCommand` + widget `removeTable`. 45 tests.                    |
+| `0200577` | **C.4** — cell-range math in `selection.ts`, `range` in `TableStore`, the pointer drag machine + `data-range` cells + measured overlay, and the S5 tint (brand `--ring`). 32 tests.                                                              |
+| `1113924` | **C.5** — B-6 table-level Backspace (`Prec.high`), B-7 range clear/delete/typing (capture-phase, full row/column bands **delete the row/column**), and `onHistory` commit-then-forward with the caret restored into the cell. 14 tests.         |
 
-- `npx vitest run` (`packages/ui`) — **1042/1042 pass**, 57 files.
-- `npx nx typecheck ui --skip-nx-cache` — green.
-- `npx nx lint ui --skip-nx-cache` — green (6 pre-existing warnings, 0 errors).
+Defects `@user` reported and the fixes that closed them (2026-10-23):
 
-**Next task pointer: Plan Task D.1 — hover `+` add column (B-4, S3).**
+- Arrows could not leave the table, and the caret could not reach a line below a
+  last-block table → the `onLeaveTable` path plus the tail strip and
+  `ArrowDown`/`ArrowRight` at the document end.
+- Arrows could not **enter** the table: CodeMirror's vertical motion treats a
+  block widget as zero lines, so the redirect never saw a caret → direction at
+  the endpoints + a `Prec.high` keymap for the adjacent lines (a DOM handler was
+  too late; the default keymap still ran and landed on the last column).
+- Mid-cell arrows were unhandled and the **browser's** contenteditable motion
+  walked into the next cell's host → the cell keymap now always consumes arrows
+  and moves the caret itself.
+- A commit's rebuild could restore focus to the wrong cell (the idle flush
+  captured the typing cell) → resolved at fire time from the store's active cell.
+- The range appeared on a hover after a click (a swallowed `mouseup` left the
+  drag armed) and used the neutral `--accent` → button-state guard + `--ring`.
+- A whole row/column selection only cleared content → full bands delete the
+  rows/columns; `Ctrl+Z` moved the caret to line 1 → restored into the cell.
+
+Gate evidence, Phase C close:
+
+- `npx vitest run` (`packages/ui`) — **1044/1044 pass**, 57 files.
+- `npx nx typecheck ui --skip-nx-cache`, `npx nx lint ui --skip-nx-cache` — green
+  (6 pre-existing warnings, 0 errors).
+
+Deviations recorded (no plan re-open):
+
+- **B.2 stayed CSS-only** (Phase B): no `measure.ts`, no `<colgroup>`; the plan's
+  B.2 is read as a CSS `max-content` / `min-inline-size` contract.
+- **C.4's range overlay is measured, not a CSS grid area**: the `data-range`
+  cells are the structural contract and the overlay positions from their boxes;
+  jsdom reports zero boxes, so the suite asserts the attributes.
+- **C.5 deletes whole row/column bands** on Backspace/Delete (`@user`,
+  2026-10-23) — an extension of §4.4's "partial range clears", recorded as
+  `@user`-directed, not as a catalogue claim.
+- **The `@user` visual pass is still in progress, not claimed**: verified so far
+  are the look (B), navigation, entry/leave, range tint, row/column deletion and
+  undo; the grip/`+`/menu geometry and the wrap thresholds belong to Phase D.
+
+**Next task pointer: Plan Task D.1 — hover `+` add column (B-4, S3).** Then D.2
+(column drag), D.3 (context menu), E.1 (viewport-bounded scanner) and E.2
+(close-out + `@user` visual pass). No soft-stop is in effect.
 
 ## Objective
 
