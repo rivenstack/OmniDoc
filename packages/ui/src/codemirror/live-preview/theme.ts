@@ -168,6 +168,37 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
     blockSize: "0.75rem",
     cursor: "text",
   },
+  // S5: the drag-selected rectangle (`@user`, 2026-10-16; plan C.4).
+  //
+  // The block is drawn as **one** overlay so its corners are rounded once and
+  // no internal border runs between the selected cells. It is positioned from
+  // the cells' measured boxes (grid.tsx), so only the look lives here: a wash
+  // of the existing `--accent` role and an accent outline, both logical
+  // (`inset-inline-start` / `inline-size`), so a later RTL resolution only
+  // flips the direction — no physical offsets to undo. `pointer-events: none`
+  // is load-bearing: the overlay sits over the cells and must not intercept the
+  // drag that created it.
+  ".cm-live-table-range": {
+    position: "absolute",
+    pointerEvents: "none",
+    insetInlineStart: "0",
+    insetBlockStart: "0",
+    borderRadius: "0.25rem",
+    // `--accent` is a *neutral* surface role in this design system; the brand
+    // green is the ring role (S5's accent block, `@user` 2026-10-23: "use the
+    // brand color which is green").
+    backgroundColor: "color-mix(in srgb, var(--ring) 18%, transparent)",
+    outline: "2px solid var(--ring)",
+    outlineOffset: "-2px",
+    zIndex: "1",
+  },
+  // A per-cell tint under the overlay. The overlay carries the boundary; this
+  // carries the reading ("these cells are selected") in the cells themselves,
+  // including the header, and is the structural hook (`data-range="true"`) the
+  // suite asserts. Existing token role only: no new `tokens.css` entry.
+  '[data-range="true"]': {
+    backgroundColor: "color-mix(in srgb, var(--ring) 12%, transparent)",
+  },
 };
 
 /**

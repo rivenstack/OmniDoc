@@ -56,7 +56,13 @@
  */
 
 import { parseMarkdownTable } from "../../../markdown/table";
-import { decodeCell, type TableCellRef } from "./model";
+import {
+  bodyRowCount,
+  columnCount,
+  decodeCell,
+  type TableCellRef,
+  type TableModel,
+} from "./model";
 
 /** Which edge of the table the caret came from. */
 export type CaretTravelDirection = "down" | "up";
@@ -329,4 +335,204 @@ export function redirectTableCaret({
     col,
     offset: decodeCell(line.slice(span.from, sourceEnd)).length,
   };
+}
+
+// ===========================================================================
+// Cell-range selection (plan Task C.4, B-7, S5)
+// ===========================================================================
+//
+// S5 is a **rectangular block of cells** selected by dragging: the user starts
+// inside one cell (its text selection continues natively) and, once the pointer
+// leaves that cell, the table takes over and tints the rectangle from the
+// anchor to whatever cell the pointer is over. The anchor keeps its caret so
+// the user can still see where the drag began.
+//
+// Everything here is a pure function over the model and the two refs. The grid
+// owns the pointer state machine (which cell is under the pointer, whether the
+// pointer left the grid, when the button came up); this module owns the
+// *answer* — the rectangle, what it covers, and where an edge drag stops. That
+// split is what makes the geometry testable without a layout engine (jsdom has
+// none) and keeps S5's rules out of React event plumbing.
+//
+// A range is deliberately **not** a document selection: no CodeMirror state
+// changes, no cells are cleared (that is task C.5), and a commit rebuilds the
+// widget and drops it. It is a transient view selection, not note content.
+
+/** A rectangular selection: the cell the drag began in and the current one. */
+export type TableCellRange = {
+  readonly anchor: TableCellRef;
+  readonly focus: TableCellRef;
+};
+
+/** The rectangle spanned by a range, as inclusive row/column bounds. */
+export type TableCellRangeBounds = {
+  readonly rowFrom: number;
+  readonly rowTo: number;
+  readonly colFrom: number;
+  readonly colTo: number;
+};
+
+/** A side of the table a pointer can leave through. */
+export type TableRangeEdge = "left" | "right" | "top" | "bottom";
+
+/** Two refs address the same cell. `null`/`undefined` only equal each other. */
+export function sameCellRef(
+  left: TableCellRef | null | undefined,
+  right: TableCellRef | null | undefined,
+): boolean {
+  if (!left || !right) return !left && !right;
+  return left.row === right.row && left.col === right.col;
+}
+
+/** Two ranges address the same rectangle. */
+export function sameCellRange(
+  left: TableCellRange | null,
+  right: TableCellRange | null,
+): boolean {
+  if (!left || !right) return left === right;
+  return sameCellRef(left.anchor, right.anchor) && sameCellRef(left.focus, right.focus);
+}
+
+/**
+ * Clamp a ref into the model's rendered grid.
+ *
+ * The grid renders row `0` (the header) through `bodyRowCount`, and
+ * `0..columnCount - 1`. A pointer can name a cell that no longer exists (the
+ * model shrank under an in-flight drag), so every ref that reaches the store
+ * passes through here rather than trusting the DOM.
+ */
+export function clampCellRef(ref: TableCellRef, model: TableModel): TableCellRef {
+  const maxRow = bodyRowCount(model);
+  const maxCol = columnCount(model) - 1;
+  return {
+    row: Math.min(Math.max(ref.row, 0), maxRow),
+    col: Math.min(Math.max(ref.col, 0), maxCol),
+  };
+}
+
+/**
+ * The inclusive rectangle a range covers.
+ *
+ * The anchor and focus may be in any relative position (the drag can go up and
+ * left as easily as down and right), so the bounds are the min/max of the two
+ * on each axis. This is the one place that normalisation happens; the overlay,
+ * `rangeContains` and the C.5 consumers all read the rectangle from here.
+ */
+export function cellRangeBounds(range: TableCellRange): TableCellRangeBounds {
+  return {
+    rowFrom: Math.min(range.anchor.row, range.focus.row),
+    rowTo: Math.max(range.anchor.row, range.focus.row),
+    colFrom: Math.min(range.anchor.col, range.focus.col),
+    colTo: Math.max(range.anchor.col, range.focus.col),
+  };
+}
+
+/** Is `ref` inside the rectangle? */
+export function rangeContains(
+  bounds: TableCellRangeBounds,
+  ref: TableCellRef,
+): boolean {
+  return (
+    ref.row >= bounds.rowFrom &&
+    ref.row <= bounds.rowTo &&
+    ref.col >= bounds.colFrom &&
+    ref.col <= bounds.colTo
+  );
+}
+
+/**
+ * Does the rectangle cover **every rendered cell**?
+ *
+ * S5's whole-table selection is not a separate kind: a sweep that starts at the
+ * top-left and leaves through the bottom-right covers the grid, so the state
+ * stays a range and this predicate is how the rest of the table (C.5, the
+ * menu) recognises "the whole table". The rendered grid is the header row plus
+ * every body row, and every column; an empty body still has its header row.
+ */
+export function rangeCoversTable(
+  bounds: TableCellRangeBounds,
+  model: TableModel,
+): boolean {
+  return (
+    bounds.rowFrom <= 0 &&
+    bounds.rowTo >= bodyRowCount(model) &&
+    bounds.colFrom <= 0 &&
+    bounds.colTo >= columnCount(model) - 1
+  );
+}
+
+/**
+ * Move the focus to one edge of the table, keeping the other axis.
+ *
+ * Dragging past the grid's right edge means "through the last column", not
+ * "nowhere": the pointer is outside the rows, so the rectangle has to end at a
+ * cell the user can see. The anchor never moves (S5 keeps its caret), and the
+ * returned range is the same object when the focus is already on that edge, so
+ * repeated moves do not churn the store.
+ */
+export function extendRangeToEdge(
+  range: TableCellRange,
+  edge: TableRangeEdge,
+  model: TableModel,
+): TableCellRange {
+  const focus = clampCellRef(range.focus, model);
+  let next: TableCellRef;
+  if (edge === "left") next = { row: focus.row, col: 0 };
+  else if (edge === "right")
+    next = { row: focus.row, col: columnCount(model) - 1 };
+  else if (edge === "top") next = { row: 0, col: focus.col };
+  else next = { row: bodyRowCount(model), col: focus.col };
+
+  if (sameCellRef(next, range.focus)) return range;
+  return { anchor: range.anchor, focus: next };
+}
+
+/** Every cell in the rectangle, row-major — for tests and C.5 consumers. */
+export function rangeCells(
+  bounds: TableCellRangeBounds,
+): TableCellRef[] {
+  const cells: TableCellRef[] = [];
+  for (let row = bounds.rowFrom; row <= bounds.rowTo; row += 1) {
+    for (let col = bounds.colFrom; col <= bounds.colTo; col += 1) {
+      cells.push({ row, col });
+    }
+  }
+  return cells;
+}
+
+/** A viewport rectangle, in the shape `getBoundingClientRect` returns. */
+export type RangePointerRect = {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+};
+
+/** A pointer position, in viewport coordinates. */
+export type RangePointerPoint = {
+  readonly clientX: number;
+  readonly clientY: number;
+};
+
+/**
+ * Which grid edge a pointer is outside of, if any.
+ *
+ * This is the only geometry the drag needs: while the pointer is inside the
+ * grid its target names the hovered cell, and only outside the grid do
+ * coordinates have to decide. Right/left are checked before bottom/top so a
+ * pointer past a corner resolves consistently (the horizontal sweep wins, which
+ * is the axis a wide table grows along).
+ *
+ * jsdom reports a zero-sized rect, so a test can express "past the right edge"
+ * as any positive `clientX` without mocking layout.
+ */
+export function rangePointerEdge(
+  point: RangePointerPoint,
+  rect: RangePointerRect,
+): TableRangeEdge | null {
+  if (point.clientX > rect.right) return "right";
+  if (point.clientX < rect.left) return "left";
+  if (point.clientY > rect.bottom) return "bottom";
+  if (point.clientY < rect.top) return "top";
+  return null;
 }

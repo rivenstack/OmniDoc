@@ -51,6 +51,14 @@ import {
 } from "./model";
 import { cellKey, cellRef, type TableStore } from "./store";
 import {
+  cellRangeBounds,
+  clampCellRef,
+  extendRangeToEdge,
+  rangeContains,
+  rangePointerEdge,
+  sameCellRef,
+} from "./selection";
+import {
   navigateEnter,
   navigateHorizontal,
   navigateTab,
@@ -65,6 +73,25 @@ export type TableCommit = (
   model: TableModel,
   focus?: TableCellRef & { offset?: number },
 ) => void;
+
+/**
+ * The cell a DOM target sits in, through the grid's public `data-*` contract.
+ *
+ * Pointer events land on whatever is under the pointer — a `<th>`, its nested
+ * editor's content, a mark inside it — so the ref is read from the nearest
+ * cell host rather than from the event target itself. Returning `null` for a
+ * target outside the table (the grid padding, the tail strip, the document) is
+ * what lets the caller treat "outside" as an edge question rather than a cell.
+ */
+function cellFromTarget(target: EventTarget | null): TableCellRef | null {
+  if (!(target instanceof Element)) return null;
+  const host = target.closest<HTMLElement>("[data-cell]");
+  if (!host) return null;
+  const row = Number(host.dataset.row);
+  const col = Number(host.dataset.col);
+  if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
+  return { row, col };
+}
 
 /**
  * Run a structure command over the **collected** model (C.3).
@@ -114,12 +141,33 @@ export function TableGrid({
   onDeleteTable,
   onCommandHost,
 }: TableGridProps) {
-  const { model, active } = useSyncExternalStore(store.subscribe, store.get);
+  const { model, active, range } = useSyncExternalStore(
+    store.subscribe,
+    store.get,
+  );
   const editors = React.useRef(new Map<string, CellEditor>());
   const idleTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gridRef = React.useRef<HTMLDivElement | null>(null);
+  /**
+   * The live range drag (S5).
+   *
+   * `started` is the whole distinction between "dragging inside the cell"
+   * (native text selection, which must not be interrupted) and "dragging a
+   * cell rectangle". It flips only once the pointer has named a different cell
+   * or left the grid's edge, and never flips back — once the table has taken
+   * the selection, returning to the anchor means a one-cell rectangle, not a
+   * text selection again.
+   */
+  const rangeDrag = React.useRef<{
+    pointerId: number;
+    anchor: TableCellRef;
+    started: boolean;
+  } | null>(null);
+  const rangeOverlay = React.useRef<HTMLDivElement | null>(null);
 
   const columns = columnCount(model);
   const bodyRows = bodyRowCount(model);
+  const bounds = range ? cellRangeBounds(range) : null;
 
   const cancelIdleFlush = React.useCallback(() => {
     if (idleTimer.current !== null) {
@@ -196,6 +244,10 @@ export function TableGrid({
   /** Escape: write what is there, then hand the caret to the outer editor. */
   const escape = React.useCallback(() => {
     cancelIdleFlush();
+    // A range is a view selection; leaving the table drops it, like a click
+    // elsewhere would. The commit below rebuilds the widget anyway, but the
+    // store is cleared here so nothing can render it in between.
+    store.setRange(null);
     const next = collect();
     store.setModel(next);
     onCommit(next);
@@ -301,7 +353,16 @@ export function TableGrid({
         store.setActive(ref);
         scheduleIdleFlush();
       },
-      onEscape: escape,
+      onEscape: () => {
+        // S5's first Escape clears the rectangle and **stays** in the table; a
+        // second Escape is the existing "commit and leave" path. Leaving on the
+        // first press would make a mis-drag end the editing session.
+        if (store.get().range) {
+          store.setRange(null);
+          return;
+        }
+        escape();
+      },
       onTab: (backwards) =>
         navigate((model) => navigateTab(model, ref, backwards)),
       onEnter: () => navigate((model) => navigateEnter(model, ref)),
@@ -315,6 +376,159 @@ export function TableGrid({
     [escape, navigate, scheduleIdleFlush, store],
   );
 
+  /**
+   * `mousedown` inside a cell: remember the anchor, then **get out of the way**.
+   *
+   * The native path must keep running — a click has to place the caret and a
+   * drag inside one cell has to select its text (B-7). So this handler neither
+   * prevents the default nor captures the pointer; it only records the cell and
+   * the button. Capturing here is exactly the bug the plan warns about: the
+   * next click would be delivered to the invisible capture target instead of
+   * the cell the user aimed at.
+   *
+   * A new press also drops any previous rectangle — clicking a cell is how a
+   * selection is normally dismissed.
+   */
+  const beginRangeDrag = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!editable || event.button !== 0) return;
+    const anchor = cellFromTarget(event.target);
+    if (!anchor) return;
+    if (store.get().range) store.setRange(null);
+    rangeDrag.current = {
+      // React's synthetic event keeps the native one; a `MouseEvent` in jsdom
+      // has no `pointerId`, so the fallback is the primary button's `0`.
+      pointerId: (event.nativeEvent as PointerEvent).pointerId ?? 0,
+      anchor: clampCellRef(anchor, store.get().model),
+      started: false,
+    };
+  };
+
+  /**
+   * The drag state machine, driven from the **document**.
+   *
+   * Pointer moves leave the grid constantly — past its right edge, over the
+   * note below it, out of the window — and the events stop targeting the grid
+   * the moment they do. Listening on the document while a drag is live is what
+   * lets the rectangle follow the pointer and lets an edge sweep clamp to the
+   * last/first row or column (`extendRangeToEdge`). `mouseup` on the document
+   * ends the drag even when the button was released outside the table; the
+   * range itself stays (S5), and only a later press or Escape clears it.
+   *
+   * The listener is installed once per editable grid, not per drag: attaching
+   * it from `mousedown` would race the very `mousemove` that starts the
+   * selection, and the ref makes the "is a drag live?" test cheap.
+   */
+  React.useEffect(() => {
+    if (!editable) return;
+
+    const onMove = (event: MouseEvent) => {
+      const drag = rangeDrag.current;
+      if (!drag) return;
+      // The release can be swallowed by the widget's event isolation (it stops
+      // `mouseup` from reaching the document), so the button state is the
+      // authority: a hover with no button down is never a range drag. Without
+      // this, a plain click left the drag armed and the next idle mouse move
+      // painted a selection (`@user`, 2026-10-23).
+      if ((event.buttons & 1) === 0) {
+        rangeDrag.current = null;
+        return;
+      }
+      const live = store.get();
+      const hovered = cellFromTarget(event.target);
+      const rect = gridRef.current?.getBoundingClientRect();
+      const edge = rect ? rangePointerEdge(event, rect) : null;
+
+      // Still inside the anchor cell and over no edge: leave the native text
+      // selection alone. This is B-7's first half, and the reason a plain click
+      // (or a small drag) never produces a table rectangle.
+      if (
+        !drag.started &&
+        (!hovered || sameCellRef(hovered, drag.anchor)) &&
+        !edge
+      ) {
+        return;
+      }
+
+      let focus: TableCellRef | null = null;
+      if (hovered && !sameCellRef(hovered, drag.anchor)) {
+        // The pointer named a real cell: that cell is the corner, regardless
+        // of whether the pointer is also (numerically) past an edge.
+        focus = clampCellRef(hovered, live.model);
+      } else if (edge) {
+        // Outside the grid: keep the axis the pointer already reached and push
+        // the other one to the edge, so a diagonal sweep ends in the corner.
+        focus = extendRangeToEdge(
+          { anchor: drag.anchor, focus: live.range?.focus ?? drag.anchor },
+          edge,
+          live.model,
+        ).focus;
+      } else if (live.range) {
+        focus = live.range.focus;
+      }
+
+      if (!focus) return;
+      drag.started = true;
+      store.setRange({ anchor: drag.anchor, focus: clampCellRef(focus, live.model) });
+    };
+
+    const onUp = () => {
+      // Ends the drag, not the selection: S5's block stays tinted until Escape
+      // or a new press. Clearing `rangeDrag` is enough — the next move is idle.
+      rangeDrag.current = null;
+    };
+
+    // Capture phase: the widget stops `mouseup`/`mousemove` from bubbling to
+    // the document (event isolation), and a release inside the table must still
+    // end the drag.
+    document.addEventListener("mousemove", onMove, true);
+    document.addEventListener("mouseup", onUp, true);
+    return () => {
+      document.removeEventListener("mousemove", onMove, true);
+      document.removeEventListener("mouseup", onUp, true);
+      rangeDrag.current = null;
+    };
+  }, [editable, store]);
+
+  /**
+   * Measure the rectangle for the S5 overlay.
+   *
+   * The browser has already laid the cells out, so the overlay is positioned
+   * from the **selected cells' own boxes** relative to the grid (its
+   * positioning context) rather than from a row/column arithmetic that would
+   * have to guess at borders. Logical properties are set directly: they are
+   * what an RTL resolution would need, and there is no physical
+   * `left`/`top` reset to fight. In jsdom every box is zero, which yields a
+   * zero-sized overlay — harmless, and the `data-range-*` attributes carry the
+   * contract the tests assert.
+   */
+  React.useLayoutEffect(() => {
+    const overlay = rangeOverlay.current;
+    const grid = gridRef.current;
+    if (!overlay || !grid) return;
+
+    const selected = grid.querySelectorAll<HTMLElement>('[data-range="true"]');
+    if (selected.length === 0) return;
+
+    const base = grid.getBoundingClientRect();
+    let left = Number.POSITIVE_INFINITY;
+    let top = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    let bottom = Number.NEGATIVE_INFINITY;
+    selected.forEach((cell) => {
+      const box = cell.getBoundingClientRect();
+      left = Math.min(left, box.left);
+      top = Math.min(top, box.top);
+      right = Math.max(right, box.right);
+      bottom = Math.max(bottom, box.bottom);
+    });
+    if (!Number.isFinite(left) || !Number.isFinite(top)) return;
+
+    overlay.style.setProperty("inset-inline-start", `${left - base.left}px`);
+    overlay.style.setProperty("inset-block-start", `${top - base.top}px`);
+    overlay.style.setProperty("inline-size", `${right - left}px`);
+    overlay.style.setProperty("block-size", `${bottom - top}px`);
+  }, [range, model]);
+
   const headerCells: React.ReactNode[] = [];
   for (let col = 0; col < columns; col += 1) {
     headerCells.push(
@@ -325,6 +539,7 @@ export function TableGrid({
         tag="th"
         editable={editable}
         active={active}
+        inRange={bounds !== null && rangeContains(bounds, { row: 0, col })}
         handlers={handlersFor}
         register={register}
         onFocus={store.setActive}
@@ -344,6 +559,10 @@ export function TableGrid({
           tag="td"
           editable={editable}
           active={active}
+          inRange={
+            bounds !== null &&
+            rangeContains(bounds, { row: index + 1, col })
+          }
           handlers={handlersFor}
           register={register}
           onFocus={store.setActive}
@@ -354,13 +573,41 @@ export function TableGrid({
   }
 
   return (
-    <div className="cm-live-table-grid" onBlur={handleBlur}>
+    <div
+      ref={gridRef}
+      className="cm-live-table-grid"
+      onBlur={handleBlur}
+      onMouseDown={beginRangeDrag}
+    >
       <table className="cm-live-table">
         <thead>
           <tr>{headerCells}</tr>
         </thead>
         <tbody>{bodyRowNodes}</tbody>
       </table>
+      {/*
+        The S5 tint, drawn as **one** element over the rectangle rather than a
+        border per cell: a per-cell outline would draw internal lines through
+        the block, and the captured look is a single rounded wash. It is
+        measured in a layout effect from the selected cells' boxes, so the
+        browser's own table layout decides the geometry (no widths are
+        computed here). jsdom has no layout, so the boxes are zero: the
+        `data-range-rows`/`data-range-cols` attributes are the contract a test
+        can assert, and they are present either way.
+
+        `pointer-events: none` keeps the overlay from swallowing the drag that
+        created it; `aria-hidden` because the cells already carry the meaning
+        and a range selection has no text to announce.
+      */}
+      {bounds ? (
+        <div
+          ref={rangeOverlay}
+          className="cm-live-table-range"
+          data-range-rows={`${bounds.rowFrom}-${bounds.rowTo}`}
+          data-range-cols={`${bounds.colFrom}-${bounds.colTo}`}
+          aria-hidden="true"
+        />
+      ) : null}
       {/*
         A clickable strip under the table (plan C.2, `@user` 2026-10-23: "I can
         not click after the table").
@@ -390,6 +637,8 @@ type TableCellProps = {
   readonly tag: "th" | "td";
   readonly editable: boolean;
   readonly active: TableCellRef | null;
+  /** Inside the current cell-range rectangle (S5). */
+  readonly inRange: boolean;
   readonly handlers: (ref: TableCellRef) => CellEditorHandlers;
   readonly register: (ref: TableCellRef, editor: CellEditor | null) => void;
   readonly onFocus: (ref: TableCellRef) => void;
@@ -408,6 +657,7 @@ function TableCell({
   tag,
   editable,
   active,
+  inRange,
   handlers,
   register,
   onFocus,
@@ -466,6 +716,7 @@ function TableCell({
       data-col={cell.col}
       data-cell={cellKey(cell)}
       data-active={focused ? "true" : undefined}
+      data-range={inRange ? "true" : undefined}
       // The delimiter row's alignment is a column property; `left` is the
       // default, and the old markup left the style off for it.
       style={alignment === "left" ? undefined : { textAlign: alignment }}

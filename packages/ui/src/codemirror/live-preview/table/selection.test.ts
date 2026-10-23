@@ -14,14 +14,32 @@
 // source is still hidden, the widget is still rendered, and no decoration
 // changed. A redirection that unfolded the table would pass a "focus moved"
 // assertion and fail the product requirement.
+//
+// The file also holds the **pure** half of C.4 (cell-range selection, image S5):
+// bounds, containment, whole-table coverage, edge extension and the pointer
+// edge test the grid's drag wires together. `@user` directed the behaviour on
+// 2026-10-16 (B-7/S5); it is not a parity claim.
 
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { EditorView } from "@codemirror/view";
 import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type EditorHarness } from "../../parity/harness";
+import type { TableModel } from "./model";
 import { tableLivePreview } from "./scan";
-import { redirectTableCaret, tableCaretRegion } from "./selection";
+import {
+  cellRangeBounds,
+  extendRangeToEdge,
+  rangeCells,
+  rangeContains,
+  rangeCoversTable,
+  rangePointerEdge,
+  redirectTableCaret,
+  sameCellRange,
+  sameCellRef,
+  tableCaretRegion,
+  type TableCellRange,
+} from "./selection";
 
 const LANGUAGE = markdown({ base: markdownLanguage });
 
@@ -515,5 +533,203 @@ describe("the observer redirects the caret into a cell (OBS-1.14.4-TABLE-007)", 
       vi.advanceTimersByTime(0);
     });
     expect(document.activeElement).toBe(cellContent(view, 0, 0));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C.4 — cell-range selection (B-7, S5; `@user`, 2026-10-16)
+// ---------------------------------------------------------------------------
+
+/** Two columns, two body rows (rows `0..2`, columns `0..1`). */
+const RANGE_MODEL: TableModel = {
+  headers: ["h0", "h1"],
+  alignments: ["left", "left"],
+  rows: [
+    ["a0", "a1"],
+    ["b0", "b1"],
+  ],
+};
+
+/** One column, no body rows — the smallest rendered grid. */
+const SINGLE_COLUMN_MODEL: TableModel = {
+  headers: ["only"],
+  alignments: ["left"],
+  rows: [],
+};
+
+function ref(row: number, col: number) {
+  return { row, col };
+}
+
+function range(anchor: { row: number; col: number }, focus: { row: number; col: number }): TableCellRange {
+  return { anchor, focus };
+}
+
+describe("the range rectangle is the min/max of anchor and focus (B-7)", () => {
+  it("B-7: normalises an anchor above the focus", () => {
+    expect(cellRangeBounds(range(ref(0, 1), ref(2, 0)))).toEqual({
+      rowFrom: 0,
+      rowTo: 2,
+      colFrom: 0,
+      colTo: 1,
+    });
+  });
+
+  it("B-7: normalises an anchor below the focus", () => {
+    expect(cellRangeBounds(range(ref(2, 1), ref(1, 0)))).toEqual({
+      rowFrom: 1,
+      rowTo: 2,
+      colFrom: 0,
+      colTo: 1,
+    });
+  });
+
+  it("B-7: normalises an anchor left of the focus", () => {
+    expect(cellRangeBounds(range(ref(1, 0), ref(2, 1)))).toEqual({
+      rowFrom: 1,
+      rowTo: 2,
+      colFrom: 0,
+      colTo: 1,
+    });
+  });
+
+  it("B-7: normalises an anchor right of the focus", () => {
+    expect(cellRangeBounds(range(ref(1, 1), ref(2, 0)))).toEqual({
+      rowFrom: 1,
+      rowTo: 2,
+      colFrom: 0,
+      colTo: 1,
+    });
+  });
+
+  it("B-7: a single-cell range is its own bounds", () => {
+    expect(cellRangeBounds(range(ref(1, 1), ref(1, 1)))).toEqual({
+      rowFrom: 1,
+      rowTo: 1,
+      colFrom: 1,
+      colTo: 1,
+    });
+  });
+});
+
+describe("range containment and the whole-table state (B-7, S5)", () => {
+  it("B-7: contains every cell inside the rectangle and no cell outside it", () => {
+    const bounds = cellRangeBounds(range(ref(1, 1), ref(2, 0)));
+
+    expect(rangeContains(bounds, ref(1, 0))).toBe(true);
+    expect(rangeContains(bounds, ref(2, 1))).toBe(true);
+    expect(rangeContains(bounds, ref(0, 0))).toBe(false);
+    expect(rangeContains(bounds, ref(1, 2))).toBe(false);
+  });
+
+  it("B-7: only the full rectangle covers a 2x2-body table", () => {
+    expect(
+      rangeCoversTable(cellRangeBounds(range(ref(0, 0), ref(2, 1))), RANGE_MODEL),
+    ).toBe(true);
+    // One short on the body rows.
+    expect(
+      rangeCoversTable(cellRangeBounds(range(ref(0, 0), ref(1, 1))), RANGE_MODEL),
+    ).toBe(false);
+    // One short on the columns.
+    expect(
+      rangeCoversTable(cellRangeBounds(range(ref(0, 0), ref(2, 0))), RANGE_MODEL),
+    ).toBe(false);
+  });
+
+  it("B-7: a one-column, zero-body-row table is covered by its header cell", () => {
+    expect(
+      rangeCoversTable(
+        cellRangeBounds(range(ref(0, 0), ref(0, 0))),
+        SINGLE_COLUMN_MODEL,
+      ),
+    ).toBe(true);
+    // A model with no columns cannot happen (one is guaranteed), but the
+    // predicate must not claim coverage of a wider table either.
+    expect(
+      rangeCoversTable(
+        cellRangeBounds(range(ref(0, 0), ref(0, 0))),
+        RANGE_MODEL,
+      ),
+    ).toBe(false);
+  });
+
+  it("B-7: lists every cell of the rectangle, row-major", () => {
+    expect(
+      rangeCells({ rowFrom: 1, rowTo: 2, colFrom: 0, colTo: 1 }),
+    ).toEqual([ref(1, 0), ref(1, 1), ref(2, 0), ref(2, 1)]);
+    expect(rangeCells({ rowFrom: 0, rowTo: 0, colFrom: 0, colTo: 0 })).toEqual([
+      ref(0, 0),
+    ]);
+  });
+});
+
+describe("dragging past an edge clamps the focus to that edge (B-7)", () => {
+  it("B-7: right reaches the last column", () => {
+    expect(
+      extendRangeToEdge(range(ref(1, 0), ref(1, 0)), "right", RANGE_MODEL),
+    ).toEqual(range(ref(1, 0), ref(1, 1)));
+  });
+
+  it("B-7: left reaches the first column", () => {
+    expect(
+      extendRangeToEdge(range(ref(1, 1), ref(1, 1)), "left", RANGE_MODEL),
+    ).toEqual(range(ref(1, 1), ref(1, 0)));
+  });
+
+  it("B-7: bottom reaches the last body row", () => {
+    expect(
+      extendRangeToEdge(range(ref(0, 1), ref(0, 1)), "bottom", RANGE_MODEL),
+    ).toEqual(range(ref(0, 1), ref(2, 1)));
+  });
+
+  it("B-7: top reaches the header row", () => {
+    expect(
+      extendRangeToEdge(range(ref(2, 1), ref(2, 1)), "top", RANGE_MODEL),
+    ).toEqual(range(ref(2, 1), ref(0, 1)));
+  });
+
+  it("B-7: clamps a stale focus before moving it to the edge", () => {
+    // The model shrank under a drag: the focus is outside it, and the edge
+    // move must use the clamped row/column rather than the stale one.
+    expect(
+      extendRangeToEdge(range(ref(0, 0), ref(99, 99)), "top", RANGE_MODEL),
+    ).toEqual(range(ref(0, 0), ref(0, 1)));
+    expect(
+      extendRangeToEdge(range(ref(1, 0), ref(99, 99)), "right", RANGE_MODEL),
+    ).toEqual(range(ref(1, 0), ref(2, 1)));
+  });
+
+  it("B-7: keeps the same range object when the focus is already on the edge", () => {
+    const existing = range(ref(0, 0), ref(2, 1));
+    expect(extendRangeToEdge(existing, "right", RANGE_MODEL)).toBe(existing);
+    expect(extendRangeToEdge(existing, "bottom", RANGE_MODEL)).toBe(existing);
+  });
+});
+
+describe("range equality and the pointer edge test (B-7)", () => {
+  it("B-7: compares refs and ranges by value", () => {
+    expect(sameCellRef(ref(1, 1), ref(1, 1))).toBe(true);
+    expect(sameCellRef(ref(1, 1), ref(1, 2))).toBe(false);
+    expect(sameCellRef(null, undefined)).toBe(true);
+    expect(sameCellRef(null, ref(0, 0))).toBe(false);
+
+    expect(sameCellRange(range(ref(0, 0), ref(1, 1)), range(ref(0, 0), ref(1, 1)))).toBe(
+      true,
+    );
+    expect(sameCellRange(range(ref(0, 0), ref(1, 1)), range(ref(0, 0), ref(1, 0)))).toBe(
+      false,
+    );
+    expect(sameCellRange(null, null)).toBe(true);
+    expect(sameCellRange(null, range(ref(0, 0), ref(0, 0)))).toBe(false);
+  });
+
+  it("B-7: resolves which grid edge a pointer is past", () => {
+    const rect = { left: 10, right: 110, top: 20, bottom: 80 };
+
+    expect(rangePointerEdge({ clientX: 200, clientY: 40 }, rect)).toBe("right");
+    expect(rangePointerEdge({ clientX: 0, clientY: 40 }, rect)).toBe("left");
+    expect(rangePointerEdge({ clientX: 50, clientY: 200 }, rect)).toBe("bottom");
+    expect(rangePointerEdge({ clientX: 50, clientY: 0 }, rect)).toBe("top");
+    expect(rangePointerEdge({ clientX: 50, clientY: 40 }, rect)).toBeNull();
   });
 });
