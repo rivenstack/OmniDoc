@@ -37,7 +37,11 @@ import {
   parseMarkdownTable,
   splitTableRow,
 } from "../../../markdown/table";
-import { TablePreviewWidget } from "./widget";
+import { TablePreviewWidget, focusTableRenderedCell } from "./widget";
+import {
+  redirectTableCaret,
+  type CaretTravelDirection,
+} from "./selection";
 
 /**
  * The fence character of a code fence line, or `null`.
@@ -188,6 +192,135 @@ const tableDecorations = StateField.define<DecorationSet>({
 });
 
 /**
+ * The rendered table block that covers `pos`, if any.
+ *
+ * Read from the decoration field rather than from `findTableBlocks`: a block
+ * that is deliberately *not* rendered (the half-typed delimiter row, a block
+ * that no longer parses) must not redirect the caret, because there is no grid
+ * to redirect into. Reading the field is also what guarantees the observer and
+ * the widget agree about which tables are on screen.
+ */
+function renderedTableAt(
+  state: EditorState,
+  pos: number,
+): { from: number; to: number } | null {
+  const decorations = state.field(tableDecorations, false);
+  if (!decorations) return null;
+
+  for (let iter = decorations.iter(); iter.value; iter.next()) {
+    if (!(iter.value.spec.widget instanceof TablePreviewWidget)) continue;
+    if (pos >= iter.from && pos <= iter.to) {
+      return { from: iter.from, to: iter.to };
+    }
+  }
+  return null;
+}
+
+/**
+ * RTL readiness for the redirect's fallback column.
+ *
+ * The locale resolution is not built yet (plan §4.8: `en`/LTR is the only
+ * shipping locale), so this reads the direction the DOM already carries — a
+ * computed `direction: rtl` or a `dir="rtl"` ancestor — instead of inventing a
+ * second locale authority. When the locale layer lands, it sets `dir` and this
+ * becomes correct without a change.
+ */
+function isRtlContext(view: EditorView): boolean {
+  if (typeof getComputedStyle === "function") {
+    if (getComputedStyle(view.dom).direction === "rtl") return true;
+  }
+  return view.dom.closest('[dir="rtl"]') !== null;
+}
+
+/**
+ * `TABLE-007`: a caret that landed in a rendered table's hidden range goes into
+ * a cell instead of unfolding the source.
+ *
+ * ## Why the work is deferred
+ *
+ * Focusing a cell means focusing a **nested** `EditorView`, which dispatches a
+ * selection transaction. Doing that from `update()` would throw
+ * "Calls to EditorView.update are not allowed while an update is in progress" —
+ * the same rule the widget's write-back follows (`widget.ts`). So the observer
+ * only records the intent here and hands it to a `setTimeout(0)` task; the timer
+ * re-checks the caret because the document may have changed in between, and it
+ * never dispatches anything itself (the nested editor's focus call does).
+ *
+ * The observer also requires the outer view to have focus: a programmatic
+ * selection change from somewhere else (opening a note, restoring a draft) must
+ * not steal the caret into a table cell. The direction is read from the
+ * transaction's own start state, so no extra bookkeeping is needed.
+ */
+class TableCaretRedirector {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private pending: {
+    from: number;
+    to: number;
+    head: number;
+    direction: CaretTravelDirection;
+  } | null = null;
+  private alive = true;
+
+  constructor(private readonly view: EditorView) {}
+
+  update(update: ViewUpdate) {
+    if (!update.selectionSet) return;
+    const selection = update.state.selection.main;
+    if (!selection.empty) return;
+    if (!update.view.hasFocus) return;
+
+    const block = renderedTableAt(update.state, selection.head);
+    if (!block) return;
+
+    // A caret that moved backwards came from below; anything else (a click, a
+    // fresh selection) is treated as entering from above.
+    const direction: CaretTravelDirection =
+      selection.head < update.startState.selection.main.head ? "up" : "down";
+    this.pending = { ...block, head: selection.head, direction };
+    this.schedule();
+  }
+
+  destroy() {
+    this.alive = false;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.pending = null;
+  }
+
+  private schedule() {
+    if (this.timer !== null) return;
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      this.run();
+    }, 0);
+  }
+
+  /** Focus the cell the deferred caret resolved to — outside any CM update. */
+  private run() {
+    const pending = this.pending;
+    this.pending = null;
+    if (!this.alive || !pending) return;
+
+    const view = this.view;
+    const selection = view.state.selection.main;
+    // The caret moved again, or a rebuild happened, while the task waited: the
+    // intent is stale and must not yank focus out of wherever it is now.
+    if (!selection.empty || selection.head !== pending.head) return;
+
+    const target = redirectTableCaret({
+      source: view.state.doc.sliceString(pending.from, pending.to),
+      from: pending.from,
+      caret: pending.head,
+      direction: pending.direction,
+      rtl: isRtlContext(view),
+    });
+    if (!target) return;
+
+    focusTableRenderedCell(view, pending.from, target, target.offset);
+  }
+}
+
+/**
  * Completes a delimiter row the user has stopped typing.
  *
  * A row that is still narrower than its header blocks rendering (see
@@ -239,4 +372,5 @@ class TableRowFinisher {
 export const tableLivePreview: Extension = [
   tableDecorations,
   ViewPlugin.fromClass(TableRowFinisher),
+  ViewPlugin.fromClass(TableCaretRedirector),
 ];

@@ -279,15 +279,39 @@ export class TablePreviewWidget extends WidgetType {
     view: EditorView | null = this.view,
   ): void {
     if (!view) return;
-    const wrapper = view.dom.querySelector<HTMLElement>(
-      `.cm-live-table-wrapper[data-table-from="${this.from}"]`,
-    );
-    const cell = wrapper?.querySelector<HTMLElement>(
-      `[data-row="${focus.row}"][data-col="${focus.col}"]`,
-    );
-    if (!cell) return;
-    cellEditorFor(cell)?.focus(focus.offset);
+    focusTableRenderedCell(view, this.from, focus, focus.offset);
   }
+}
+
+/**
+ * Focus a cell inside an already-rendered table.
+ *
+ * The widget's DOM is the only link between the document and the nested editors
+ * (`cellEditorFor` is keyed by host element), so both the post-write caret
+ * restore and the `TABLE-007` redirector (`scan.ts`) go through this one lookup.
+ * It returns `false` when the table or the cell is not rendered — a redirect
+ * that races a rebuild must not create a cell or unfold anything.
+ *
+ * This is a *focus* call, so callers must be outside a CodeMirror update: the
+ * nested editor dispatches its selection, which would otherwise throw
+ * "Calls to EditorView.update are not allowed while an update is in progress".
+ */
+export function focusTableRenderedCell(
+  view: EditorView,
+  tableFrom: number,
+  cell: TableCellRef,
+  offset?: number,
+): boolean {
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${tableFrom}"]`,
+  );
+  const host = wrapper?.querySelector<HTMLElement>(
+    `[data-row="${cell.row}"][data-col="${cell.col}"]`,
+  );
+  const editor = host ? cellEditorFor(host) : undefined;
+  if (!editor) return false;
+  editor.focus(offset);
+  return true;
 }
 
 function stopPropagation(event: Event): void {
