@@ -10,7 +10,7 @@ human_owner: front-end-programmer
 from: commander
 to: implementer
 created: 2026-10-13
-updated: 2026-10-16
+updated: 2026-10-23
 branch: F15-obsidian-fidelity-editor
 ---
 
@@ -378,6 +378,28 @@ Open item recorded (not fixed — outside Phase B's file list):
 is in effect. Note for C.1: `table/widget.ts`'s `restoreFocus` is the existing,
 now-tested caret-handoff path (`data-table-from` lookup), and C.2 is what finally
 passes `onLeave`/`onTab`/`onEnter` — A.2 exposes them, A.4 does not yet wire them.
+
+**2026-10-23 — Plan Task C.5 landed (working tree only, not committed).**
+B-6: a `Prec.high` `Backspace` binding in `table/scan.ts` fires only for an empty
+selection at offset 0 of the line after a rendered table; the first press calls
+`selectWholeTableRendered`, the grid marks the wrapper `data-table-selected`, and
+the second press deletes through the widget's existing `removeTable` path
+(block + preceding newline, caret in the outer editor). B-7: a capture-phase
+`keydown` on the grid resolves Backspace/Delete over a range (partial → `clearCells`
++ focus in the anchor; whole-table → delete the table) and a printable character
+(clear the range, type into the anchor, one write — policy §11-3). `onHistory` is
+wired end to end: the grid folds its editors into the store, the widget commits,
+then `undo`/`redo` (`@codemirror/commands`) run on the **outer** view on a
+deferred task (policy §11-4). New suite:
+`table/selection-semantics.test.tsx` (12 tests, all `B-6`/`B-7`).
+
+Gate evidence (C.5, uncommitted):
+
+- `npx vitest run` (`packages/ui`) — **1042/1042 pass**, 57 files.
+- `npx nx typecheck ui --skip-nx-cache` — green.
+- `npx nx lint ui --skip-nx-cache` — green (6 pre-existing warnings, 0 errors).
+
+**Next task pointer: Plan Task D.1 — hover `+` add column (B-4, S3).**
 
 ## Objective
 

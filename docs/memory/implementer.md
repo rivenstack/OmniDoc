@@ -798,3 +798,14 @@
   committed. When the user reports a failure on a port they chose, check
   `ps -eo pid,cmd | grep next` before assuming your instance is the one they
   are looking at.
+- **2026-10-23 (F-15 C.5): two jsdom quirks in the table suites.**
+  (1) CodeMirror's layout measurement runs on `requestAnimationFrame`, and a
+  frame still queued when a jsdom environment is torn down throws
+  `textRange(...).getClientRects is not a function`. A suite that dispatches a
+  deferred outer write (the cell-history forward) can leave one; a small
+  `Range.prototype.getClientRects = () => []` shim in the test file documents
+  and neutralises it (`selection-semantics.test.tsx`).
+  (2) `keyEvent("Mod-Shift-z")` from the parity harness reports `key: "z"` and
+  `keyCode: 0`, so CodeMirror matches the plain `Mod-z` binding first (undo
+  instead of redo). Real browsers report the shifted character plus a physical
+  `keyCode`; define both on the event to test redo faithfully.

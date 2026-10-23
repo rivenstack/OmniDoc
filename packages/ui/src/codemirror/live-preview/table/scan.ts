@@ -41,8 +41,10 @@ import {
 } from "../../../markdown/table";
 import {
   TablePreviewWidget,
+  deleteTableRendered,
   focusTableRenderedCell,
   leaveTableRenderedAfter,
+  selectWholeTableRendered,
 } from "./widget";
 import {
   redirectTableCaret,
@@ -467,8 +469,56 @@ const tableAdjacentKeys: Extension = Prec.high(
       key: "ArrowRight",
       run: (view) => leaveTableAtEnd(view),
     },
+    {
+      // B-6. The bare key has no modifiers, so a `Shift-Backspace` or a
+      // `Mod-Backspace` never reaches this binding (CodeMirror matches the
+      // modifier set exactly) and keeps its native meaning.
+      key: "Backspace",
+      run: (view) => tableBackspaceAfterTable(view),
+    },
   ]),
 );
+
+/**
+ * B-6: Backspace at the start of the line immediately after a rendered table.
+ *
+ * Two presses, one binding:
+ *
+ * 1. the table has no whole-table range yet → **select** every cell (a view
+ *    selection; the document is not touched, so there is nothing to write);
+ * 2. the grid has marked the wrapper `data-table-selected` → **delete** the
+ *    table through the widget's own removal path (block + preceding newline,
+ *    caret in the outer editor).
+ *
+ * Any other Backspace returns `false` so CodeMirror's default applies: the
+ * binding is a narrow answer to one position, not an override of the key. That
+ * includes a non-empty selection, a caret anywhere but offset 0 of that line,
+ * and the line above the table.
+ */
+function tableBackspaceAfterTable(view: EditorView): boolean {
+  const state = view.state;
+  // A locked note renders the table but has nothing to select or delete.
+  if (state.readOnly || !state.facet(EditorView.editable)) return false;
+
+  const selection = state.selection.main;
+  if (!selection.empty) return false;
+
+  const line = state.doc.lineAt(selection.head);
+  if (selection.head !== line.from) return false;
+
+  const block = renderedTableAbove(state, line);
+  if (!block) return false;
+
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${block.from}"]`,
+  );
+  if (!wrapper) return false;
+
+  if (wrapper.dataset.tableSelected === "true") {
+    return deleteTableRendered(view, block.from);
+  }
+  return selectWholeTableRendered(view, block.from);
+}
 
 /** `ArrowDown` / `ArrowRight` when the caret already sits at the document end. */
 function leaveTableAtEnd(view: EditorView): boolean {

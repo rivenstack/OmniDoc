@@ -40,16 +40,19 @@
  */
 
 import { EditorView, WidgetType } from "@codemirror/view";
+import { redo, undo } from "@codemirror/commands";
 import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { cellEditorFor } from "./editor";
+import { cellEditorFor, type CellHistoryKind } from "./editor";
 import {
   TableGrid,
   type TableCommandRun,
   type TableCommit,
 } from "./grid";
 import {
+  bodyRowCount,
+  columnCount,
   markdownFromModel,
   tableModelFromMarkdown,
   type TableCellRef,
@@ -258,6 +261,7 @@ export class TablePreviewWidget extends WidgetType {
       onLeaveTable: this.leaveTable,
       onDeleteTable: this.removeTable,
       onCommandHost: this.registerCommandHost,
+      onHistory: this.handleHistory,
     });
     // `flushSync` so the grid's DOM exists before CodeMirror measures the
     // widget — a concurrent render would leave an empty block for a frame.
@@ -372,6 +376,69 @@ export class TablePreviewWidget extends WidgetType {
    */
   private readonly removeTable = (): void => {
     setTimeout(() => this.dispatchRemoveTable(), 0);
+  };
+
+  /**
+   * B-6's first press: select every cell without touching the document.
+   *
+   * A range is a **view** selection (C.4), so the markdown is untouched. The
+   * grid turns a covering range into the wrapper's `data-table-selected`
+   * marker, which is what the outer keymap reads to tell the first press
+   * (select) from the second (delete).
+   */
+  selectWholeTable(): boolean {
+    const model = this.store?.get().model;
+    if (!model) return false;
+    this.store?.setRange({
+      anchor: { row: 0, col: 0 },
+      focus: { row: bodyRowCount(model), col: columnCount(model) - 1 },
+    });
+    return true;
+  }
+
+  /** The C.5 key path for "delete this table", through {@link removeTable}. */
+  deleteTable(): void {
+    this.removeTable();
+  }
+
+  /**
+   * A cell asked for `undo`/`redo` (plan §4.5, policy §11-4).
+   *
+   * The grid has already folded its editors into the store, so committing here
+   * publishes the pending cell text to the document first — which is what makes
+   * the following undo revert the **cell edit** rather than the edit before it.
+   * The history action is always deferred: a commit may itself be deferred
+   * (`writeDoc`), and both are `setTimeout(0)` tasks, so FIFO ordering puts the
+   * undo after the write it is meant to revert.
+   *
+   * The view is captured before the commit because a write replaces this
+   * widget — CodeMirror destroys it during the dispatch and clears `this.view`.
+   */
+  private readonly handleHistory = (
+    kind: CellHistoryKind,
+    focus?: TableCellRef,
+  ): void => {
+    const view = this.view;
+    if (!view) return;
+    const from = this.from;
+    const model = this.store?.get().model;
+    if (model) this.commit(model);
+
+    setTimeout(() => {
+      if (!view.dom.isConnected) return;
+      // Focus first: the command dispatches a transaction, and an unfocused
+      // view still applies it (the caret simply is not visible yet).
+      view.focus();
+      if (kind === "undo") undo(view);
+      else redo(view);
+      // The outer selection was never where the user was looking — a cell held
+      // focus — so the history's restored selection lands at the table's start
+      // (or worse, the document's). Put the caret back in the cell that asked
+      // (`@user`, 2026-10-23: "ctrl+z … moves the caret to the first line").
+      if (focus) {
+        focusTableRenderedCell(view, from, focus);
+      }
+    }, 0);
   };
 
   /**
@@ -567,6 +634,45 @@ export function runTableStructureCommand(
   const widget = wrapper ? mountedWidgets.get(wrapper) : undefined;
   if (!widget) return false;
   return widget.runStructureCommand(resolve);
+}
+
+/**
+ * Select every cell of the rendered table at `tableFrom` (B-6, first press).
+ *
+ * Resolved through the **mounted** widget, like `focusTableRenderedCell`: the
+ * decoration set is rebuilt on selection changes, so the widget instance in the
+ * state may be an `eq` replacement that never mounted a grid.
+ */
+export function selectWholeTableRendered(
+  view: EditorView,
+  tableFrom: number,
+): boolean {
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${tableFrom}"]`,
+  );
+  const widget = wrapper ? mountedWidgets.get(wrapper) : undefined;
+  if (!widget) return false;
+  return widget.selectWholeTable();
+}
+
+/**
+ * Delete the rendered table at `tableFrom` (B-6, second press).
+ *
+ * The removal itself is the widget's deferred `removeTable` write — the same
+ * path MENU-002's "Delete table" uses, so the block, the preceding newline and
+ * the outer caret stay in one place.
+ */
+export function deleteTableRendered(
+  view: EditorView,
+  tableFrom: number,
+): boolean {
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${tableFrom}"]`,
+  );
+  const widget = wrapper ? mountedWidgets.get(wrapper) : undefined;
+  if (!widget) return false;
+  widget.deleteTable();
+  return true;
 }
 
 function stopPropagation(event: Event): void {

@@ -40,11 +40,15 @@ import {
   CellEditor,
   TABLE_IDLE_FLUSH_MS,
   type CellEditorHandlers,
+  type CellHistoryKind,
 } from "./editor";
 import {
   bodyRowCount,
   cellText,
+  clearCells,
   columnCount,
+  deleteColumn,
+  deleteRow,
   setCellText,
   type TableCellRef,
   type TableModel,
@@ -54,7 +58,11 @@ import {
   cellRangeBounds,
   clampCellRef,
   extendRangeToEdge,
+  rangeCells,
   rangeContains,
+  rangeCoversAllColumns,
+  rangeCoversAllRows,
+  rangeCoversTable,
   rangePointerEdge,
   sameCellRef,
 } from "./selection";
@@ -130,6 +138,12 @@ export type TableGridProps = {
    * without one.
    */
   readonly onCommandHost?: (run: TableCommandRun | null) => void;
+  /**
+   * Forward a `Mod-z` / `Mod-Shift-z` / `Mod-y` from a cell to the **outer**
+   * editor (plan §4.5, policy §11-4). A cell installs no history, so undo is
+   * the document's; the widget owns the outer view and dispatches it there.
+   */
+  readonly onHistory: (kind: CellHistoryKind, focus: TableCellRef) => void;
 };
 
 export function TableGrid({
@@ -140,6 +154,7 @@ export function TableGrid({
   onLeaveTable,
   onDeleteTable,
   onCommandHost,
+  onHistory,
 }: TableGridProps) {
   const { model, active, range } = useSyncExternalStore(
     store.subscribe,
@@ -302,14 +317,7 @@ export function TableGrid({
       store.setModel(result.model);
       onCommit(result.model, result.focus);
     },
-    [
-      cancelIdleFlush,
-      collect,
-      focusEditor,
-      onCommit,
-      onLeaveTable,
-      store,
-    ],
+    [cancelIdleFlush, collect, focusEditor, onCommit, onLeaveTable, store],
   );
 
   /**
@@ -339,6 +347,189 @@ export function TableGrid({
     },
     [cancelIdleFlush, collect, onCommit, onDeleteTable, store],
   );
+
+  /**
+   * C.5's clear: empty the selected cells and put the caret in the anchor.
+   *
+   * The **editors** are emptied as well as the model, and that is not
+   * duplication: `collect()` folds their text back into the model on the very
+   * next commit, so a clear that touched only the model would be undone by the
+   * next keystroke's flush. Everything is published in one `onCommit`, so the
+   * table is written once and the rebuild puts the caret in the anchor.
+   *
+   * A range that covers **every** cell is B-6's whole-table state: there the
+   * clear means "delete the table" (block plus preceding newline), which the
+   * widget owns.
+   */
+  const clearRange = React.useCallback((): boolean => {
+    const live = store.get();
+    const range = live.range;
+    if (!range) return false;
+
+    const bounds = cellRangeBounds(range);
+    if (rangeCoversTable(bounds, live.model)) {
+      cancelIdleFlush();
+      // Drop the view selection first, so nothing repaints it while the
+      // deferred removal runs.
+      store.setRange(null);
+      onDeleteTable();
+      return true;
+    }
+
+    /** Publish a structural deletion and put the caret at `focus`. */
+    const commitDelete = (next: TableModel, focus: TableCellRef): true => {
+      cancelIdleFlush();
+      store.setModel(next);
+      onCommit(next, { ...focus, offset: 0 });
+      return true;
+    };
+
+    // A band that spans the whole table is a row or column selection, not a
+    // block of cells: `@user` (2026-10-23) expects Backspace/Delete there to
+    // **remove the rows or columns**, not to empty their contents. The header
+    // row cannot be deleted (it is the table's shape), so a band that includes
+    // it deletes the body rows inside the band and clears the header cells.
+    const collected = collect();
+    if (rangeCoversAllColumns(bounds, collected)) {
+      const columns = columnCount(collected);
+      let next = collected;
+      const firstBody = Math.max(bounds.rowFrom, 1);
+      const lastBody = Math.min(bounds.rowTo, bodyRowCount(collected));
+      for (let row = lastBody; row >= firstBody; row -= 1) {
+        next = deleteRow(next, row - 1);
+      }
+      if (bounds.rowFrom === 0) {
+        const headerCells = Array.from({ length: columns }, (_, col) => ({
+          row: 0,
+          col,
+        })).filter((cell) => rangeContains(bounds, cell));
+        next = clearCells(next, headerCells);
+      }
+      // Focus the first row of the band (clamped to what is left), same column.
+      return commitDelete(next, {
+        row: Math.min(bounds.rowFrom || 1, bodyRowCount(next)),
+        col: range.anchor.col,
+      });
+    }
+
+    if (rangeCoversAllRows(bounds, collected)) {
+      let next = collected;
+      const count = bounds.colTo - bounds.colFrom + 1;
+      // The last column cannot be deleted (GFM needs one); a band covering
+      // everything is the whole-table state handled above.
+      if (columnCount(next) - count >= 1) {
+        for (let col = bounds.colTo; col >= bounds.colFrom; col -= 1) {
+          next = deleteColumn(next, col);
+        }
+        return commitDelete(next, {
+          row: 0,
+          col: Math.min(bounds.colFrom, columnCount(next) - 1),
+        });
+      }
+    }
+
+    const cells = rangeCells(bounds);
+    const cleared = clearCells(collected, cells);
+    for (const cell of cells) {
+      editors.current.get(cellKey(cell))?.setText("");
+    }
+    // `setText` fires each cell's `onInput`, which re-arms the idle flush; the
+    // commit below replaces it, so cancel the last arming.
+    cancelIdleFlush();
+    store.setModel(cleared);
+    onCommit(cleared, { ...range.anchor, offset: 0 });
+    return true;
+  }, [cancelIdleFlush, collect, onCommit, onDeleteTable, store]);
+
+  /**
+   * Type over a range: clear the rectangle and put the character in the anchor
+   * (chosen policy §11-3).
+   *
+   * Same shape as {@link clearRange} — the editors are brought in step with the
+   * model, then **one** write carries both the clear and the character. The
+   * range is not merely painted over: a commit rebuilds the widget, which drops
+   * it.
+   */
+  const typeOverRange = React.useCallback(
+    (text: string): boolean => {
+      const live = store.get();
+      const range = live.range;
+      if (!range) return false;
+
+      const bounds = cellRangeBounds(range);
+      const cells = rangeCells(bounds);
+      const anchor = range.anchor;
+      let model = clearCells(collect(), cells);
+      model = setCellText(model, anchor, text);
+
+      for (const cell of cells) {
+        editors.current
+          .get(cellKey(cell))
+          ?.setText(sameCellRef(cell, anchor) ? text : "");
+      }
+      cancelIdleFlush();
+      store.setModel(model);
+      onCommit(model, { ...anchor, offset: text.length });
+      return true;
+    },
+    [cancelIdleFlush, collect, onCommit, store],
+  );
+
+  /**
+   * C.5's key entry point while a cell range exists.
+   *
+   * **Capture phase**: the nested cell editor is a descendant of this div, so a
+   * bubble handler would run after the cell's own keymap. A range selection
+   * outranks the cell's text editing — Backspace/Delete clear it and a
+   * printable character replaces it — while every other key is left alone so
+   * the cell keeps its native behaviour. Escape stays on the cell keymap, where
+   * C.4 wired "clear the rectangle and stay in the table".
+   */
+  const handleRangeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!editable) return;
+    if (!store.get().range) return;
+
+    if (event.key === "Backspace" || event.key === "Delete") {
+      if (!clearRange()) return;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    // One printable character, with no command modifier and no IME composition.
+    // Anything longer is a named key (`ArrowLeft`, `Enter`, …) and belongs to
+    // the cell.
+    const native = event.nativeEvent as KeyboardEvent;
+    if (
+      event.key.length !== 1 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      native.isComposing
+    ) {
+      return;
+    }
+    if (!typeOverRange(event.key)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  /**
+   * Is the whole table selected (B-6)?
+   *
+   * The wrapper belongs to the widget, not to React, so the marker is written
+   * as an attribute rather than rendered as a prop — and it is what the outer
+   * keymap reads to tell the first Backspace (select) from the second (delete).
+   */
+  const coversTable = bounds !== null && rangeCoversTable(bounds, model);
+  React.useEffect(() => {
+    const wrapper = gridRef.current?.closest<HTMLElement>(
+      ".cm-live-table-wrapper",
+    );
+    if (!wrapper) return;
+    if (coversTable) wrapper.dataset.tableSelected = "true";
+    else delete wrapper.dataset.tableSelected;
+  }, [coversTable]);
 
   // Hand the executor to the widget; a rebuilt grid registers again, and an
   // unmounted one clears it so a late menu activation cannot act on dead cells.
@@ -372,8 +563,28 @@ export function TableGrid({
             ? navigateHorizontal(model, ref, direction)
             : navigateVertical(model, ref, direction),
         ),
+      // Cells install no history (HIST-002: one stack, the document's). The
+      // grid publishes the pending cell text first, then the widget commits it
+      // and forwards `undo`/`redo` to the outer editor — so the undo reverts the
+      // cell write, not whatever came before it.
+      onHistory: (kind) => {
+        cancelIdleFlush();
+        store.setModel(collect());
+        // The ref travels with the request: the outer view's own caret is stale
+        // while a cell has focus, so an unqualified undo would drop the caret at
+        // the top of the document (`@user`, 2026-10-23).
+        onHistory(kind, ref);
+      },
     }),
-    [escape, navigate, scheduleIdleFlush, store],
+    [
+      cancelIdleFlush,
+      collect,
+      escape,
+      navigate,
+      onHistory,
+      scheduleIdleFlush,
+      store,
+    ],
   );
 
   /**
@@ -468,7 +679,10 @@ export function TableGrid({
 
       if (!focus) return;
       drag.started = true;
-      store.setRange({ anchor: drag.anchor, focus: clampCellRef(focus, live.model) });
+      store.setRange({
+        anchor: drag.anchor,
+        focus: clampCellRef(focus, live.model),
+      });
     };
 
     const onUp = () => {
@@ -560,8 +774,7 @@ export function TableGrid({
           editable={editable}
           active={active}
           inRange={
-            bounds !== null &&
-            rangeContains(bounds, { row: index + 1, col })
+            bounds !== null && rangeContains(bounds, { row: index + 1, col })
           }
           handlers={handlersFor}
           register={register}
@@ -572,12 +785,18 @@ export function TableGrid({
     bodyRowNodes.push(<tr key={index}>{cells}</tr>);
   }
 
+  /*
+    `onKeyDownCapture` is load-bearing: the range's Backspace/Delete/typing
+    must be answered **before** the nested cell editor's own keymap sees the
+    key, and the cell editor is a descendant of this div.
+  */
   return (
     <div
       ref={gridRef}
       className="cm-live-table-grid"
       onBlur={handleBlur}
       onMouseDown={beginRangeDrag}
+      onKeyDownCapture={handleRangeKeyDown}
     >
       <table className="cm-live-table">
         <thead>

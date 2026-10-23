@@ -462,6 +462,29 @@ export function rangeCoversTable(
 }
 
 /**
+ * Does the rectangle span **every column**? A row band.
+ *
+ * `@user` (2026-10-23): selecting whole rows and pressing Backspace must delete
+ * the rows, not merely empty their cells — the same is true of a whole-column
+ * band (below). Only a band that really crosses the table counts, so a partial
+ * rectangle keeps the clear semantics.
+ */
+export function rangeCoversAllColumns(
+  bounds: TableCellRangeBounds,
+  model: TableModel,
+): boolean {
+  return bounds.colFrom <= 0 && bounds.colTo >= columnCount(model) - 1;
+}
+
+/** Does the rectangle span **every row** (header included)? A column band. */
+export function rangeCoversAllRows(
+  bounds: TableCellRangeBounds,
+  model: TableModel,
+): boolean {
+  return bounds.rowFrom <= 0 && bounds.rowTo >= bodyRowCount(model);
+}
+
+/**
  * Move the focus to one edge of the table, keeping the other axis.
  *
  * Dragging past the grid's right edge means "through the last column", not
