@@ -53,6 +53,16 @@ import {
 import { TableStore } from "./store";
 
 /**
+ * The mounted widget for each rendered wrapper element.
+ *
+ * A selection change rebuilds the decoration set, and CodeMirror keeps the old
+ * DOM when the replacement widget is `eq` — so the widget instance stored in the
+ * current state may never have been mounted. The wrapper element, not the state
+ * entry, is the reliable link back to the instance that owns the live view.
+ */
+const mountedWidgets = new WeakMap<HTMLElement, TablePreviewWidget>();
+
+/**
  * The event types that must not reach the outer editor.
  *
  * These are the ones CodeMirror acts on from its content DOM (pointer selection,
@@ -90,6 +100,15 @@ export class TablePreviewWidget extends WidgetType {
   private root: Root | null = null;
   private store: TableStore | null = null;
   private view: EditorView | null = null;
+  /**
+   * The element this widget rendered into, once `toDOM` has run.
+   *
+   * CodeMirror rebuilds the decoration set on every selection change and keeps
+   * the existing DOM when the new widget is `eq`, so the widget *instance* in
+   * the current state may never have been mounted. The wrapper element is the
+   * stable link to the mounted instance ({@link leaveTableRenderedAfter}).
+   */
+  private wrapper: HTMLElement | null = null;
   /**
    * Set once this widget has written to the document.
    *
@@ -131,6 +150,8 @@ export class TablePreviewWidget extends WidgetType {
 
   destroy(): void {
     this.disposeRoot();
+    if (this.wrapper) mountedWidgets.delete(this.wrapper);
+    this.wrapper = null;
     this.store = null;
     this.view = null;
   }
@@ -169,6 +190,8 @@ export class TablePreviewWidget extends WidgetType {
       wrapper.addEventListener(type, stopPropagation);
     }
 
+    this.wrapper = wrapper;
+    mountedWidgets.set(wrapper, this);
     this.mount(wrapper, view);
     return wrapper;
   }
@@ -214,6 +237,7 @@ export class TablePreviewWidget extends WidgetType {
       editable: this.editable,
       onCommit: this.commit,
       onEscape: () => this.view?.focus(),
+      onLeaveTable: this.leaveTable,
     });
     // `flushSync` so the grid's DOM exists before CodeMirror measures the
     // widget — a concurrent render would leave an empty block for a frame.
@@ -268,6 +292,105 @@ export class TablePreviewWidget extends WidgetType {
   }
 
   /**
+   * The caret stepped off the table (plan §4.5, Task C.2).
+   *
+   * The grid resolves the edge; the **widget** owns the block range, so it
+   * computes the outer caret. Nothing is dispatched here: this is called from a
+   * keydown inside a nested cell, which is frequently inside a CodeMirror update
+   * (a focus handoff), and dispatching the outer view then throws. The whole
+   * decision — including the pending cell text — is made in {@link dispatchLeave}
+   * on the next task.
+   */
+  private readonly leaveTable = (edge: "before" | "after"): void => {
+    setTimeout(() => this.dispatchLeave(edge), 0);
+  };
+
+  /**
+   * The `TABLE-007` end-of-document case: a caret landed at the document's end
+   * directly below a table that is the last block (a click below it, ArrowDown
+   * or End from the outer editor). There is no line there, so the user's intent
+   * is "put my caret after the table" and the table has to grow one.
+   *
+   * `scan.ts` owns the **position** rule (and defers the call outside the
+   * CodeMirror update); the widget owns the block range and the `written` latch,
+   * so the exit reuses the same path as the keyboard's ArrowDown-off-the-table.
+   * `dispatchLeave` refuses when this widget has already written, and this
+   * method is a no-op when the view is gone — a redirect that races a rebuild
+   * must not dispatch into a detached editor.
+   */
+  leaveTableAfter(): void {
+    this.dispatchLeave("after");
+  }
+
+  /**
+   * Move the outer caret out of the table, writing any pending cell text first.
+   *
+   * `before` lands at the end of the previous line; at the document start there
+   * is no previous line, so one is inserted. `after` lands at the start of the
+   * following line; when the table is the last block, a trailing line is added.
+   *
+   * The possible write and the caret are one transaction, so the target offset is
+   * valid in the post-change document and no second lookup can race the rebuild.
+   * The grid has already folded its editors into the store, so an uncommitted
+   * keystroke is part of the write rather than lost by the leave.
+   */
+  private dispatchLeave(edge: "before" | "after"): void {
+    if (this.written) return;
+    const view = this.view;
+    if (!view?.dom.isConnected) return;
+
+    const model = this.store?.get().model;
+    const markdown = model ? markdownFromModel(model) : this.markdown;
+    const changed = markdown !== this.markdown;
+    const { from, to } = this;
+
+    // Where the table ends once the pending edit (if any) has been written, and
+    // how long the document will be then. A following line exists while the
+    // table's end is still before the document's end.
+    const tableEnd = from + markdown.length;
+    const docLength = view.state.doc.length - (to - from) + markdown.length;
+    const atDocumentStart = from === 0;
+    const hasFollowingLine = tableEnd < docLength;
+
+    let insert = markdown;
+    let anchor: number;
+    if (edge === "before") {
+      if (atDocumentStart) {
+        // No line above: give the caret one, before the table.
+        insert = `\n${markdown}`;
+        anchor = 0;
+      } else {
+        // `from` is a line start, so the character before it is that line's
+        // newline — the end of the previous line.
+        anchor = from - 1;
+      }
+    } else if (hasFollowingLine) {
+      anchor = tableEnd + 1;
+    } else {
+      // The table is the last block: add the line the caret is going to.
+      insert = `${markdown}\n`;
+      anchor = tableEnd + 1;
+    }
+
+    const write = changed || insert !== markdown;
+    // Only a write that replaces the **table itself** replaces this widget; the
+    // trailing line is outside the block, so CodeMirror keeps this instance
+    // (`eq` is unchanged) and latching would make the next leave a silent
+    // no-op — exactly what `@user` hit after deleting the line and clicking
+    // below the table again (2026-10-23).
+    if (changed) this.written = true;
+    view.dispatch({
+      ...(write ? { changes: { from, to, insert } } : {}),
+      selection: { anchor },
+    });
+    view.focus();
+    // CodeMirror notices focus during an update, and its focus transaction can
+    // overwrite the selection a dispatch made while the view was unfocused
+    // (the same quirk `CellEditor.focus` handles). Re-assert it after focusing.
+    view.dispatch({ selection: { anchor } });
+  }
+
+  /**
    * Put the caret back after a rebuild.
    *
    * The rebuild has already replaced this widget's DOM, so the target is looked up
@@ -311,6 +434,31 @@ export function focusTableRenderedCell(
   const editor = host ? cellEditorFor(host) : undefined;
   if (!editor) return false;
   editor.focus(offset);
+  return true;
+}
+
+/**
+ * Create the line after a table that is the document's last block.
+ *
+ * The `TABLE-007` redirector (`scan.ts`) decides *that* the caret landed at
+ * `docLength` below a rendered table; the mounted widget owns the block range, so
+ * it performs the write. Resolving the widget through the wrapper matters: the
+ * decoration set is rebuilt on every selection change and the state's widget
+ * instance may be an `eq` replacement that CodeMirror never mounted.
+ *
+ * Returns `false` when the table is not mounted any more, so a redirect that
+ * races a rebuild does nothing.
+ */
+export function leaveTableRenderedAfter(
+  view: EditorView,
+  tableFrom: number,
+): boolean {
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${tableFrom}"]`,
+  );
+  const widget = wrapper ? mountedWidgets.get(wrapper) : undefined;
+  if (!widget) return false;
+  widget.leaveTableAfter();
   return true;
 }
 

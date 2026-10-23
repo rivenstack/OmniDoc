@@ -17,6 +17,7 @@
 
 import {
   EditorState,
+  Prec,
   StateField,
   type Extension,
   type Range,
@@ -26,6 +27,7 @@ import {
   Decoration,
   EditorView,
   ViewPlugin,
+  keymap,
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
@@ -37,10 +39,16 @@ import {
   parseMarkdownTable,
   splitTableRow,
 } from "../../../markdown/table";
-import { TablePreviewWidget, focusTableRenderedCell } from "./widget";
+import {
+  TablePreviewWidget,
+  focusTableRenderedCell,
+  leaveTableRenderedAfter,
+} from "./widget";
 import {
   redirectTableCaret,
+  tableCaretRegion,
   type CaretTravelDirection,
+  type TableCaretArrival,
 } from "./selection";
 
 /**
@@ -192,6 +200,16 @@ const tableDecorations = StateField.define<DecorationSet>({
 });
 
 /**
+ * What a caret position means for one rendered table block.
+ *
+ * `"cell"` redirects into the grid; `"leave-after"` creates the trailing line a
+ * last-block table needs (see `tableCaretRegion`).
+ */
+type RenderedTable =
+  | { readonly kind: "cell"; readonly from: number; readonly to: number }
+  | { readonly kind: "leave-after"; readonly from: number; readonly to: number };
+
+/**
  * The rendered table block that covers `pos`, if any.
  *
  * Read from the decoration field rather than from `findTableBlocks`: a block
@@ -199,19 +217,32 @@ const tableDecorations = StateField.define<DecorationSet>({
  * that no longer parses) must not redirect the caret, because there is no grid
  * to redirect into. Reading the field is also what guarantees the observer and
  * the widget agree about which tables are on screen.
+ *
+ * The boundary itself is `tableCaretRegion` (pure, unit-tested): interior
+ * positions redirect into a cell, and `pos === to` redirects when a following
+ * line exists but asks for a trailing line when the table is the document's last
+ * block. Matching `to` unconditionally is what broke entering the table from
+ * below; matching `to` never is what broke clicking after a last-block table
+ * (`@user`, 2026-10-23).
  */
 function renderedTableAt(
   state: EditorState,
   pos: number,
-): { from: number; to: number } | null {
+  arrival: TableCaretArrival,
+): RenderedTable | null {
   const decorations = state.field(tableDecorations, false);
   if (!decorations) return null;
+  const docLength = state.doc.length;
 
   for (let iter = decorations.iter(); iter.value; iter.next()) {
     if (!(iter.value.spec.widget instanceof TablePreviewWidget)) continue;
-    if (pos >= iter.from && pos <= iter.to) {
-      return { from: iter.from, to: iter.to };
+
+    const region = tableCaretRegion(iter.from, iter.to, docLength, pos, arrival);
+    if (region === null) continue;
+    if (region === "leave-after") {
+      return { kind: "leave-after", from: iter.from, to: iter.to };
     }
+    return { kind: "cell", from: iter.from, to: iter.to };
   }
   return null;
 }
@@ -233,6 +264,47 @@ function isRtlContext(view: EditorView): boolean {
 }
 
 /**
+ * The rendered table block that ends on the line just above `line`, or `null`.
+ *
+ * A block replacement has no document positions of its own, so CodeMirror's
+ * vertical motion treats it as **zero lines**: ArrowUp from the line below the
+ * table jumps straight to the line *above* it, and ArrowDown from above jumps
+ * below — the caret never lands in the hidden range, so the selection observer
+ * never sees it (`@user`, 2026-10-23: entering the table only worked with
+ * Left/Right). The two keys have to be answered before CodeMirror moves.
+ */
+function renderedTableAbove(
+  state: EditorState,
+  line: { from: number; to: number; number: number },
+): { from: number; to: number } | null {
+  if (line.number <= 1) return null;
+  const previous = state.doc.line(line.number - 1);
+  const decorations = state.field(tableDecorations, false);
+  if (!decorations) return null;
+  for (let iter = decorations.iter(); iter.value; iter.next()) {
+    if (!(iter.value.spec.widget instanceof TablePreviewWidget)) continue;
+    if (iter.to === previous.to) return { from: iter.from, to: iter.to };
+  }
+  return null;
+}
+
+/** The rendered table block that starts on the line just below `line`. */
+function renderedTableBelow(
+  state: EditorState,
+  line: { from: number; to: number; number: number },
+): { from: number; to: number } | null {
+  if (line.number >= state.doc.lines) return null;
+  const next = state.doc.line(line.number + 1);
+  const decorations = state.field(tableDecorations, false);
+  if (!decorations) return null;
+  for (let iter = decorations.iter(); iter.value; iter.next()) {
+    if (!(iter.value.spec.widget instanceof TablePreviewWidget)) continue;
+    if (iter.from === next.from) return { from: iter.from, to: iter.to };
+  }
+  return null;
+}
+
+/**
  * `TABLE-007`: a caret that landed in a rendered table's hidden range goes into
  * a cell instead of unfolding the source.
  *
@@ -243,8 +315,10 @@ function isRtlContext(view: EditorView): boolean {
  * "Calls to EditorView.update are not allowed while an update is in progress" —
  * the same rule the widget's write-back follows (`widget.ts`). So the observer
  * only records the intent here and hands it to a `setTimeout(0)` task; the timer
- * re-checks the caret because the document may have changed in between, and it
- * never dispatches anything itself (the nested editor's focus call does).
+ * re-checks the caret because the document may have changed in between. The one
+ * document write it can cause — the trailing line a last-block table needs — is
+ * delegated to the widget, which owns the block range, and also happens on this
+ * deferred task.
  *
  * The observer also requires the outer view to have focus: a programmatic
  * selection change from somewhere else (opening a note, restoring a draft) must
@@ -254,10 +328,10 @@ function isRtlContext(view: EditorView): boolean {
 class TableCaretRedirector {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pending: {
-    from: number;
-    to: number;
+    table: RenderedTable;
     head: number;
     direction: CaretTravelDirection;
+    pointer: boolean;
   } | null = null;
   private alive = true;
 
@@ -269,14 +343,22 @@ class TableCaretRedirector {
     if (!selection.empty) return;
     if (!update.view.hasFocus) return;
 
-    const block = renderedTableAt(update.state, selection.head);
-    if (!block) return;
-
     // A caret that moved backwards came from below; anything else (a click, a
     // fresh selection) is treated as entering from above.
     const direction: CaretTravelDirection =
       selection.head < update.startState.selection.main.head ? "up" : "down";
-    this.pending = { ...block, head: selection.head, direction };
+    // A pointer selection has no direction to give — see `redirectTableCaret`.
+    const pointer = update.transactions.some((tr) =>
+      tr.isUserEvent("select.pointer"),
+    );
+
+    const table = renderedTableAt(update.state, selection.head, {
+      direction,
+      pointer,
+    });
+    if (!table) return;
+
+    this.pending = { table, head: selection.head, direction, pointer };
     this.schedule();
   }
 
@@ -295,7 +377,7 @@ class TableCaretRedirector {
     }, 0);
   }
 
-  /** Focus the cell the deferred caret resolved to — outside any CM update. */
+  /** Focus the cell (or create the trailing line) the deferred caret resolved to. */
   private run() {
     const pending = this.pending;
     this.pending = null;
@@ -307,17 +389,123 @@ class TableCaretRedirector {
     // intent is stale and must not yank focus out of wherever it is now.
     if (!selection.empty || selection.head !== pending.head) return;
 
+    // Below a last-block table there is no line to put the caret on. The widget
+    // owns the block's range and the `written` latch, so the write stays in one
+    // place; this call already runs outside a CodeMirror update (the timer).
+    if (pending.table.kind === "leave-after") {
+      leaveTableRenderedAfter(view, pending.table.from);
+      return;
+    }
+
+    const { from, to } = pending.table;
     const target = redirectTableCaret({
-      source: view.state.doc.sliceString(pending.from, pending.to),
-      from: pending.from,
+      source: view.state.doc.sliceString(from, to),
+      from,
       caret: pending.head,
       direction: pending.direction,
       rtl: isRtlContext(view),
+      pointer: pending.pointer,
     });
     if (!target) return;
 
-    focusTableRenderedCell(view, pending.from, target, target.offset);
+    focusTableRenderedCell(view, from, target, target.offset);
   }
+}
+
+/**
+ * The rendered table that ends exactly at `pos`, when that is the document's
+ * end, or `null`.
+ *
+ * After the trailing line is deleted — or on a note saved with a table as its
+ * last block — the caret sits at the block's `to`, which is the document's end.
+ * There is no line below, no document position to move to, and the caret cannot
+ * change, so the selection observer never runs. This is the keyboard half of the
+ * click target the grid's tail strip provides (C.2, `@user` 2026-10-23).
+ */
+function renderedTableEndingAt(state: EditorState, pos: number): number | null {
+  if (pos !== state.doc.length) return null;
+  const decorations = state.field(tableDecorations, false);
+  if (!decorations) return null;
+
+  for (let iter = decorations.iter(); iter.value; iter.next()) {
+    if (!(iter.value.spec.widget instanceof TablePreviewWidget)) continue;
+    if (iter.to === pos) return iter.from;
+  }
+  return null;
+}
+
+/**
+ * The table-crossing keys, at high precedence so they run **before** the
+ * document keymap's own motion.
+ *
+ * Three cases, all of them positions the selection observer can never see
+ * because no selection transaction with a caret *inside* the block is ever
+ * produced:
+ *
+ * - `ArrowUp` on the line below a rendered table → the last row;
+ * - `ArrowDown` on the line above a rendered table → the header row;
+ * - `ArrowDown` / `ArrowRight` at the document's end after a last-block table →
+ *   the trailing line (there is nowhere else for the caret to go).
+ *
+ * This has to be a keymap binding rather than a `domEventHandlers` entry: the
+ * default keymap still runs after a DOM handler has called `preventDefault`,
+ * and its vertical motion would move the caret to the table's last line end,
+ * which a position match then resolves to the *last column* (`@user` saw
+ * `ArrowDown` land in the wrong cell). `Prec.high` makes this answer first.
+ */
+const tableAdjacentKeys: Extension = Prec.high(
+  keymap.of([
+    {
+      key: "ArrowUp",
+      run: (view) => enterAdjacentTable(view, "up"),
+    },
+    {
+      key: "ArrowDown",
+      run: (view) => enterAdjacentTable(view, "down") || leaveTableAtEnd(view),
+    },
+    {
+      key: "ArrowRight",
+      run: (view) => leaveTableAtEnd(view),
+    },
+  ]),
+);
+
+/** `ArrowDown` / `ArrowRight` when the caret already sits at the document end. */
+function leaveTableAtEnd(view: EditorView): boolean {
+  const selection = view.state.selection.main;
+  if (!selection.empty) return false;
+  const from = renderedTableEndingAt(view.state, selection.head);
+  if (from === null) return false;
+  leaveTableRenderedAfter(view, from);
+  return true;
+}
+
+/** `ArrowUp` / `ArrowDown` on the line just outside a rendered table. */
+function enterAdjacentTable(
+  view: EditorView,
+  direction: CaretTravelDirection,
+): boolean {
+  const selection = view.state.selection.main;
+  if (!selection.empty) return false;
+  const line = view.state.doc.lineAt(selection.head);
+  const block =
+    direction === "up"
+      ? renderedTableAbove(view.state, line)
+      : renderedTableBelow(view.state, line);
+  if (!block) return false;
+
+  const cell = redirectTableCaret({
+    source: view.state.doc.sliceString(block.from, block.to),
+    from: block.from,
+    // The endpoint the key is aiming for; the direction then picks the row.
+    caret: direction === "up" ? block.to : block.from,
+    direction,
+    rtl: isRtlContext(view),
+  });
+  if (!cell) return false;
+
+  focusTableRenderedCell(view, block.from, cell, cell.offset);
+  return true;
 }
 
 /**
@@ -373,4 +561,5 @@ export const tableLivePreview: Extension = [
   tableDecorations,
   ViewPlugin.fromClass(TableRowFinisher),
   ViewPlugin.fromClass(TableCaretRedirector),
+  tableAdjacentKeys,
 ];

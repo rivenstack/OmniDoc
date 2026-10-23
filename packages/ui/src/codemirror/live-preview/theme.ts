@@ -160,6 +160,14 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
   ".cm-live-table .cm-line": {
     padding: "0",
   },
+  // A click target under the table (plan C.2): clicking below a last-block table
+  // has no document position to land on, so this strip turns that click into
+  // "put the caret on a new line after the table". It sits inside the grid, so
+  // it reads as the table's own bottom margin rather than a toolbar (B-3).
+  ".cm-live-table-tail": {
+    blockSize: "0.75rem",
+    cursor: "text",
+  },
 };
 
 /**

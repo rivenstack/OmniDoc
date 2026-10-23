@@ -222,9 +222,13 @@ describe("cell keymap (OBS-1.14.4-TABLE-001)", () => {
     const handlers = spyHandlers();
     const cell = mountCell("abc", handlers);
 
+    // Mid-cell is consumed too, but it moves the caret rather than leaving: an
+    // unhandled arrow belongs to the browser, whose motion walks into the next
+    // cell (`@user`, 2026-10-23).
     cell.focus(1);
-    expect(press(cell, "ArrowLeft")).toBe(false);
+    expect(press(cell, "ArrowLeft")).toBe(true);
     expect(handlers.onLeave).not.toHaveBeenCalled();
+    expect(cell.view.state.selection.main.head).toBe(0);
 
     cell.focus(0);
     expect(press(cell, "ArrowLeft")).toBe(true);
@@ -236,42 +240,62 @@ describe("cell keymap (OBS-1.14.4-TABLE-001)", () => {
     const cell = mountCell("abc", handlers);
 
     cell.focus(1);
-    expect(press(cell, "ArrowRight")).toBe(false);
+    expect(press(cell, "ArrowRight")).toBe(true);
+    expect(handlers.onLeave).not.toHaveBeenCalled();
+    expect(cell.view.state.selection.main.head).toBe(2);
 
     cell.focus(3);
     expect(press(cell, "ArrowRight")).toBe(true);
     expect(handlers.onLeave).toHaveBeenCalledWith("right");
   });
 
-  it("TABLE-001: leaves Up/Down only at the cell's first and last visual line", () => {
+  it("TABLE-001: leaves Up/Down only from the cell's first and last visual line", () => {
     const handlers = spyHandlers();
-    const cell = mountCell("line one\nline two", handlers);
+    const cell = mountCell("one\ntwo\nthree", handlers);
 
-    // End of the first line is not the *start* of it: the caret moves up natively.
-    cell.focus(8);
-    expect(press(cell, "ArrowUp")).toBe(false);
+    // A middle line has somewhere to go: consumed, but no leave.
+    const middle = cell.text().indexOf("two") + 1;
+    cell.focus(middle);
+    expect(press(cell, "ArrowUp")).toBe(true);
+    expect(press(cell, "ArrowDown")).toBe(true);
     expect(handlers.onLeave).not.toHaveBeenCalled();
 
-    cell.focus(0);
+    // Anywhere on the first line leaves upwards; anywhere on the last leaves
+    // downwards (the line, not its boundary, is what the matrix names).
+    cell.focus(2);
     expect(press(cell, "ArrowUp")).toBe(true);
     expect(handlers.onLeave).toHaveBeenCalledWith("up");
 
-    // Start of the last line is not its end either.
-    cell.focus(9);
-    expect(press(cell, "ArrowDown")).toBe(false);
-
-    cell.focus(cell.text().length);
+    cell.focus(cell.text().length - 2);
     expect(press(cell, "ArrowDown")).toBe(true);
     expect(handlers.onLeave).toHaveBeenCalledWith("down");
   });
 
-  it("TABLE-001: keeps arrows native while text is selected", () => {
+  it("TABLE-001: a single-line cell leaves vertically from any offset", () => {
+    // The cell has one visual line, so it is both its first and its last: the
+    // browser must never be the one to move the caret (it would walk into the
+    // next cell's editing host).
+    const handlers = spyHandlers();
+    const cell = mountCell("abc", handlers);
+
+    cell.focus(1);
+    expect(press(cell, "ArrowDown")).toBe(true);
+    expect(handlers.onLeave).toHaveBeenCalledWith("down");
+    expect(handlers.onLeave).toHaveBeenCalledTimes(1);
+
+    cell.focus(1);
+    expect(press(cell, "ArrowUp")).toBe(true);
+    expect(handlers.onLeave).toHaveBeenCalledWith("up");
+    expect(handlers.onLeave).toHaveBeenCalledTimes(2);
+  });
+
+  it("TABLE-001: a selection collapses inside the cell instead of leaving", () => {
     const handlers = spyHandlers();
     const cell = mountCell("abc", handlers);
     cell.view.dispatch({ selection: { anchor: 0, head: 3 } });
 
-    expect(press(cell, "ArrowLeft")).toBe(false);
-    expect(press(cell, "ArrowRight")).toBe(false);
+    expect(press(cell, "ArrowLeft")).toBe(true);
+    expect(press(cell, "ArrowRight")).toBe(true);
     expect(handlers.onLeave).not.toHaveBeenCalled();
   });
 

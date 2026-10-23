@@ -21,7 +21,7 @@ import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type EditorHarness } from "../../parity/harness";
 import { tableLivePreview } from "./scan";
-import { redirectTableCaret } from "./selection";
+import { redirectTableCaret, tableCaretRegion } from "./selection";
 
 const LANGUAGE = markdown({ base: markdownLanguage });
 
@@ -99,6 +99,34 @@ function cellEditor(view: EditorHarness, row: number, col: number): EditorView {
   return editor;
 }
 
+describe("the block boundary is a pure position question (TABLE-007)", () => {
+  it("TABLE-007: redirects strictly interior positions and never the block start", () => {
+    expect(tableCaretRegion(10, 40, 100, 9)).toBeNull();
+    expect(tableCaretRegion(10, 40, 100, 10)).toBe("inside");
+    expect(tableCaretRegion(10, 40, 100, 39)).toBe("inside");
+  });
+
+  it("TABLE-007: treats the block end as inside while a following line exists", () => {
+    // `to` with text after it is where ArrowUp from the line below lands: the
+    // caret is at the end of the table's last line and belongs in its last row.
+    expect(tableCaretRegion(10, 40, 41, 40)).toBe("inside");
+    expect(tableCaretRegion(10, 40, 100, 40)).toBe("inside");
+  });
+
+  it("TABLE-007: treats the block end as a leave when the table is the last block", () => {
+    // `to === docLength`: clicking below the document's last block has nowhere
+    // to put the caret, so the caller creates the trailing line.
+    expect(tableCaretRegion(10, 40, 40, 40, { pointer: true })).toBe(
+      "leave-after",
+    );
+    expect(tableCaretRegion(10, 40, 40, 41)).toBeNull();
+    // Keyboard motion downwards lands on the same offset and means the table.
+    expect(tableCaretRegion(10, 40, 40, 40, { direction: "down" })).toBe(
+      "inside",
+    );
+  });
+});
+
 describe("the redirect is a pure document question (OBS-1.14.4-TABLE-007)", () => {
   it("TABLE-007: maps a caret inside a header cell to that cell and decoded offset", () => {
     const source = TABLE;
@@ -122,6 +150,9 @@ describe("the redirect is a pure document question (OBS-1.14.4-TABLE-007)", () =
   it("TABLE-007: maps a caret at the block's start and end to the edge cells", () => {
     const source = TABLE;
 
+    // The endpoints take the direction's fallback target (see the module
+    // header): down → the first cell of the first row; up → the first cell of
+    // the last row, which is the documented TABLE-007 fallback.
     expect(
       redirectTableCaret({ source, from: 40, caret: 40, direction: "down" }),
     ).toEqual({ row: 0, col: 0, offset: 0 });
@@ -133,7 +164,66 @@ describe("the redirect is a pure document question (OBS-1.14.4-TABLE-007)", () =
         caret: 40 + source.length,
         direction: "up",
       }),
+    ).toEqual({ row: 2, col: 0, offset: 0 });
+  });
+
+  it("TABLE-007: the travel direction decides the row at both endpoints", () => {
+    const source = TABLE;
+    const to = source.length;
+
+    // Upward motion reports the block's start; downward motion reports its end,
+    // so a position match would name the opposite row.
+    expect(
+      redirectTableCaret({ source, from: 0, caret: 0, direction: "up" }),
+    ).toEqual({ row: 2, col: 0, offset: 0 });
+    expect(
+      redirectTableCaret({ source, from: 0, caret: to, direction: "down" }),
+    ).toEqual({ row: 0, col: 0, offset: 0 });
+
+    // RTL swaps the fallback column for both.
+    expect(
+      redirectTableCaret({
+        source,
+        from: 0,
+        caret: 0,
+        direction: "up",
+        rtl: true,
+      }),
+    ).toEqual({ row: 2, col: 1, offset: 0 });
+    expect(
+      redirectTableCaret({
+        source,
+        from: 0,
+        caret: to,
+        direction: "down",
+        rtl: true,
+      }),
+    ).toEqual({ row: 0, col: 1, offset: 0 });
+  });
+
+  it("TABLE-007: a pointer selection at an endpoint keeps the position match", () => {
+    const source = TABLE;
+
+    // Clicking the table's bottom edge means the last row, its last cell.
+    expect(
+      redirectTableCaret({
+        source,
+        from: 0,
+        caret: source.length,
+        direction: "down",
+        pointer: true,
+      }),
     ).toEqual({ row: 2, col: 1, offset: 1 });
+    // The header's start is the header either way.
+    expect(
+      redirectTableCaret({
+        source,
+        from: 0,
+        caret: 0,
+        direction: "up",
+        pointer: true,
+      }),
+    ).toEqual({ row: 0, col: 0, offset: 0 });
   });
 
   it("TABLE-007: falls back to the first row when the caret sits on the delimiter row going down", () => {
@@ -284,6 +374,96 @@ describe("the observer redirects the caret into a cell (OBS-1.14.4-TABLE-007)", 
 
     // "First cell" is the rightmost one under RTL (readiness only).
     expect(document.activeElement).toBe(cellContent(view, 0, 1));
+  });
+
+  it("TABLE-007: redirects a caret at the block's end when a following line exists", async () => {
+    // Entering from below: ArrowUp on the line after the table yields a caret at
+    // the end of the table's last line (`to`) — the direction is what says it
+    // came from below, and the endpoint takes the documented fallback target.
+    const view = mount();
+    await focusSettled(view);
+
+    view.placeCaret(FROM + TABLE.length + 1);
+    view.placeCaret(FROM + TABLE.length);
+    await settle();
+
+    expect(document.activeElement).toBe(cellContent(view, 2, 0));
+    expect(cellEditor(view, 2, 0).state.selection.main.head).toBe(0);
+    expect(view.doc()).toBe(DOC);
+  });
+
+  it("TABLE-007: ArrowUp from below enters the last row, not the header", async () => {
+    // CodeMirror's upward motion over a block replacement reports the block's
+    // *start* (it is one visual line), so a position match would land in the
+    // header. `@user` (2026-10-23): "hitting arrow up … navigated to top of the
+    // table instead of the previous line". Direction must win at the endpoints.
+    const view = mount();
+    await focusSettled(view);
+
+    view.placeCaret(FROM + TABLE.length + 1);
+    view.placeCaret(FROM);
+    await settle();
+
+    expect(document.activeElement).toBe(cellContent(view, 2, 0));
+  });
+
+  it("TABLE-007: ArrowDown from above enters the header, not the last row", async () => {
+    // The mirror case: downward motion reports the block's *end*.
+    const view = mount();
+    await focusSettled(view);
+
+    view.placeCaret(FROM - 1);
+    view.placeCaret(FROM + TABLE.length);
+    await settle();
+
+    expect(document.activeElement).toBe(cellContent(view, 0, 0));
+  });
+
+  it("TABLE-007: a pointer selection at the block's end still picks the last row", async () => {
+    // No direction to give, so the endpoint keeps the position match.
+    const view = mount();
+    await focusSettled(view);
+
+    view.placeCaret(FROM + TABLE.length, "select.pointer");
+    await settle();
+
+    expect(document.activeElement).toBe(cellContent(view, 2, 1));
+  });
+
+  it("TABLE-007: a caret at document end after a last-block table creates a trailing line", async () => {
+    // `@user` (2026-10-23): "if the table is the latest block, I can not click
+    // after the table to write at the bottom". The click lands at `docLength`,
+    // which is the block's `to`; there is no line there, so the table grows one.
+    // The paragraph prefix keeps the initial caret (offset 0) out of the table.
+    const last = `intro\n\n${TABLE}`;
+    const view = mount(last);
+    await focusSettled(view);
+
+    view.placeCaret(last.length, "select.pointer");
+    await settle();
+
+    // The document gains the line, the outer caret sits on it, and the widget
+    // is still rendered — no cell took focus and no source was revealed.
+    expect(view.doc()).toBe(`${last}\n`);
+    expect(view.view.state.selection.main.head).toBe(last.length + 1);
+    expect(document.activeElement).toBe(view.view.contentDOM);
+    expect(view.view.contentDOM.querySelector("table.cm-live-table")).not.toBeNull();
+    expect(
+      view.view.contentDOM.querySelector('[data-active="true"]'),
+    ).toBeNull();
+  });
+
+  it("TABLE-007: still redirects a caret one position inside the block end", async () => {
+    const view = mount();
+    await focusSettled(view);
+
+    // The closing pipe of the last cell: inside the hidden range, so it belongs
+    // in that cell — at the decoded end of `d`.
+    view.placeCaret(FROM + TABLE.length - 1);
+    await settle();
+
+    expect(document.activeElement).toBe(cellContent(view, 2, 1));
+    expect(cellEditor(view, 2, 1).state.selection.main.head).toBe(1);
   });
 
   it("TABLE-007: never reveals the raw source (negative)", async () => {

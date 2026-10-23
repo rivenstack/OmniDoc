@@ -72,7 +72,7 @@ export type EditorHarness = {
   /** Set a caret/selection explicitly. */
   select(anchor: number, head?: number): void;
   /** Collapse the selection to `pos`. */
-  placeCaret(pos: number): void;
+  placeCaret(pos: number, userEvent?: string): void;
   /** Place the caret on a 1-based line, at a 0-based column. */
   placeCaretAt(lineNumber: number, column?: number): void;
   /** Replace the whole document programmatically (no user event). */
@@ -204,7 +204,8 @@ export function createHarness(options: EditorHarnessOptions = {}): EditorHarness
     focus: () => view.focus(),
     select: (anchor, head = anchor) =>
       dispatch({ selection: { anchor, head } }),
-    placeCaret: (pos) => dispatch({ selection: { anchor: pos } }),
+    placeCaret: (pos, userEvent) =>
+      dispatch({ selection: { anchor: pos }, ...(userEvent ? { userEvent } : {}) }),
     placeCaretAt: (lineNumber, column = 0) => {
       const line = view.state.doc.line(lineNumber);
       dispatch({ selection: { anchor: Math.min(line.from + column, line.to) } });

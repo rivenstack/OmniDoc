@@ -50,6 +50,14 @@ import {
   type TableModel,
 } from "./model";
 import { cellKey, cellRef, type TableStore } from "./store";
+import {
+  navigateEnter,
+  navigateHorizontal,
+  navigateTab,
+  navigateVertical,
+  type NavigationResult,
+  type TableFocusTarget,
+} from "./structure";
 
 /** Ask the widget to write `model` back to the document. */
 export type TableCommit = (
@@ -64,6 +72,12 @@ export type TableGridProps = {
   readonly onCommit: TableCommit;
   /** Escape: the caller commits and hands focus back to the outer editor. */
   readonly onEscape: () => void;
+  /**
+   * The caret stepped past the table's edge (plan §4.5, B/C). The widget owns
+   * the block's document range, so it — not the grid — decides where the outer
+   * caret goes and dispatches it.
+   */
+  readonly onLeaveTable: (edge: "before" | "after") => void;
 };
 
 export function TableGrid({
@@ -71,6 +85,7 @@ export function TableGrid({
   editable,
   onCommit,
   onEscape,
+  onLeaveTable,
 }: TableGridProps) {
   const { model, active } = useSyncExternalStore(store.subscribe, store.get);
   const editors = React.useRef(new Map<string, CellEditor>());
@@ -116,19 +131,32 @@ export function TableGrid({
     [collect, onCommit, store],
   );
 
-  /** Arm the idle write for `ref`: it fires once the user stops typing. */
-  const scheduleIdleFlush = React.useCallback(
-    (ref: TableCellRef) => {
-      cancelIdleFlush();
-      idleTimer.current = setTimeout(() => {
-        idleTimer.current = null;
-        const editor = editors.current.get(cellKey(ref));
-        const offset = editor?.view.state.selection.main.head;
-        flush({ ...ref, offset });
-      }, TABLE_IDLE_FLUSH_MS);
-    },
-    [cancelIdleFlush, flush],
-  );
+  /**
+   * Arm the idle write: it fires once the user stops typing.
+   *
+   * The focus target is resolved **at fire time** from the live state, not from
+   * the cell that happened to arm the timer. `@user` reported the caret jumping
+   * back to the previous cell after a pause (`2026-10-23`): the timer used to
+   * capture the typing cell, so the write's rebuild restored focus there even
+   * though the user had already moved on. The store knows which cell holds
+   * focus now, and its editor knows where the caret is now; when no cell is
+   * active the focus stays where it is (the table was left, or the cell no
+   * longer exists — a structural edit rebuilt the grid).
+   */
+  const scheduleIdleFlush = React.useCallback(() => {
+    cancelIdleFlush();
+    idleTimer.current = setTimeout(() => {
+      idleTimer.current = null;
+      const live = store.get().active;
+      const editor = live ? editors.current.get(cellKey(live)) : undefined;
+      if (!live || !editor) {
+        flush();
+        return;
+      }
+      const offset = editor.view.state.selection.main.head;
+      flush({ ...live, offset });
+    }, TABLE_IDLE_FLUSH_MS);
+  }, [cancelIdleFlush, flush, store]);
 
   const register = React.useCallback(
     (ref: TableCellRef, editor: CellEditor | null) => {
@@ -162,15 +190,67 @@ export function TableGrid({
     flush();
   };
 
+  /** Put the caret in an existing cell; no document write is involved. */
+  const focusEditor = React.useCallback((target: TableFocusTarget) => {
+    editors.current.get(cellKey(target))?.focus(target.offset);
+  }, []);
+
+  /**
+   * Execute one navigation result.
+   *
+   * A structural move (Tab off the last cell, Shift-Tab at `(0,0)`, Enter on the
+   * last row) is written through the commit pipeline, and the write's rebuild
+   * puts the caret in `focus`. The model is collected first so an uncommitted
+   * cell edit is part of the operation rather than lost by it.
+   */
+  const navigate = React.useCallback(
+    (resolve: (model: TableModel) => NavigationResult) => {
+      const model = collect();
+      const result = resolve(model);
+      if (result.kind === "focus") {
+        focusEditor(result.focus);
+        return;
+      }
+      cancelIdleFlush();
+      if (result.kind === "leave") {
+        // A leave must not lose the last keystrokes: the collected model is
+        // published first, and the widget's leave handler writes it (if it
+        // differs from the document) before it moves the caret out.
+        store.setModel(model);
+        onLeaveTable(result.edge);
+        return;
+      }
+      store.setModel(result.model);
+      onCommit(result.model, result.focus);
+    },
+    [
+      cancelIdleFlush,
+      collect,
+      focusEditor,
+      onCommit,
+      onLeaveTable,
+      store,
+    ],
+  );
+
   const handlersFor = React.useCallback(
     (ref: TableCellRef): CellEditorHandlers => ({
       onInput: () => {
         store.setActive(ref);
-        scheduleIdleFlush(ref);
+        scheduleIdleFlush();
       },
       onEscape: escape,
+      onTab: (backwards) =>
+        navigate((model) => navigateTab(model, ref, backwards)),
+      onEnter: () => navigate((model) => navigateEnter(model, ref)),
+      onLeave: (direction) =>
+        navigate((model) =>
+          direction === "left" || direction === "right"
+            ? navigateHorizontal(model, ref, direction)
+            : navigateVertical(model, ref, direction),
+        ),
     }),
-    [escape, scheduleIdleFlush, store],
+    [escape, navigate, scheduleIdleFlush, store],
   );
 
   const headerCells: React.ReactNode[] = [];
@@ -219,6 +299,25 @@ export function TableGrid({
         </thead>
         <tbody>{bodyRowNodes}</tbody>
       </table>
+      {/*
+        A clickable strip under the table (plan C.2, `@user` 2026-10-23: "I can
+        not click after the table").
+
+        A block widget is as tall as its table, so when the table is the
+        document's last block there is no document position below it to click:
+        the user is stuck in the cells. The strip gives that click a target, and
+        `mousedown` + `preventDefault` keeps focus from moving anywhere before
+        the widget adds the line (the same trigger the hover `+` uses, D.1).
+        The widget owns the block range, so the caret is placed there.
+      */}
+      <div
+        className="cm-live-table-tail"
+        aria-hidden="true"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          onLeaveTable("after");
+        }}
+      />
     </div>
   );
 }

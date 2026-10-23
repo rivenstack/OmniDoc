@@ -45,6 +45,12 @@ import {
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
+import {
+  cursorCharLeft,
+  cursorCharRight,
+  cursorLineDown,
+  cursorLineUp,
+} from "@codemirror/commands";
 import { buildInlineDecorations } from "../decorations";
 
 /** The direction a caret left the cell's edge. */
@@ -290,21 +296,82 @@ export class CellEditor {
   }
 
   /**
-   * Leave the cell only from the edge the arrow points past.
+   * Leave the cell only from the edge the arrow points past; otherwise move
+   * the caret inside the cell.
    *
-   * A non-empty selection is always native: extending a selection with Shift is
-   * not a request to leave. Left/Right test the decoded offsets `0` and `length`;
-   * Up/Down test the first and last **visual** line, so a wrapped or multi-line
-   * cell moves its own caret first.
+   * ## Why the in-cell half is handled here too
+   *
+   * A cell is a `contenteditable`, and an unhandled arrow key is the
+   * **browser's** to perform — its motion walks out of the editing host into
+   * the next cell's host, so `ArrowDown` in a header cell moved focus sideways
+   * across the row and then out of the table (`@user`, 2026-10-23: "hitting
+   * arrow down will jump over the table to bottom"). The motion commands from
+   * `@codemirror/commands` keep it inside this editor, and returning `true`
+   * stops the browser from doing anything else.
+   *
+   * A non-empty selection is still a move inside the cell: the command
+   * collapses it by direction, exactly like the document editor.
    */
   private runLeave(direction: CellLeaveDirection): boolean {
-    const handler = this.handlers.onLeave;
-    if (!handler) return false;
-    if (!this.atEdge(direction)) return false;
-    handler(direction);
+    if (this.atEdge(direction) && this.handlers.onLeave) {
+      this.handlers.onLeave(direction);
+      return true;
+    }
+    return this.moveWithin(direction);
+  }
+
+  private moveWithin(direction: CellLeaveDirection): boolean {
+    // An unmeasured view throws from inside the motion command's coordinate
+    // lookup instead of answering `false`; both mean "the commands could not
+    // move this caret".
+    let moved: boolean;
+    try {
+      moved =
+        direction === "left"
+          ? cursorCharLeft(this.view)
+          : direction === "right"
+            ? cursorCharRight(this.view)
+            : direction === "up"
+              ? cursorLineUp(this.view)
+              : cursorLineDown(this.view);
+    } catch {
+      moved = false;
+    }
+    if (moved) return true;
+    // Before the view has measured — jsdom never does — the motion commands
+    // cannot resolve a visual line. The cell's *logical* lines are the right
+    // fallback there: a cell is a handful of lines, and an unmeasured one has
+    // no wrapping to account for.
+    return direction === "up" || direction === "down"
+      ? this.moveLine(direction)
+      : false;
+  }
+
+  /** Move to the previous/next logical line, keeping the column. */
+  private moveLine(direction: "up" | "down"): boolean {
+    const { doc, selection } = this.view.state;
+    const head = selection.main.head;
+    const line = doc.lineAt(head);
+    const target = direction === "up" ? line.number - 1 : line.number + 1;
+    if (target < 1 || target > doc.lines) return false;
+    const column = head - line.from;
+    const next = doc.line(target);
+    this.view.dispatch({
+      selection: { anchor: Math.min(next.from + column, next.to) },
+    });
     return true;
   }
 
+  /**
+   * Does the caret sit on the edge the arrow points past?
+   *
+   * Left/Right are decoded offsets `0` and `length`. Up/Down ask whether the
+   * caret's **visual line** is the cell's first or last one — not whether the
+   * caret is at that line's boundary. A single-line cell is both its first and
+   * its last visual line, so a vertical arrow leaves from anywhere in it (the
+   * cell has nowhere else to move); a multi-line cell only leaves from its
+   * outermost lines, which is what makes an interior arrow move inside it.
+   */
   private atEdge(direction: CellLeaveDirection): boolean {
     const { doc, selection } = this.view.state;
     const range = selection.main;
@@ -315,6 +382,6 @@ export class CellEditor {
     if (direction === "right") return position === doc.length;
 
     const line = visualLineAt(this.view, position);
-    return direction === "up" ? position === line.from : position === line.to;
+    return direction === "up" ? line.from === 0 : line.to === doc.length;
   }
 }

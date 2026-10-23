@@ -36,6 +36,17 @@
  * locale claim (plan §4.8); the code is written so the later resolution is a
  * flag, not a rewrite.
  *
+ * ## Direction wins at the block's endpoints
+ *
+ * CodeMirror's vertical motion treats a block replacement as **one visual
+ * line**, so it reports the block's `from` when the caret moves **up** and its
+ * `to` when it moves **down** — regardless of which row the user was aiming at.
+ * A position match there names the opposite row (ArrowUp from the paragraph
+ * below landed in the header), which `@user` reported on 2026-10-23. So at
+ * either endpoint the travel direction decides the row; a **pointer** selection
+ * has no direction to give and keeps the position match (clicking the table's
+ * bottom edge means the last row).
+ *
  * ## The decoded offset
  *
  * A cell editor holds **decoded** text (`\|` → `|`, a line-break tag → newline),
@@ -49,6 +60,72 @@ import { decodeCell, type TableCellRef } from "./model";
 
 /** Which edge of the table the caret came from. */
 export type CaretTravelDirection = "down" | "up";
+
+/**
+ * How a caret position relates to a rendered table block's hidden range.
+ *
+ * - `"inside"` — the caret belongs in a cell.
+ * - `"leave-after"` — the caret is below a table that is the document's **last**
+ *   block, so there is no line to put it on; the caller creates one.
+ * - `null` — the position is not this table's business.
+ *
+ * ## Why `to` is ambiguous
+ *
+ * A block replacement covers `[from, to)`, and `to` is the end of the table's
+ * last line. CodeMirror uses that same offset for two different user intents:
+ *
+ * - coming from the line **below**, the caret is at the end of the table's last
+ *   line (`pos === to`) and belongs in the last row's cell;
+ * - clicking below the document's **last block** (or ArrowDown/End from the
+ *   outer editor) also lands at the document's end, which is `to` when the
+ *   table is last — and the user means "put my caret after the table".
+ *
+ * The document length separates them: a following line exists when `to` is still
+ * before the end, so the caret can go into the table; at the end there is
+ * nothing below, so the table must grow a trailing line (`@user`, 2026-10-23:
+ * "if the table is the latest block, I can not click after the table").
+ *
+ * Strictly interior positions (`from <= pos < to`) always redirect, which keeps
+ * `@user` defect 3 fixed: the leave path puts the outer caret at `to + 1`, never
+ * at `to`, so a caret that legitimately stepped off the table is not yanked
+ * back in.
+ */
+export type TableCaretRegion = "inside" | "leave-after" | null;
+
+/**
+ * Classify a caret against one table block — the pure half of TABLE-007.
+ *
+ * Kept next to `redirectTableCaret` (and separate from the view) so both
+ * boundaries are plain unit tests: `scan.ts` only has to translate the result
+ * into "focus a cell" or "add the line after the table".
+ */
+export function tableCaretRegion(
+  from: number,
+  to: number,
+  docLength: number,
+  caret: number,
+  arrival: TableCaretArrival = {},
+): TableCaretRegion {
+  if (caret >= from && caret < to) return "inside";
+  if (caret !== to) return null;
+  if (to < docLength) return "inside";
+
+  // Document end. A click below the last block means "put the caret after the
+  // table", so the table grows a trailing line. Keyboard motion downwards also
+  // lands here (CM reports the block's end) and means the opposite: the user
+  // was arrowing *into* the table from above. See `redirectTableCaret`'s
+  // endpoint rule.
+  if (arrival.pointer) return "leave-after";
+  return arrival.direction === "down" ? "inside" : "leave-after";
+}
+
+/** How the caret reached the block — the endpoint rule needs both halves. */
+export type TableCaretArrival = {
+  /** Direction of travel, when the change came from a key. */
+  readonly direction?: CaretTravelDirection;
+  /** The selection came from a pointer event (no meaningful direction). */
+  readonly pointer?: boolean;
+};
 
 /**
  * The cell a redirected caret belongs in.
@@ -70,6 +147,11 @@ export type TableCaretRedirectInput = {
   readonly direction?: CaretTravelDirection;
   /** RTL readiness: swap the direction fallback's column (see the header). */
   readonly rtl?: boolean;
+  /**
+   * The caret came from a pointer event, so the endpoint rule keeps the
+   * position match (see the module header).
+   */
+  readonly pointer?: boolean;
 };
 
 /**
@@ -210,6 +292,7 @@ export function redirectTableCaret({
   caret,
   direction = "down",
   rtl = false,
+  pointer = false,
 }: TableCaretRedirectInput): TableCaretTarget | null {
   const parsed = parseMarkdownTable(source);
   if (!parsed) return null;
@@ -217,6 +300,15 @@ export function redirectTableCaret({
 
   const columns = Math.max(parsed.headers.length, 1);
   const bodyRows = parsed.rows.length;
+
+  // The endpoints belong to the direction, not to the position: CodeMirror
+  // reports `from` for an upward motion and `to` for a downward one, so a
+  // position match would send the caret to the far side of the table (see the
+  // module header).
+  if (!pointer && (caret === from || caret === from + source.length)) {
+    return fallbackTarget(direction, bodyRows, columns, rtl);
+  }
+
   const local = Math.min(Math.max(caret - from, 0), source.length);
   const { lineIndex, column, line } = locateLine(source, local);
 
