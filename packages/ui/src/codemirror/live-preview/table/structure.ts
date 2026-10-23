@@ -14,10 +14,22 @@
  *   must hold focus after the write, so the grid only has to translate one
  *   result into one action.
  *
- * The plan reserves this file for the full command layer (`C.3`: menu and
- * affordance commands, sorting, duplicate/move/delete). This task adds **only**
- * the navigation half: pure model operations that already exist in `model.ts`
- * plus the focus targets the keyboard needs. No menu, no drag, no cell range.
+ * This file holds two pure layers, both free of any view:
+ *
+ * - **navigation** (C.2) — what Tab / Enter / an arrow key resolves to; and
+ * - **structure commands** (C.3) — the mutations the context menu (D.3) and the
+ *   hover affordances (D.1/D.2) invoke. Every command answers with a
+ *   {@link StructureResult}: either a new model plus the cell that must hold
+ *   focus after the write, or "this cannot apply" as an explicit `noop`.
+ *
+ * Commands never mutate the view. The grid folds uncommitted cell text into the
+ * model ({@link TableCommandRun}), runs the command, and hands a `commit` result
+ * to the one write pipeline (`widget.ts`). Keeping the decision here is what
+ * makes every menu item a plain unit test and lets D.3 *remove* unavailable
+ * items — {@link canMoveRow} and friends answer the same question the command
+ * will answer, so the menu never offers a command that would noop.
+ *
+ * No menu, no drag, no cell range lives here.
  *
  * ## Offsets
  *
@@ -40,8 +52,19 @@ import {
   bodyRowCount,
   cellText,
   columnCount,
+  deleteColumn as deleteColumnIn,
+  deleteRow as deleteRowIn,
+  duplicateColumn as duplicateColumnIn,
+  duplicateRow as duplicateRowIn,
+  insertColumn,
   insertRow,
+  moveColumn,
+  moveRow,
   pushHeaderDown,
+  setColumnAlignment,
+  sortRows,
+  type SortDirection,
+  type TableAlignment,
   type TableCellRef,
   type TableModel,
 } from "./model";
@@ -203,4 +226,349 @@ export function navigateEnter(
   const bodyRows = bodyRowCount(model);
   if (row < bodyRows) return focusEnd(model, row + 1, col);
   return appendRow(model, col);
+}
+
+// ------------------------------------------------------------ command layer
+
+/**
+ * What one structure command resolved to.
+ *
+ * - `commit` — write this model and focus `focus` after the rebuild.
+ * - `delete-table` — remove the whole block (the widget owns its range).
+ * - `noop` — the command does not apply. Explicit, so a menu item that should
+ *   have been removed cannot silently dispatch an unchanged model.
+ */
+export type StructureResult =
+  | {
+      readonly kind: "commit";
+      readonly model: TableModel;
+      readonly focus: TableFocusTarget;
+    }
+  | { readonly kind: "delete-table" }
+  | { readonly kind: "noop" };
+
+/** The shared "cannot apply" answer. */
+const NOOP: StructureResult = { kind: "noop" };
+
+/**
+ * A result that refuses to claim a commit it did not make.
+ *
+ * A model operation returns its input unchanged when its guard fails (a move to
+ * the same index, a sort by a missing column). The command layer must report
+ * that as `noop`, never as `commit` with a referentially identical model — the
+ * grid would otherwise rebuild the widget for nothing, and a menu item that
+ * cannot apply would look enabled.
+ */
+function committed(
+  model: TableModel,
+  next: TableModel,
+  focus: TableFocusTarget,
+): StructureResult {
+  if (next === model) return NOOP;
+  return { kind: "commit", model: next, focus };
+}
+
+/** Column `col` exists in `model`. */
+function hasColumn(model: TableModel, col: number): boolean {
+  return col >= 0 && col < columnCount(model);
+}
+
+/**
+ * `ref` addresses a cell of the table.
+ *
+ * `row === 0` is the header; `1..bodyRowCount` are the body rows. This is the
+ * full grid address, not the model's body-only index.
+ */
+function isCell(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col) && ref.row >= 0 && ref.row <= bodyRowCount(model);
+}
+
+/** `ref` addresses a **body** row (the header is never a row command target). */
+function isBodyRow(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col) && ref.row >= 1 && ref.row <= bodyRowCount(model);
+}
+
+/** The header cell of `col`, at offset 0 — where column commands land. */
+function headerFocus(col: number): TableFocusTarget {
+  return { row: 0, col, offset: 0 };
+}
+
+// ------------------------------------------------------------------ row ops
+
+/**
+ * Insert an empty body row **before** the clicked body row (plan §4.6).
+ *
+ * The header row is not a body row, so there is nothing "above" it: the command
+ * is a noop there. The new row takes the clicked visual row's place and the
+ * clicked row shifts down, so focus stays in the same column at the same visual
+ * row — the user types into the row they asked for.
+ */
+export function addRowAbove(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isBodyRow(model, ref)) return NOOP;
+  const next = insertRow(model, ref.row - 1);
+  return committed(model, next, { row: ref.row, col: ref.col, offset: 0 });
+}
+
+/**
+ * Insert an empty body row **after** the clicked row (plan §4.6).
+ *
+ * On the header row this inserts the table's first body row, which is the only
+ * row command §4.6 offers on a header cell.
+ */
+export function addRowBelow(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isCell(model, ref)) return NOOP;
+  // The header (row 0) inserts at body index 0; a body row inserts at its own
+  // body index, which is one past itself. Both put the new row at `ref.row + 1`.
+  const next = insertRow(model, ref.row);
+  return committed(model, next, { row: ref.row + 1, col: ref.col, offset: 0 });
+}
+
+/** Move a body row up one; the first body row and the header cannot move. */
+export function moveRowUp(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isBodyRow(model, ref) || ref.row < 2) return NOOP;
+  const index = ref.row - 1;
+  const next = moveRow(model, index, index - 1);
+  return committed(model, next, { row: ref.row - 1, col: ref.col, offset: 0 });
+}
+
+/** Move a body row down one; the last body row cannot move. */
+export function moveRowDown(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isBodyRow(model, ref) || ref.row >= bodyRowCount(model)) return NOOP;
+  const index = ref.row - 1;
+  const next = moveRow(model, index, index + 1);
+  return committed(model, next, { row: ref.row + 1, col: ref.col, offset: 0 });
+}
+
+/** Copy the clicked body row directly below it and focus the copy. */
+export function duplicateRow(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isBodyRow(model, ref)) return NOOP;
+  const next = duplicateRowIn(model, ref.row - 1);
+  return committed(model, next, { row: ref.row + 1, col: ref.col, offset: 0 });
+}
+
+/**
+ * Delete the clicked body row and keep the caret in the same column.
+ *
+ * The caret clamps to the same visual row (which now holds the row that was
+ * below) or to the last body row when the deleted row was last. When the last
+ * body row goes too, the table has no rows left and the closest editable cell is
+ * the header — focus it rather than dropping the caret.
+ */
+export function deleteRow(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!isBodyRow(model, ref)) return NOOP;
+  const next = deleteRowIn(model, ref.row - 1);
+  if (next === model) return NOOP;
+  const remaining = bodyRowCount(next);
+  const row = remaining === 0 ? 0 : Math.min(ref.row, remaining);
+  return { kind: "commit", model: next, focus: { row, col: ref.col, offset: 0 } };
+}
+
+// --------------------------------------------------------------- column ops
+
+/** Insert an empty column directly left of the clicked column. */
+export function addColumnLeft(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col)) return NOOP;
+  const next = insertColumn(model, ref.col);
+  return committed(model, next, headerFocus(ref.col));
+}
+
+/** Insert an empty column directly right of the clicked column. */
+export function addColumnRight(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col)) return NOOP;
+  const next = insertColumn(model, ref.col + 1);
+  return committed(model, next, headerFocus(ref.col + 1));
+}
+
+/** Move a column one to the left; column 0 cannot move. */
+export function moveColumnLeft(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col) || ref.col === 0) return NOOP;
+  const next = moveColumn(model, ref.col, ref.col - 1);
+  return committed(model, next, headerFocus(ref.col - 1));
+}
+
+/** Move a column one to the right; the last column cannot move. */
+export function moveColumnRight(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col) || ref.col >= columnCount(model) - 1) {
+    return NOOP;
+  }
+  const next = moveColumn(model, ref.col, ref.col + 1);
+  return committed(model, next, headerFocus(ref.col + 1));
+}
+
+/** Set a column's alignment and focus its header (plan §4.6). */
+export function alignColumn(
+  model: TableModel,
+  col: number,
+  alignment: TableAlignment,
+): StructureResult {
+  if (!hasColumn(model, col)) return NOOP;
+  // Re-selecting the alignment a column already has is not an edit — and the
+  // menu's checked item is the one the user just confirmed.
+  if ((model.alignments[col] ?? "left") === alignment) return NOOP;
+  const next = setColumnAlignment(model, col, alignment);
+  return committed(model, next, headerFocus(col));
+}
+
+/** Copy the clicked column directly to its right and focus the copy. */
+export function duplicateColumn(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col)) return NOOP;
+  const next = duplicateColumnIn(model, ref.col);
+  return committed(model, next, headerFocus(ref.col + 1));
+}
+
+/**
+ * Delete the clicked column.
+ *
+ * A table must keep at least one column (an empty delimiter row is not a table),
+ * so the last column's command is a noop — the matching availability helper
+ * removes the menu item instead of showing a dead entry.
+ */
+export function deleteColumn(
+  model: TableModel,
+  ref: TableCellRef,
+): StructureResult {
+  if (!hasColumn(model, ref.col) || columnCount(model) <= 1) return NOOP;
+  const next = deleteColumnIn(model, ref.col);
+  if (next === model) return NOOP;
+  return {
+    kind: "commit",
+    model: next,
+    focus: headerFocus(Math.min(ref.col, columnCount(next) - 1)),
+  };
+}
+
+// -------------------------------------------------------------------- sort
+
+/**
+ * Sort the body rows by the clicked cell's column (plan J-2, §4.6).
+ *
+ * The header never moves (`sortRows` sorts the body only), and focus stays in
+ * the cell the user invoked the command from — the row identity may change under
+ * it, which is expected: the user asked for a reordering, not a different cell.
+ */
+export function sortColumn(
+  model: TableModel,
+  ref: TableCellRef,
+  direction: SortDirection,
+): StructureResult {
+  if (!hasColumn(model, ref.col)) return NOOP;
+  const next = sortRows(model, ref.col, direction);
+  return committed(model, next, { row: ref.row, col: ref.col, offset: 0 });
+}
+
+// ------------------------------------------------------------- whole table
+
+/**
+ * Delete the entire table (plan §4.4: whole-table selection → delete).
+ *
+ * The result carries no model: the widget owns the block's document range, the
+ * preceding newline, and the outer caret, so it performs the removal.
+ */
+export function deleteTable(): StructureResult {
+  return { kind: "delete-table" };
+}
+
+// ------------------------------------------------------------- availability
+
+/**
+ * Which commands the menu may offer for a cell.
+ *
+ * §4.6 requires direction-unavailable items to be **removed**, not shown and
+ * refused, so these helpers answer the same question their command does. They
+ * are the single truth for both the menu (D.3) and the command guards above —
+ * if the two ever disagreed, a removed item could noop or a present one could
+ * do nothing.
+ */
+
+export function canAddRowAbove(model: TableModel, ref: TableCellRef): boolean {
+  return isBodyRow(model, ref);
+}
+
+export function canAddRowBelow(model: TableModel, ref: TableCellRef): boolean {
+  return isCell(model, ref);
+}
+
+export function canMoveRow(model: TableModel, ref: TableCellRef): boolean {
+  return canMoveRowUp(model, ref) || canMoveRowDown(model, ref);
+}
+
+export function canMoveRowUp(model: TableModel, ref: TableCellRef): boolean {
+  return isBodyRow(model, ref) && ref.row >= 2;
+}
+
+export function canMoveRowDown(model: TableModel, ref: TableCellRef): boolean {
+  return isBodyRow(model, ref) && ref.row < bodyRowCount(model);
+}
+
+export function canDuplicateRow(model: TableModel, ref: TableCellRef): boolean {
+  return isBodyRow(model, ref);
+}
+
+export function canDeleteRow(model: TableModel, ref: TableCellRef): boolean {
+  return isBodyRow(model, ref);
+}
+
+export function canAddColumnLeft(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col);
+}
+
+export function canAddColumnRight(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col);
+}
+
+export function canMoveColumnLeft(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col) && ref.col > 0;
+}
+
+export function canMoveColumnRight(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col) && ref.col < columnCount(model) - 1;
+}
+
+export function canDuplicateColumn(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col);
+}
+
+export function canDeleteColumn(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col) && columnCount(model) > 1;
+}
+
+export function canAlignColumn(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col);
+}
+
+export function canSortColumn(model: TableModel, ref: TableCellRef): boolean {
+  return hasColumn(model, ref.col);
 }

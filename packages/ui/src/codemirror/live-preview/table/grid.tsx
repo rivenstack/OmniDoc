@@ -56,6 +56,7 @@ import {
   navigateTab,
   navigateVertical,
   type NavigationResult,
+  type StructureResult,
   type TableFocusTarget,
 } from "./structure";
 
@@ -63,6 +64,19 @@ import {
 export type TableCommit = (
   model: TableModel,
   focus?: TableCellRef & { offset?: number },
+) => void;
+
+/**
+ * Run a structure command over the **collected** model (C.3).
+ *
+ * The grid folds every cell editor's text into the model first, so an
+ * uncommitted keystroke is part of the command rather than lost by it. The
+ * executor is registered with the widget so the menu (D.3) and the hover
+ * affordances act on the live table, and so the C.3 suite can exercise the same
+ * commit pipeline the menu will use.
+ */
+export type TableCommandRun = (
+  resolve: (model: TableModel) => StructureResult,
 ) => void;
 
 export type TableGridProps = {
@@ -78,6 +92,17 @@ export type TableGridProps = {
    * caret goes and dispatches it.
    */
   readonly onLeaveTable: (edge: "before" | "after") => void;
+  /**
+   * Delete the whole table (MENU-002's "Delete table"). The widget owns the
+   * block range and the preceding newline, so the removal is its write.
+   */
+  readonly onDeleteTable: () => void;
+  /**
+   * Register the command executor for the widget, and unregister on unmount.
+   * Optional so a future non-widget host (a story, a test) can mount the grid
+   * without one.
+   */
+  readonly onCommandHost?: (run: TableCommandRun | null) => void;
 };
 
 export function TableGrid({
@@ -86,6 +111,8 @@ export function TableGrid({
   onCommit,
   onEscape,
   onLeaveTable,
+  onDeleteTable,
+  onCommandHost,
 }: TableGridProps) {
   const { model, active } = useSyncExternalStore(store.subscribe, store.get);
   const editors = React.useRef(new Map<string, CellEditor>());
@@ -232,6 +259,41 @@ export function TableGrid({
       store,
     ],
   );
+
+  /**
+   * Execute one structure command (MENU-002, plan C.3).
+   *
+   * The model is collected first, always: a menu item activates after a
+   * right-click, and the cell the click left may still hold uncommitted text.
+   * `noop` is a real answer — nothing is written, nothing is rebuilt, and the
+   * idle flush stays armed so the user's pending text is not lost.
+   *
+   * A `commit` goes through the same `onCommit` pipeline as Escape and the idle
+   * flush. The widget decides *when* to dispatch (it defers while CodeMirror is
+   * mid-update), so this function never touches the document itself.
+   */
+  const runCommand = React.useCallback<TableCommandRun>(
+    (resolve) => {
+      const model = collect();
+      const result = resolve(model);
+      if (result.kind === "noop") return;
+      cancelIdleFlush();
+      if (result.kind === "delete-table") {
+        onDeleteTable();
+        return;
+      }
+      store.setModel(result.model);
+      onCommit(result.model, result.focus);
+    },
+    [cancelIdleFlush, collect, onCommit, onDeleteTable, store],
+  );
+
+  // Hand the executor to the widget; a rebuilt grid registers again, and an
+  // unmounted one clears it so a late menu activation cannot act on dead cells.
+  React.useEffect(() => {
+    onCommandHost?.(runCommand);
+    return () => onCommandHost?.(null);
+  }, [onCommandHost, runCommand]);
 
   const handlersFor = React.useCallback(
     (ref: TableCellRef): CellEditorHandlers => ({

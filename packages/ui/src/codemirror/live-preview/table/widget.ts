@@ -44,12 +44,18 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { cellEditorFor } from "./editor";
-import { TableGrid, type TableCommit } from "./grid";
+import {
+  TableGrid,
+  type TableCommandRun,
+  type TableCommit,
+} from "./grid";
 import {
   markdownFromModel,
   tableModelFromMarkdown,
   type TableCellRef,
+  type TableModel,
 } from "./model";
+import type { StructureResult } from "./structure";
 import { TableStore } from "./store";
 
 /**
@@ -117,6 +123,17 @@ export class TablePreviewWidget extends WidgetType {
    * Escape would otherwise splice the table out of its own old range.
    */
   private written = false;
+  /**
+   * The live grid's structure-command executor (C.3).
+   *
+   * Commands must run over the **collected** model — uncommitted cell text lives
+   * in the nested editors, which only the grid can read — so the executor is the
+   * grid's, registered through `onCommandHost`. The menu (D.3) will call it
+   * directly from inside the grid; the lookup below exists for the same reason
+   * `focusTableRenderedCell` does: the mounted widget, not the state's `eq`
+   * replacement, is the one with a live grid.
+   */
+  private commandHost: TableCommandRun | null = null;
 
   constructor(
     private readonly markdown: string,
@@ -154,6 +171,7 @@ export class TablePreviewWidget extends WidgetType {
     this.wrapper = null;
     this.store = null;
     this.view = null;
+    this.commandHost = null;
   }
 
   /**
@@ -238,6 +256,8 @@ export class TablePreviewWidget extends WidgetType {
       onCommit: this.commit,
       onEscape: () => this.view?.focus(),
       onLeaveTable: this.leaveTable,
+      onDeleteTable: this.removeTable,
+      onCommandHost: this.registerCommandHost,
     });
     // `flushSync` so the grid's DOM exists before CodeMirror measures the
     // widget — a concurrent render would leave an empty block for a frame.
@@ -320,6 +340,70 @@ export class TablePreviewWidget extends WidgetType {
    */
   leaveTableAfter(): void {
     this.dispatchLeave("after");
+  }
+
+  /** The grid registers its executor on mount; `null` on unmount. */
+  private readonly registerCommandHost = (run: TableCommandRun | null): void => {
+    this.commandHost = run;
+  };
+
+  /**
+   * Run one structure command against the live grid (plan C.3).
+   *
+   * Returns `false` when the grid has not registered — a widget that is being
+   * replaced, or one whose React tree never mounted — so a menu activation that
+   * races a rebuild does nothing rather than writing a stale model.
+   */
+  runStructureCommand(
+    resolve: (model: TableModel) => StructureResult,
+  ): boolean {
+    if (!this.commandHost) return false;
+    this.commandHost(resolve);
+    return true;
+  }
+
+  /**
+   * Delete the whole table (MENU-002's "Delete table").
+   *
+   * Deferred for the same reason {@link leaveTable} is: the click that asked for
+   * the deletion may arrive during a CodeMirror update, and dispatching then
+   * throws. The decision — the block range, the preceding newline, the outer
+   * caret — is made in {@link dispatchRemoveTable}.
+   */
+  private readonly removeTable = (): void => {
+    setTimeout(() => this.dispatchRemoveTable(), 0);
+  };
+
+  /**
+   * Remove the block and the newline that separated it from the line above.
+   *
+   * Deleting only `from..to` would leave the table's trailing newline as an
+   * empty line where the table used to be; taking the preceding newline instead
+   * makes the surrounding text join up, which is the same "the block and its
+   * preceding newline" rule the whole-table Backspace follows (§4.4) and the
+   * negative the plan asks for. The caret goes to the deletion point in the
+   * **outer** editor, which is where the user is looking after the table is
+   * gone.
+   *
+   * Guarded exactly like {@link dispatchLeave}: a widget that already wrote has
+   * stale offsets, and a detached view must not be dispatched into.
+   */
+  private dispatchRemoveTable(): void {
+    if (this.written) return;
+    const view = this.view;
+    if (!view?.dom.isConnected) return;
+
+    const from = this.from > 0 ? this.from - 1 : this.from;
+    this.written = true;
+    view.dispatch({
+      changes: { from, to: this.to, insert: "" },
+      selection: { anchor: from },
+    });
+    view.focus();
+    // Re-assert after focusing: CodeMirror's focus transaction can overwrite a
+    // selection dispatched while the view was unfocused (the same quirk
+    // `CellEditor.focus` handles).
+    view.dispatch({ selection: { anchor: from } });
   }
 
   /**
@@ -460,6 +544,29 @@ export function leaveTableRenderedAfter(
   if (!widget) return false;
   widget.leaveTableAfter();
   return true;
+}
+
+/**
+ * Run a structure command against the table rendered at `tableFrom` (plan C.3).
+ *
+ * This is the widget-level entry point the C.3 suite drives and the seam the
+ * context menu (D.3) can use from outside React. The grid folds uncommitted cell
+ * text into the model and the widget writes the result through its one commit
+ * pipeline, so a command behaves exactly as it will from a menu item.
+ *
+ * Returns `false` when the table is not mounted (a rebuild raced the call).
+ */
+export function runTableStructureCommand(
+  view: EditorView,
+  tableFrom: number,
+  resolve: (model: TableModel) => StructureResult,
+): boolean {
+  const wrapper = view.dom.querySelector<HTMLElement>(
+    `.cm-live-table-wrapper[data-table-from="${tableFrom}"]`,
+  );
+  const widget = wrapper ? mountedWidgets.get(wrapper) : undefined;
+  if (!widget) return false;
+  return widget.runStructureCommand(resolve);
 }
 
 function stopPropagation(event: Event): void {
