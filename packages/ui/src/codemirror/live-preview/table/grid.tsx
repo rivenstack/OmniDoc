@@ -36,6 +36,7 @@
 
 import * as React from "react";
 import { useSyncExternalStore } from "react";
+import { AddColumnAffordance, AddRowAffordance } from "./affordances";
 import {
   CellEditor,
   TABLE_IDLE_FLUSH_MS,
@@ -67,6 +68,8 @@ import {
   sameCellRef,
 } from "./selection";
 import {
+  addColumnRight,
+  addRowBelow,
   navigateEnter,
   navigateHorizontal,
   navigateTab,
@@ -179,6 +182,15 @@ export function TableGrid({
     started: boolean;
   } | null>(null);
   const rangeOverlay = React.useRef<HTMLDivElement | null>(null);
+  /**
+   * The table's own wrapper — the element that hugs the table (D.1).
+   *
+   * The grid is larger than the table now that the affordance strips sit along
+   * its edges, so a drag's "past the edge" question has to be asked of the
+   * table's box, not the grid's: a pointer over the row strip is below the
+   * table and extends a cell selection even though it is still inside the grid.
+   */
+  const tableRef = React.useRef<HTMLDivElement | null>(null);
 
   const columns = columnCount(model);
   const bodyRows = bodyRowCount(model);
@@ -347,6 +359,38 @@ export function TableGrid({
     },
     [cancelIdleFlush, collect, onCommit, onDeleteTable, store],
   );
+
+  /**
+   * The hover `+` (plan §4.3 S3, Task D.1): append one column at the inline end
+   * and focus its header.
+   *
+   * Routed through {@link runCommand}, not straight to the model, so the
+   * command acts on the **collected** model (an uncommitted keystroke in a cell
+   * is part of the same write) and the widget's own deferral/focus rules apply.
+   * The column is addressed from the live model, so a column added earlier in
+   * the same table is counted.
+   */
+  const addColumnAtEnd = React.useCallback(() => {
+    runCommand((model) =>
+      addColumnRight(model, { row: 0, col: columnCount(model) - 1 }),
+    );
+  }, [runCommand]);
+
+  /**
+   * The row strip's command (`@user`-directed, 2026-10-23): append one empty
+   * body row below the last row and focus its **first** cell.
+   *
+   * `addRowBelow` takes a cell and inserts the new row one past it; the last
+   * visual row is `bodyRowCount(model)`, so passing it with `col: 0` appends at
+   * the bottom and lands the caret in the new row's first cell. A table with no
+   * body rows passes the header (`row: 0`), which is the same "first body row"
+   * answer. Same collected-model/one-write pipeline as the column strip.
+   */
+  const addRowAtEnd = React.useCallback(() => {
+    runCommand((model) =>
+      addRowBelow(model, { row: bodyRowCount(model), col: 0 }),
+    );
+  }, [runCommand]);
 
   /**
    * C.5's clear: empty the selected cells and put the caret in the anchor.
@@ -646,7 +690,7 @@ export function TableGrid({
       }
       const live = store.get();
       const hovered = cellFromTarget(event.target);
-      const rect = gridRef.current?.getBoundingClientRect();
+      const rect = tableRef.current?.getBoundingClientRect();
       const edge = rect ? rangePointerEdge(event, rect) : null;
 
       // Still inside the anchor cell and over no edge: leave the native text
@@ -798,12 +842,62 @@ export function TableGrid({
       onMouseDown={beginRangeDrag}
       onKeyDownCapture={handleRangeKeyDown}
     >
-      <table className="cm-live-table">
-        <thead>
-          <tr>{headerCells}</tr>
-        </thead>
-        <tbody>{bodyRowNodes}</tbody>
-      </table>
+      {/*
+        The affordance frame (D.1, `@user` 2026-10-23).
+
+        It exists to reserve the column strip's gutter: the strip is a
+        full-height ghost sliver *outside* the table's inline-end edge, and the
+        wrapper is `overflow-x: auto`, so without a gutter a table as wide as
+        the note would clip it. `pe-6` is that gutter and the strip is `w-6`, so
+        the strip always has exactly its own width of room and never overlaps a
+        cell. The gutter is only reserved while the affordances exist — a locked
+        note keeps the table's full width.
+
+        Its child is the table's own box (`tableRef`): that is what the column
+        strip measures its height against, and what a cell-range drag asks
+        "past the edge?" of.
+      */}
+      <div className={editable ? "pe-6" : undefined}>
+        <div ref={tableRef} className="relative">
+          <table className="cm-live-table">
+            <thead>
+              <tr>{headerCells}</tr>
+            </thead>
+            <tbody>{bodyRowNodes}</tbody>
+          </table>
+          {/*
+            The column `+` sits in the gutter, beside the table's full height,
+            and the row `+` sits directly below the table. Neither is a
+            circular button and neither is revealed by the table's own hover:
+            each strip reveals **itself** (D.1). Both are absent in a locked
+            note (§4.3), so the frame has no gutter there either.
+          */}
+          {editable ? (
+            <AddColumnAffordance onAddColumn={addColumnAtEnd} />
+          ) : null}
+        </div>
+        {editable ? <AddRowAffordance onAddRow={addRowAtEnd} /> : null}
+        {/*
+          A clickable strip under the table (plan C.2, `@user` 2026-10-23: "I can
+          not click after the table").
+
+          A block widget is as tall as its table, so when the table is the
+          document's last block there is no document position below it to click:
+          the user is stuck in the cells. The strip gives that click a target, and
+          `mousedown` + `preventDefault` keeps focus from moving anywhere before
+          the widget adds the line (the same press the `+` strips use, D.1).
+          It stays **below the row strip**, so the row `+` never steals this
+          click. The widget owns the block range, so the caret is placed there.
+        */}
+        <div
+          className="cm-live-table-tail"
+          aria-hidden="true"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            onLeaveTable("after");
+          }}
+        />
+      </div>
       {/*
         The S5 tint, drawn as **one** element over the rectangle rather than a
         border per cell: a per-cell outline would draw internal lines through
@@ -827,25 +921,6 @@ export function TableGrid({
           aria-hidden="true"
         />
       ) : null}
-      {/*
-        A clickable strip under the table (plan C.2, `@user` 2026-10-23: "I can
-        not click after the table").
-
-        A block widget is as tall as its table, so when the table is the
-        document's last block there is no document position below it to click:
-        the user is stuck in the cells. The strip gives that click a target, and
-        `mousedown` + `preventDefault` keeps focus from moving anywhere before
-        the widget adds the line (the same trigger the hover `+` uses, D.1).
-        The widget owns the block range, so the caret is placed there.
-      */}
-      <div
-        className="cm-live-table-tail"
-        aria-hidden="true"
-        onMouseDown={(event) => {
-          event.preventDefault();
-          onLeaveTable("after");
-        }}
-      />
     </div>
   );
 }

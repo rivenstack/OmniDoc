@@ -433,9 +433,47 @@ Deviations recorded (no plan re-open):
   are the look (B), navigation, entry/leave, range tint, row/column deletion and
   undo; the grip/`+`/menu geometry and the wrap thresholds belong to Phase D.
 
-**Next task pointer: Plan Task D.1 — hover `+` add column (B-4, S3).** Then D.2
-(column drag), D.3 (context menu), E.1 (viewport-bounded scanner) and E.2
-(close-out + `@user` visual pass). No soft-stop is in effect.
+**2026-10-23 — Plan Task D.1 complete (amended by `@user` during the visual
+pass).** One uncommitted slice, both per-task gates green (`npx vitest run` in
+`packages/ui`; `npx nx typecheck ui --skip-nx-cache` at the repo root);
+`npx nx lint ui --skip-nx-cache` green (6 pre-existing warnings, 0 errors).
+`@user` verified the amended behaviour in the running dev server before the
+commit.
+
+| Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (pending) | **D.1** — `table/affordances.tsx`: two full-size **ghost strips**, not one circular button. Each is invisible until hovered/focused **itself** (not the table): a full-height strip outside the table's inline-end edge (`Add column to the right`) and a full-width strip directly below it (`Add row below`). Both are labelled, focusable `<button>`s, `data-visible` is the reveal contract, `mousedown` + `preventDefault` protects the cell's focus, and Enter/Space cancels native activation so one press is one append. `grid.tsx` wires both through `runCommand` (`addColumnRight` / `addRowBelow`), reserves a `pe-6` gutter for the column strip only while editable, keeps the C.2 tail below the row strip, and asks the range drag's "past the edge?" against the table's box rather than the grid's. 14 tests. |
+
+`@user`-directed amendments (2026-10-23), recorded so Phase Check reads them as
+directed, never as parity claims:
+
+- **The row `+` is now built.** Plan §9 lists a row hover `+` as not directed;
+  `@user` directed it during D.1's visual pass. It appends a body row below the
+  last row and focuses that row's **first** cell.
+- **No circular icon button and no table-wide hover.** Each affordance reveals
+  only itself, and both are full-edge hit areas (the captured Obsidian look).
+
+Deviations recorded (no plan re-open):
+
+- **`table/theme.ts` gained `contain: inline-size` on
+  `.cm-live-table-wrapper`** (outside D.1's named files). Without it the frame's
+  gutter pushed the widget's max-content past the note width, so the editor
+  scrolled and the column strip was clipped in the "table fills the note" case.
+  Verified in the browser: 340px viewport → table 270 + 24px strip inside a
+  294px wrapper, no horizontal scroll; at 1024px the table still hugs its
+  content. This is what plan B-2 already asks (wrap rather than run off the
+  page) but it is a behaviour change beyond the literal file list.
+- **The column strip's placement is `top-0 h-full`** (physical) because no
+  logical block-axis Tailwind utility applied; the block axis has no
+  direction-dependent meaning, and the inline placement stays logical
+  (`start-full`), so RTL-readiness is unaffected.
+- **The column tooltip appears below the full-height strip** (below the table),
+  not beside the `+` glyph. Recorded as a §11 visual-pass item if `@user` wants
+  it anchored to the glyph instead.
+
+**Next task pointer: Plan Task D.2 — column drag-and-drop (B-4, S1/S2).** Then
+D.3 (context menu), E.1 (viewport-bounded scanner) and E.2 (close-out + `@user`
+visual pass). No soft-stop is in effect.
 
 ## Objective
 

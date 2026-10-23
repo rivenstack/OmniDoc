@@ -74,10 +74,20 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
     marginBlock: "0.75rem",
     // B-1. See the doc comment: an omission would not be enough.
     outline: "none",
+    // D.1's column strip sits *outside* the table's inline-end edge, in the
+    // gutter the grid reserves. Inline-size containment keeps this widget's
+    // inline contribution out of CodeMirror's content width: without it the
+    // widget's max-content (table + gutter) makes the content wider than the
+    // note, so the editor scrolls and the strip is clipped at the edge. With
+    // it, `max-width: 100%` on the grid resolves to the note's width and a
+    // table near the limit wraps to leave the strip its gutter.
+    contain: "inline-size",
   },
-  // The grid is the positioning context for the affordances (the hover grip and
-  // the `+`, D.1/D.2) and hugs the table, so pinning something to its edge is
-  // pinning it to the table's edge.
+  // The grid hugs the table and carries the D.1 frame (which reserves the
+  // column strip's gutter). It is the positioning context for the cell-range
+  // overlay; the strips themselves are positioned against the table's own
+  // wrapper, so the full-height column strip spans the table and not the row
+  // strip below it.
   ".cm-live-table-grid": {
     position: "relative",
     width: "max-content",
