@@ -25,6 +25,10 @@
  * The row `+` overrides the plan's §9 out-of-scope line for that control: it is
  * now `@user`-directed, and it is recorded as directed — never a parity claim.
  *
+ * Task D.2 adds a third affordance that is not a strip: the **column grip**
+ * ({@link ColumnGrip}). One grip is mounted per column, each revealing only
+ * itself — `@user` (2026-10-24) required the D.1 reveal model here too.
+ *
  * ## Why `mousedown` + `preventDefault`
  *
  * A strip sits next to a table whose cells are independent editing hosts. A
@@ -50,7 +54,7 @@
  * the label is what a screen reader announces.
  */
 
-import { IconPlus } from "@tabler/icons-react";
+import { IconGripHorizontal, IconPlus } from "@tabler/icons-react";
 import * as React from "react";
 import {
   Tooltip,
@@ -174,6 +178,119 @@ export function AddColumnAffordance({ onAddColumn }: AddColumnAffordanceProps) {
       placement="absolute start-full top-0 h-full w-6"
       onActivate={onAddColumn}
     />
+  );
+}
+
+/** The column grip's accessible name (plan §4.3, Task D.2). */
+export const COLUMN_GRIP_LABEL = "Drag to reorder column";
+
+export type ColumnGripProps = {
+  /** The column the grip belongs to; `data-column` carries it to the suite. */
+  readonly column: number;
+  /**
+   * Controlled reveal for a live drag: the grip of the **lifted source** column
+   * is shown and every other one is hidden. `undefined` (no drag) hands the
+   * reveal back to the grip's own hover/focus state.
+   */
+  readonly visible?: boolean;
+  /**
+   * How far the grip has travelled from the grab point, in px (positive = right,
+   * D.2 `@user` 2026-10-25). Defined **only** while that grip is the one being
+   * dragged: it is what makes the grip follow the pointer and what marks it as
+   * the drag source (`data-drag-source`). `undefined` at rest, so a stationary
+   * grip writes no inline style at all.
+   */
+  readonly offset?: number;
+  readonly onPointerDown: (
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => void;
+};
+
+/**
+ * The six-dot column grip (S1; plan §4.3, Task D.2; `@user`-directed).
+ *
+ * A ghost control, like the D.1 strips: no shell, no shadow, just a centred
+ * `IconGripHorizontal` (2 × 3 dots). `@user` reviewed the first cut on
+ * 2026-10-24 and rejected hover-on-the-column revealing it ("the six-dot grip
+ * must only appear when the pointer is exactly on it — the same model as the
+ * D.1 `+` strips"). So one grip is mounted **per column**, invisible by default
+ * but keeping its box and focusability, and it reveals **only itself** on its
+ * own hover or keyboard focus — the same `opacity-0` +
+ * `data-[visible=true]:opacity-100` contract as {@link AffordanceStrip}.
+ * Hovering a cell or the table reveals nothing.
+ *
+ * `start-[calc(50%-0.75rem)]` centres the `w-6` grip on the column's centre
+ * **without** a transform: half of 1.5rem is the grip's own width divided by
+ * two, so the grip's inline-start sits exactly half a grip before the column's
+ * centre. `start-…` is the **logical** `inset-inline-start`, so an RTL resolution
+ * places the grip over the same column without a second rule. That matters more
+ * now than it did for the old `-translate-x-1/2` version: the inline `transform`
+ * below is the drag offset (physical px, `@user` 2026-10-25: "it should really
+ * move with my pointer"), and a translation used for *centring* would fight it —
+ * the grip would jump half its width when the drag began. The grip sits in the
+ * block gutter the grid reserves above the table (see `grid.tsx`), so it is above
+ * the column's top edge rather than clipping against the widget's scroll box.
+ *
+ * The grip is **CSS-anchored inside its own header cell** (`inset-inline-start:
+ * 50%` of that cell, `-top-5` into the grid's `pt-5` gutter), not placed from a
+ * JavaScript measurement. A `getBoundingClientRect()` pass ran before the nested
+ * cell editors mounted and saw only each header's `min-inline-size` floor, so
+ * every grip was misaligned; and no re-measure followed a column widening as
+ * the user typed. Anchoring it in the cell means it can never desync from its
+ * column (`@user`, 2026-10-25: "The position of the grips are not aligned
+ * correctly with the columns").
+ *
+ * The offset is an inline `transform` because it changes on every
+ * `pointermove`: a CSS transition on it would make the grip lag the pointer
+ * instead of following it, so `theme.ts` restricts the drag source's transition
+ * to the non-position properties and lifts it with a shadow.
+ *
+ * `mousedown` is cancelled for the same reason the D.1 strips cancel it: a press
+ * must not blur the cell that holds uncommitted text, or the commit would
+ * rebuild the widget under the pointer before the pointerdown handler sees it.
+ * The press is also **stopped** here: the grip now lives inside a
+ * `[data-row][data-col]` cell, and without `stopPropagation` the grid's
+ * range-drag `mousedown` would read the grip press as a press on the cell.
+ * The drag itself starts on `pointerdown` and is owned by the grid (document
+ * listeners, Escape/pointercancel aborts).
+ */
+export function ColumnGrip({
+  column,
+  visible,
+  offset,
+  onPointerDown,
+}: ColumnGripProps) {
+  const [hovered, setHovered] = React.useState(false);
+  // A live drag owns the reveal; otherwise the grip reveals itself.
+  const shown = visible ?? hovered;
+  const dragging = offset !== undefined;
+
+  return (
+    <button
+      type="button"
+      className="cm-live-table-column-grip absolute -top-5 start-[calc(50%-0.75rem)] z-10 flex h-5 w-6 cursor-grab items-center justify-center rounded-sm bg-transparent text-muted-foreground opacity-0 outline-none transition hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing data-[visible=true]:opacity-100"
+      aria-label={COLUMN_GRIP_LABEL}
+      data-column={column}
+      data-slot="column-grip"
+      data-visible={shown ? "true" : "false"}
+      data-drag-source={dragging ? "true" : undefined}
+      // Physical px on purpose: the grip must track the pointer, including under
+      // an RTL resolution, where "right" is not the inline end.
+      style={dragging ? { transform: `translateX(${offset}px)` } : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        // The grip is inside the header cell now, so its own press must not
+        // reach the grid's range-drag handler (grid.tsx also guards by class).
+        event.stopPropagation();
+      }}
+      onPointerDown={onPointerDown}
+    >
+      <IconGripHorizontal size={14} stroke={2} aria-hidden="true" />
+    </button>
   );
 }
 

@@ -121,7 +121,11 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
     verticalAlign: "top",
   },
   // S1: bold, no filled bar — the header is a row, not a surface.
+  // D.2's column grip is absolutely positioned **inside its own header cell**,
+  // so making the cell the positioning context anchors it with CSS: the grip
+  // stays over its column without any measurement that could go stale.
   ".cm-live-th": {
+    position: "relative",
     fontWeight: "600",
     textAlign: "start",
   },
@@ -208,6 +212,63 @@ export const TABLE_THEME_RULES: Record<string, Record<string, string>> = {
   // suite asserts. Existing token role only: no new `tokens.css` entry.
   '[data-range="true"]': {
     backgroundColor: "color-mix(in srgb, var(--ring) 12%, transparent)",
+  },
+  // D.2 (S2, `@user`-directed; not a parity claim): the **lifted source**
+  // column's accent wash while a drag is live — the column the grip was taken
+  // from, matching Obsidian's `createDragHandle`, which selects the source
+  // column rather than translating it. Existing token role only — `--ring` is
+  // the brand accent the S5 selection already uses. `@user` (2026-10-24)
+  // rejected a column **hover** edge: hovering a cell must paint nothing, so
+  // only the drag state has a rule. The edges are drawn on both horizontal sides
+  // with an inset shadow, so they read the same under an RTL resolution and add
+  // no layout (an inset shadow does not change the box, unlike a border). Exact
+  // treatment is visual-pass item §11-7.
+  '[data-column-drag="true"]': {
+    backgroundColor: "color-mix(in srgb, var(--ring) 10%, transparent)",
+    boxShadow: "inset 1px 0 0 var(--ring), inset -1px 0 0 var(--ring)",
+    // The wash eases in and out; the grip's translate does not (see below).
+    transition: "background-color 120ms ease",
+  },
+  '.cm-live-th[data-column-drag="true"]': {
+    backgroundColor: "color-mix(in srgb, var(--ring) 20%, transparent)",
+  },
+  // The grip while it is the drag source (D.2, `@user` 2026-10-25: "it should
+  // really move with my pointer"). The grip's class carries Tailwind's
+  // `transition` (all properties, 150ms), which would make the inline
+  // `translateX` lag the pointer by a frame's worth of easing and read as
+  // rubber-banding; this rule narrows the transition to the properties that
+  // *should* animate — the lift and the reveal — so the position is
+  // instantaneous. The selector is `[data-drag-source]` **plus** the grip class
+  // so it outranks `.transition` regardless of stylesheet order (CodeMirror
+  // injects this theme at runtime; Tailwind's sheet is linked in the head).
+  // The shadow is a plain token mix, no new `tokens.css` entry.
+  '[data-drag-source="true"].cm-live-table-column-grip': {
+    cursor: "grabbing",
+    boxShadow:
+      "0 4px 12px color-mix(in srgb, var(--foreground) 18%, transparent)",
+    transition:
+      "background-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
+  },
+  // The drop line (D.2, `@user` 2026-10-25), the counterpart of Obsidian's
+  // `table-drag-target`: a hairline at the edge the lifted column would cross.
+  // Its inline offset is written by `grid.tsx` from the spans measured at the
+  // press (logical `inset-inline-start`, so RTL needs no second rule); this rule
+  // owns only the look, and transitions **only** the offset, so the line slides
+  // when the pointer changes target column while its colour and size stay put.
+  // `minInlineSize` rather than `inlineSize`: the element has no content, so its
+  // shrink-to-fit inline size is 0 and the minimum is exactly the hairline —
+  // which also keeps `theme.test.ts`'s B-2 rule ("no computed column widths in
+  // this block") true, since that rule deliberately scans `width`/`inlineSize`.
+  ".cm-live-table-drop-indicator": {
+    position: "absolute",
+    insetBlockStart: "0",
+    blockSize: "100%",
+    minInlineSize: "2px",
+    background: "var(--ring)",
+    borderRadius: "9999px",
+    pointerEvents: "none",
+    zIndex: "20",
+    transition: "inset-inline-start 120ms ease",
   },
 };
 

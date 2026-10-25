@@ -36,7 +36,11 @@
 
 import * as React from "react";
 import { useSyncExternalStore } from "react";
-import { AddColumnAffordance, AddRowAffordance } from "./affordances";
+import {
+  AddColumnAffordance,
+  AddRowAffordance,
+  ColumnGrip,
+} from "./affordances";
 import {
   CellEditor,
   TABLE_IDLE_FLUSH_MS,
@@ -50,10 +54,19 @@ import {
   columnCount,
   deleteColumn,
   deleteRow,
+  moveColumn,
   setCellText,
   type TableCellRef,
   type TableModel,
 } from "./model";
+import {
+  columnAtOffset,
+  dragOffset,
+  dragTo,
+  dropIndicator,
+  type ColumnDragState,
+  type ColumnSpan,
+} from "./drag";
 import { cellKey, cellRef, type TableStore } from "./store";
 import {
   cellRangeBounds,
@@ -102,6 +115,67 @@ function cellFromTarget(target: EventTarget | null): TableCellRef | null {
   const col = Number(host.dataset.col);
   if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
   return { row, col };
+}
+
+/**
+ * The table's column geometry, measured in the table's own coordinate space
+ * (D.2, `@user` 2026-10-25).
+ *
+ * `spans` is in **inline** coordinates, ascending, indexed by column: each
+ * header box's distance from the table's inline-start edge. Under RTL that edge
+ * is the physical right one and the visual order is the reverse of the column
+ * order, so the list is reversed on the way out — the caller then works in
+ * column indices and `inset-inline-start` px with no further mapping. Measured
+ * against the table (`base`) rather than the viewport, so a scroll of the
+ * wrapper cancels out of every subtraction.
+ *
+ * `null` when there is no table or no header row to measure (a stale model, or
+ * jsdom, where every box is zero — callers then get no answer rather than a
+ * wrong one).
+ */
+type ColumnMetrics = {
+  readonly base: DOMRect;
+  readonly rtl: boolean;
+  readonly spans: readonly ColumnSpan[];
+};
+
+function columnMetrics(table: HTMLElement | null): ColumnMetrics | null {
+  if (!table) return null;
+  const headers = Array.from(
+    table.querySelectorAll<HTMLElement>('thead [data-row="0"]'),
+  );
+  if (headers.length === 0) return null;
+  const base = table.getBoundingClientRect();
+  const rtl = getComputedStyle(table).direction === "rtl";
+  const spans = headers.map((header) => {
+    const box = header.getBoundingClientRect();
+    return rtl
+      ? { start: base.right - box.right, end: base.right - box.left }
+      : { start: box.left - base.left, end: box.right - base.left };
+  });
+  return { base, rtl, spans: rtl ? [...spans].reverse() : spans };
+}
+
+/**
+ * The column whose box contains the pointer (D.2).
+ *
+ * A drag's pointer is not always over a cell: the grip sits in the block gutter
+ * *above* the table, and moving it sideways keeps the pointer in that gutter.
+ * Reading the header cells' measured boxes is what makes the drag follow the
+ * pointer there. {@link columnMetrics} answers in inline coordinates already, so
+ * the pointer only has to be converted once: from the inline-start edge, which
+ * is the physical left under LTR and the physical right under RTL.
+ */
+function columnUnderPointer(
+  table: HTMLElement | null,
+  clientX: number,
+): number | null {
+  const metrics = columnMetrics(table);
+  if (!metrics) return null;
+  const offset = metrics.rtl
+    ? metrics.base.right - clientX
+    : clientX - metrics.base.left;
+  return columnAtOffset(metrics.spans, offset);
 }
 
 /**
@@ -191,10 +265,57 @@ export function TableGrid({
    * table and extends a cell selection even though it is still inside the grid.
    */
   const tableRef = React.useRef<HTMLDivElement | null>(null);
+  /**
+   * The live column drag (D.2).
+   *
+   * State for rendering (the lifted source column, the grip that follows the
+   * pointer, the drop line) **and** a ref for the document listeners:
+   * `pointermove` can outrun React's commit, and the drop must read the target
+   * the pointer last named, not the last one React painted.
+   */
+  const [columnDrag, setColumnDrag] = React.useState<ColumnDragState | null>(
+    null,
+  );
+  const columnDragRef = React.useRef<ColumnDragState | null>(null);
+  /**
+   * The drag's measured origin and column geometry (D.2, `@user` 2026-10-25).
+   *
+   * `x` is the pointer's `clientX` at the press: the grip's offset is
+   * `clientX - x`, so the grip keeps the grab point under the pointer instead of
+   * snapping its centre onto it. `spans` is measured **once**, at the press, in
+   * inline coordinates indexed by column ({@link columnMetrics}), which is what
+   * the drop line is positioned from without re-reading layout on every move.
+   *
+   * A ref, not state: it is written in the same handler that publishes the drag
+   * state, before that state renders, so the render below always sees the spans
+   * of the drag it is drawing. It is cleared with the drag.
+   */
+  const columnDragOriginRef = React.useRef<{
+    readonly x: number;
+    readonly spans: readonly ColumnSpan[];
+  } | null>(null);
 
   const columns = columnCount(model);
   const bodyRows = bodyRowCount(model);
   const bounds = range ? cellRangeBounds(range) : null;
+  /**
+   * The drop line's geometry for the live drag (D.2).
+   *
+   * `dropIndicator` marks the edge the lifted column would cross — the target's
+   * inline-end edge moving towards the end, its inline-start edge moving towards
+   * the start — and returns `null` over the source column, so a drag that has
+   * not left its own column draws nothing. The spans come from the origin ref
+   * (measured at the press), which is why they are still valid when the pointer
+   * is in the gutter above the table.
+   */
+  const dropMark =
+    columnDrag && columnDragOriginRef.current
+      ? dropIndicator(
+          columnDragOriginRef.current.spans,
+          columnDrag.from,
+          columnDrag.to,
+        )
+      : null;
 
   const cancelIdleFlush = React.useCallback(() => {
     if (idleTimer.current !== null) {
@@ -391,6 +512,57 @@ export function TableGrid({
       addRowBelow(model, { row: bodyRowCount(model), col: 0 }),
     );
   }, [runCommand]);
+
+  /**
+   * Publish a column drag to React (for the accent render) **and** to the ref
+   * the document listeners read (D.2).
+   *
+   * The ref is the source of truth: `pointermove` can outrun a React commit, and
+   * a drop must land where the pointer last was.
+   */
+  const publishColumnDrag = React.useCallback(
+    (next: ColumnDragState | null) => {
+      columnDragRef.current = next;
+      setColumnDrag(next);
+    },
+    [],
+  );
+
+  /**
+   * Pointer-down on the grip: lift the column (S2). Nothing is written yet.
+   *
+   * `preventDefault` keeps the press from moving focus out of the cell, so a
+   * half-typed cell is not committed (and the widget rebuilt) before the drag
+   * even starts — the same press discipline the D.1 strips use. A pending
+   * cell-range selection is dropped, like a press elsewhere would.
+   *
+   * The pointer's own `clientX` and the measured header spans are recorded here
+   * (D.2, `@user` 2026-10-25): the grip is translated by `clientX - x` on every
+   * move, and the drop line is positioned from the spans, so neither path needs
+   * a measurement per frame.
+   */
+  const beginColumnDrag = React.useCallback(
+    (column: number, event: React.PointerEvent<HTMLButtonElement>) => {
+      if (!editable || event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (store.get().range) store.setRange(null);
+      const metrics = columnMetrics(tableRef.current);
+      columnDragOriginRef.current = {
+        x: event.clientX,
+        spans: metrics?.spans ?? [],
+      };
+      publishColumnDrag({
+        // A `MouseEvent` in jsdom has no `pointerId`; the primary pointer's `0`
+        // is the same fallback the cell-range drag uses.
+        pointerId: (event.nativeEvent as PointerEvent).pointerId ?? 0,
+        from: column,
+        to: column,
+        offset: 0,
+      });
+    },
+    [editable, publishColumnDrag, store],
+  );
 
   /**
    * C.5's clear: empty the selected cells and put the caret in the anchor.
@@ -646,6 +818,9 @@ export function TableGrid({
    */
   const beginRangeDrag = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!editable || event.button !== 0) return;
+    // The grip owns its own press (D.2).
+    if ((event.target as Element | null)?.closest(".cm-live-table-column-grip"))
+      return;
     const anchor = cellFromTarget(event.target);
     if (!anchor) return;
     if (store.get().range) store.setRange(null);
@@ -748,6 +923,97 @@ export function TableGrid({
   }, [editable, store]);
 
   /**
+   * The column drag's state machine, driven from the **document** (D.2).
+   *
+   * Pointer moves leave the grip immediately — it is 24px wide in a gutter — so
+   * a listener on the grip itself would only ever see the press. Like the
+   * cell-range drag, this listens in the capture phase on the document, which
+   * also survives the widget's own event isolation.
+   *
+   * A move carries **two** answers, and one publish (D.2, `@user` 2026-10-25:
+   * the grip "should really move with my pointer"):
+   *
+   * - `to`, through {@link dragTo} — which final column the drop would use; and
+   * - `offset`, through {@link dragOffset} — how far the grip has travelled, so
+   *   the **grip** follows the pointer 1:1 while the columns stay put (the
+   *   Obsidian `createDragHandle` model, and the reason the source column is the
+   *   one painted as lifted).
+   *
+   * Both helpers return the same state object when nothing changed, so one
+   * identity check is the "either changed" test.
+   *
+   * Drop is `moveColumn` through {@link runCommand}: the command runs on the
+   * **collected** model (uncommitted cell text travels with the reorder), the
+   * widget owns when the write is dispatched, and the rebuilt table focuses the
+   * moved column's header. Escape and `pointercancel` clear the drag without a
+   * command, so the document is untouched. Dropping on the source column is a
+   * no-op by construction, not a commit of an unchanged model.
+   */
+  React.useEffect(() => {
+    if (!editable) return;
+
+    const finish = (commit: boolean) => {
+      const drag = columnDragRef.current;
+      if (!drag) return;
+      // One clear drops the lift, the grip's transform and the drop line: all
+      // three render from this state, so nothing can outlive the drag.
+      columnDragOriginRef.current = null;
+      publishColumnDrag(null);
+      if (!commit || drag.from === drag.to) return;
+      const from = drag.from;
+      const to = drag.to;
+      runCommand((model) => {
+        const next = moveColumn(model, from, to);
+        if (next === model) return { kind: "noop" };
+        return {
+          kind: "commit",
+          model: next,
+          focus: { row: 0, col: to, offset: 0 },
+        };
+      });
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = columnDragRef.current;
+      if (!drag) return;
+      // A cell under the pointer names its column directly. The gutter above
+      // the table has no cell under it, so the header boxes answer instead.
+      const cell = cellFromTarget(event.target);
+      const over =
+        cell?.col ?? columnUnderPointer(tableRef.current, event.clientX);
+      if (over === null) return;
+      const origin = columnDragOriginRef.current;
+      const next = dragOffset(
+        dragTo(drag, over, columnCount(store.get().model)),
+        event.clientX - (origin?.x ?? event.clientX),
+      );
+      if (next !== drag) publishColumnDrag(next);
+    };
+
+    const onPointerUp = () => finish(true);
+    const onPointerCancel = () => finish(false);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !columnDragRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      finish(false);
+    };
+
+    document.addEventListener("pointermove", onPointerMove, true);
+    document.addEventListener("pointerup", onPointerUp, true);
+    document.addEventListener("pointercancel", onPointerCancel, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointermove", onPointerMove, true);
+      document.removeEventListener("pointerup", onPointerUp, true);
+      document.removeEventListener("pointercancel", onPointerCancel, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+      columnDragRef.current = null;
+      columnDragOriginRef.current = null;
+    };
+  }, [editable, publishColumnDrag, runCommand, store]);
+
+  /**
    * Measure the rectangle for the S5 overlay.
    *
    * The browser has already laid the cells out, so the overlay is positioned
@@ -798,9 +1064,25 @@ export function TableGrid({
         editable={editable}
         active={active}
         inRange={bounds !== null && rangeContains(bounds, { row: 0, col })}
+        dragging={columnDrag !== null && columnDrag.from === col}
         handlers={handlersFor}
         register={register}
         onFocus={store.setActive}
+        // D.2: the grip is a child of **its own** header cell, so the cell's
+        // box (position: relative, `theme.ts`) anchors it with CSS — no offset
+        // is measured, and it cannot desync while a column resizes. During a
+        // drag the **source** grip is the revealed one (`@user` 2026-10-25: it
+        // follows the pointer) and it alone carries the travel offset.
+        grip={
+          editable ? (
+            <ColumnGrip
+              column={col}
+              visible={columnDrag ? columnDrag.from === col : undefined}
+              offset={columnDrag?.from === col ? columnDrag.offset : undefined}
+              onPointerDown={(event) => beginColumnDrag(col, event)}
+            />
+          ) : undefined
+        }
       />,
     );
   }
@@ -820,6 +1102,7 @@ export function TableGrid({
           inRange={
             bounds !== null && rangeContains(bounds, { row: index + 1, col })
           }
+          dragging={columnDrag !== null && columnDrag.from === col}
           handlers={handlersFor}
           register={register}
           onFocus={store.setActive}
@@ -837,7 +1120,7 @@ export function TableGrid({
   return (
     <div
       ref={gridRef}
-      className="cm-live-table-grid"
+      className={editable ? "cm-live-table-grid pt-5" : "cm-live-table-grid"}
       onBlur={handleBlur}
       onMouseDown={beginRangeDrag}
       onKeyDownCapture={handleRangeKeyDown}
@@ -865,6 +1148,26 @@ export function TableGrid({
             </thead>
             <tbody>{bodyRowNodes}</tbody>
           </table>
+          {/*
+            The drop line (D.2, `@user` 2026-10-25: "it should really move with
+            my pointer"). Obsidian's `createDragHandle` moves only the handle and
+            marks where the column would land; the columns themselves never
+            translate. The line is positioned from the spans measured at the
+            press, in inline coordinates, so it sits on the edge the column would
+            cross and slides between target columns (`theme.ts` transitions
+            `inset-inline-start` only). Absent while the source is its own
+            target: there is nothing to mark.
+          */}
+          {dropMark && columnDrag ? (
+            <div
+              className="cm-live-table-drop-indicator"
+              data-table-drop-indicator="true"
+              data-drop-column={columnDrag.to}
+              data-drop-edge={dropMark.edge}
+              aria-hidden="true"
+              style={{ insetInlineStart: `${dropMark.inlineStart}px` }}
+            />
+          ) : null}
           {/*
             The column `+` sits in the gutter, beside the table's full height,
             and the row `+` sits directly below the table. Neither is a
@@ -933,17 +1236,26 @@ type TableCellProps = {
   readonly active: TableCellRef | null;
   /** Inside the current cell-range rectangle (S5). */
   readonly inRange: boolean;
+  /** This column is the **lifted source** of a live drag (D.2, S2): accent fill. */
+  readonly dragging: boolean;
   readonly handlers: (ref: TableCellRef) => CellEditorHandlers;
   readonly register: (ref: TableCellRef, editor: CellEditor | null) => void;
   readonly onFocus: (ref: TableCellRef) => void;
+  /**
+   * An affordance rendered **inside** the cell host (D.2's column grip in a
+   * header). React renders it; the nested editor is appended beside it, so this
+   * must stay a leaf node the editor can coexist with.
+   */
+  readonly grip?: React.ReactNode;
 };
 
 /**
- * One cell: a `<th>`/`<td>` whose only child is a nested editor's DOM.
+ * One cell: a `<th>`/`<td>` whose child is a nested editor's DOM (and, for a
+ * header, its D.2 grip).
  *
- * React owns the element but never its children — the `CellEditor` appends the
- * CodeMirror tree into that node and React reconciles nothing, which is why the
- * element carries no React children at all.
+ * React owns the element and any declarative child (the grip); the `CellEditor`
+ * appends the CodeMirror tree into that same node and React reconciles nothing
+ * about it, which is why the element carries no other React children.
  */
 function TableCell({
   model,
@@ -952,9 +1264,11 @@ function TableCell({
   editable,
   active,
   inRange,
+  dragging,
   handlers,
   register,
   onFocus,
+  grip,
 }: TableCellProps) {
   const hostRef = React.useRef<HTMLTableCellElement | null>(null);
   const editorRef = React.useRef<CellEditor | null>(null);
@@ -1011,10 +1325,16 @@ function TableCell({
       data-cell={cellKey(cell)}
       data-active={focused ? "true" : undefined}
       data-range={inRange ? "true" : undefined}
+      // D.2's lifted state (S2): the **source** column, header and body, while
+      // its grip follows the pointer. Hovering a cell paints nothing — `@user`
+      // rejected a column hover edge on 2026-10-24.
+      data-column-drag={dragging ? "true" : undefined}
       // The delimiter row's alignment is a column property; `left` is the
       // default, and the old markup left the style off for it.
       style={alignment === "left" ? undefined : { textAlign: alignment }}
       onFocus={() => onFocus(cell)}
-    />
+    >
+      {grip}
+    </Tag>
   );
 }
