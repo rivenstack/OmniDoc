@@ -80,6 +80,7 @@ import {
   rangePointerEdge,
   sameCellRef,
 } from "./selection";
+import { TableContextMenu } from "./menu";
 import {
   addColumnRight,
   addRowBelow,
@@ -240,6 +241,25 @@ export function TableGrid({
   const editors = React.useRef(new Map<string, CellEditor>());
   const idleTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const gridRef = React.useRef<HTMLDivElement | null>(null);
+  /**
+   * The context menu's anchor (D.3).
+   *
+   * A right-click inside a cell records the cell here; the menu itself is the
+   * project's Base UI `ContextMenu`, whose trigger is the `<table>` (so the
+   * pointer position is the menu's, not ours). The anchor is what decides the
+   * header guard, the checked alignment item and where a dismissed menu returns
+   * focus. It is deliberately **not** the active cell: opening the menu must not
+   * move the caret.
+   */
+  const [menuCell, setMenuCell] = React.useState<TableCellRef | null>(null);
+  /** The anchor captured at the last open — activation reads this, not a prop. */
+  const menuAnchorRef = React.useRef<TableCellRef | null>(null);
+  /**
+   * The caret offset of the anchor cell at open time, restored when the menu is
+   * dismissed. `undefined` when the anchor was not the focused cell (a
+   * right-click on another cell): the cell's end is the sensible target then.
+   */
+  const menuOffsetRef = React.useRef<number | undefined>(undefined);
   /**
    * The live range drag (S5).
    *
@@ -412,6 +432,10 @@ export function TableGrid({
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
     const next = event.relatedTarget as Node | null;
     if (next && event.currentTarget.contains(next)) return;
+    // Focus moving into the table menu's portal is not the user leaving the
+    // table: committing here would rebuild the widget and destroy the open
+    // menu (and lose the cell text to an extra write) — the D.3 hardening rule.
+    if (next instanceof Element && next.closest("[data-table-menu]")) return;
     cancelIdleFlush();
     store.setActive(null);
     flush();
@@ -480,6 +504,129 @@ export function TableGrid({
     },
     [cancelIdleFlush, collect, onCommit, onDeleteTable, store],
   );
+
+  /**
+   * Record the menu's anchor and the caret position to restore (D.3).
+   *
+   * Called from the **capture** phase of a real right-click and from the
+   * keyboard opener, so both paths agree on the cell. It does not move the
+   * caret: the click leaves the cell's caret where the user left it, and the
+   * menu only reads the cell to answer "header?" and "which alignment?".
+   */
+  const rememberMenuAnchor = React.useCallback(
+    (cell: TableCellRef) => {
+      // The menu will run a command (or be dismissed and refocus the anchor), so
+      // a pending idle flush must not fire while the menu is open: it would
+      // rebuild the widget and destroy the menu under the pointer. The close
+      // handler re-arms it for a dismissed menu.
+      cancelIdleFlush();
+      const anchor = clampCellRef(cell, store.get().model);
+      const editor = editors.current.get(cellKey(anchor));
+      menuOffsetRef.current = editor?.view.state.selection.main.head;
+      menuAnchorRef.current = anchor;
+      setMenuCell(anchor);
+    },
+    [cancelIdleFlush, store],
+  );
+
+  /**
+   * The menu closed.
+   *
+   * A command already named its focus target and the write pipeline restores it
+   * (or removed the table), so only a **dismissed** menu returns focus to the
+   * anchor. The editor is checked for connection first: a structural command
+   * can have rebuilt the grid and destroyed the old cell editors, and focusing
+   * a detached editor would throw.
+   */
+  const handleMenuClose = React.useCallback(
+    (commandRan: boolean) => {
+      const anchor = menuAnchorRef.current;
+      const offset = menuOffsetRef.current;
+      menuAnchorRef.current = null;
+      menuOffsetRef.current = undefined;
+      if (commandRan || !anchor) return;
+      // A dismissed menu leaves the table's pending text uncommitted; re-arm
+      // the idle write so abandoning the note still reaches autosave.
+      scheduleIdleFlush();
+      const editor = editors.current.get(cellKey(anchor));
+      if (!editor || !editor.view.dom.isConnected) return;
+      editor.focus(offset);
+    },
+    [scheduleIdleFlush],
+  );
+
+  /**
+   * Open the menu for `cell` from the keyboard (D-4).
+   *
+   * The menu component owns the trigger, so the keyboard path **forwards a
+   * synthetic `contextmenu`** to the table element rather than duplicating the
+   * open logic. The event is dispatched at the anchor cell's centre so Base UI
+   * anchors the portal where a pointer would have.
+   */
+  const openMenuAt = React.useCallback(
+    (cell: TableCellRef) => {
+      const anchor = clampCellRef(cell, store.get().model);
+      rememberMenuAnchor(anchor);
+
+      const grid = gridRef.current;
+      const table = grid?.querySelector<HTMLTableElement>(
+        "table.cm-live-table",
+      );
+      if (!table) return;
+      const host = grid?.querySelector<HTMLElement>(
+        `[data-row="${anchor.row}"][data-col="${anchor.col}"]`,
+      );
+      const rect = host?.getBoundingClientRect();
+      table.dispatchEvent(
+        new MouseEvent("contextmenu", {
+          bubbles: true,
+          cancelable: true,
+          clientX: rect ? rect.left + rect.width / 2 : 0,
+          clientY: rect ? rect.top + rect.height / 2 : 0,
+        }),
+      );
+    },
+    [rememberMenuAnchor, store],
+  );
+
+  /**
+   * Capture the anchor of a real right-click.
+   *
+   * A target outside any cell (the tail strip, the grid gutter) is **not** this
+   * menu's business — the general editor menu (Task 6.3) will own it — so the
+   * event is left alone. Focus is likewise untouched: the right-click's own
+   * `mousedown` is ignored by {@link beginRangeDrag} (button 2), and the
+   * trigger opens the menu at the pointer.
+   */
+  const captureMenuAnchor = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!editable) return;
+    const cell = cellFromTarget(event.target);
+    if (!cell) return;
+    rememberMenuAnchor(cell);
+  };
+
+  /**
+   * The context-menu key / Shift+F10 (plan §4.6, D-4).
+   *
+   * The active cell wins; a focus that the store has not seen yet falls back to
+   * the DOM's `activeElement`. `preventDefault` is asserted by the suite: the
+   * key must not also reach the cell editor, whose browser default would be a
+   * native context menu.
+   */
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!editable) return;
+    if (
+      event.key !== "ContextMenu" &&
+      !(event.shiftKey && event.key === "F10")
+    ) {
+      return;
+    }
+    const cell = store.get().active ?? cellFromTarget(document.activeElement);
+    if (!cell) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openMenuAt(cell);
+  };
 
   /**
    * The hover `+` (plan §4.3 S3, Task D.1): append one column at the inline end
@@ -728,6 +875,21 @@ export function TableGrid({
     if (!typeOverRange(event.key)) return;
     event.preventDefault();
     event.stopPropagation();
+  };
+
+  /**
+   * The grid's one key capture: the menu keys first, then a live cell range.
+   *
+   * Both have to run **before** the nested cell editor's own keymap (the cell is
+   * a descendant of this div), and the menu key is consumed outright: a
+   * `contextmenu` key would otherwise be offered to the browser's native menu.
+   * A range key handler that declined a key (`defaultPrevented` false) leaves
+   * it for the cell, exactly as before.
+   */
+  const handleKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    handleMenuKeyDown(event);
+    if (event.defaultPrevented) return;
+    handleRangeKeyDown(event);
   };
 
   /**
@@ -1123,7 +1285,8 @@ export function TableGrid({
       className={editable ? "cm-live-table-grid pt-5" : "cm-live-table-grid"}
       onBlur={handleBlur}
       onMouseDown={beginRangeDrag}
-      onKeyDownCapture={handleRangeKeyDown}
+      onContextMenuCapture={captureMenuAnchor}
+      onKeyDownCapture={handleKeyDownCapture}
     >
       {/*
         The affordance frame (D.1, `@user` 2026-10-23).
@@ -1142,12 +1305,24 @@ export function TableGrid({
       */}
       <div className={editable ? "pe-6" : undefined}>
         <div ref={tableRef} className="relative">
-          <table className="cm-live-table">
+          {/*
+            The table is the context-menu trigger (plan D.3, MENU-002). The menu
+            lives in `menu.tsx`; the grid only supplies the anchor and the
+            executor. It is mounted even before any right-click so Base UI owns
+            the trigger, and it renders a plain table in a locked note.
+          */}
+          <TableContextMenu
+            model={model}
+            cell={menuCell}
+            editable={editable}
+            run={runCommand}
+            onClose={handleMenuClose}
+          >
             <thead>
               <tr>{headerCells}</tr>
             </thead>
             <tbody>{bodyRowNodes}</tbody>
-          </table>
+          </TableContextMenu>
           {/*
             The drop line (D.2, `@user` 2026-10-25: "it should really move with
             my pointer"). Obsidian's `createDragHandle` moves only the handle and
