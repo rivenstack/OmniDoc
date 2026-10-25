@@ -516,9 +516,41 @@ Gate evidence, D.2: `npx vitest run` **1090/1090** (60 files); typecheck, lint a
 Prettier green. `@user` verified grip alignment, 1:1 tracking, source lift, drop
 line, reorder, focus, and Escape abort in the running dev server.
 
-**Next task pointer: Plan Task D.3 — cell context menu (MENU-002; B-5 seam).**
-Then E.1 (viewport-bounded scanner) and E.2 (close-out + `@user` visual pass). No
-soft-stop is in effect.
+**2026-10-25 — Plan Task D.3 complete.** One commit, both per-task gates green
+(`npx vitest run` in `packages/ui`; `npx nx typecheck ui --skip-nx-cache` at the
+repo root); `npx nx lint ui --skip-nx-cache` green (6 pre-existing warnings, 0
+errors). `@user` verified the menu in the running dev server before the commit.
+
+| Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `d461e0a` | **D.3** — `table/menu-model.ts` (pure `menuSections()` + `runMenuCommand()`, the **Task 6.3 seam**), `table/menu.tsx` (the project's portalled Base UI `ContextMenu`: Row/Column submenus, checked alignment radio group, sort A→Z/Z→A), `grid.tsx` wiring (anchor capture, synthetic `contextmenu` forwarding for the context-menu key / Shift+F10, focus restore, menu-portal blur guard). 60 tests (`menu-model.test.ts` 45, `menu.test.tsx` 15). |
+
+Design notes recorded (no plan re-open):
+
+- **The trigger is the `<table>`** via Base UI's `render` prop, so a right-click in
+  any cell opens the menu at the pointer without a wrapper element; a locked note
+  renders a bare table with no trigger.
+- **Activation runs one `setTimeout(0)` after the menu closes.** Base UI returns
+  focus to the trigger as part of closing, which overwrote the command's own
+  focus target (probed: focus fell to `body` instead of the new header). The
+  resolver still runs against the model the grid collects at activation time and
+  clamps the open-time anchor, so a table that shrank under the menu is safe.
+- **Alignment is a `ContextMenuRadioGroup`** (the S4 checked state); submenu
+  separators are derived from command ids so removing an unavailable item cannot
+  leave a stray rule.
+- **MENU-002 only**: right-clicking the table tail/gutter never opens this menu;
+  the general editor menu remains Task 6.3, to be appended to the same
+  `sections` array.
+- Uncommitted cell text is folded into the one command write (hardening test), and
+  the menu's portal is excluded from the grid's blur-commit path so opening it
+  never rebuilds the widget underneath itself.
+
+Gate evidence, D.3: `npx vitest run` **1150/1150** (62 files); typecheck, lint and
+Prettier green.
+
+**Phase D complete (D.1–D.3).** Next task pointer: **Plan Task E.1 —
+viewport-bounded scanner (F-15 C-1)**, then E.2 (close-out + `@user` visual pass).
+No soft-stop is in effect.
 
 ## Objective
 
