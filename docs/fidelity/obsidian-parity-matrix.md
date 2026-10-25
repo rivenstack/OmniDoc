@@ -90,7 +90,7 @@ implementation (plan §2).
 | Entry | Disposition | Task | Coverage | Note |
 |---|---|---|---|---|
 | `OBS-1.14.4-MENU-001` | adapt | 6.3 | verified +unknowns | One menu builder, fixed section order (Format / Paragraph / Insert + token-specific entries); web menu component. |
-| `OBS-1.14.4-MENU-002` | adopt | 3.3 | verified +unknowns | Table-cell menu: row/column ops + sort. Extends the F-14 bubble. |
+| `OBS-1.14.4-MENU-002` | adopt | 3.3 | verified +unknowns | Table-cell context menu (right-click / ContextMenu / Shift+F10): row/column operations and sort. The pure sections/command model is the Task 6.3 seam; it stays separate from the general editor menu. |
 | `OBS-1.14.4-MENU-003` | out-of-scope | — | verified | Note-composer extract-selection; no such product feature. Re-open if note splitting ships. |
 
 ## cursor-movement (9)

@@ -233,7 +233,7 @@ export const DISPOSITIONS: Readonly<Record<string, EntryDisposition>> = {
   "MENU-002": {
     disposition: "adopt",
     task: "3.3",
-    note: "Table-cell menu: row/column ops + sort. Extends the F-14 bubble.",
+    note: "Table-cell context menu (right-click / ContextMenu / Shift+F10): row/column operations and sort. The pure sections/command model is the Task 6.3 seam; it stays separate from the general editor menu.",
   },
   "MENU-003": {
     disposition: "out-of-scope",

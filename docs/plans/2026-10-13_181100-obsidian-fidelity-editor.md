@@ -755,6 +755,9 @@ incl. "None"; nesting.
 **Commit.** `feat(editor): callouts in live preview`
 
 #### Task 3.3 — Tables: per-cell model, redirect, navigation, menu
+> **Superseded for the table slice** by
+> [`2026-10-16_172806-table-rebuild-obsidian-ux.md`](2026-10-16_172806-table-rebuild-obsidian-ux.md)
+> (Rev 2, 2026-10-16). Its catalogue contract and gates carry over unchanged.
 **Catalogue.** TABLE-001, -007; MENU-002; F-15 C-1 (perf).
 **Files.** Modify `live-preview/table/*`.
 **Tests.** Cell document is decoded text (escaped pipe → pipe, `<br>` →
