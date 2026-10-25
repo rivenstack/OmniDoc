@@ -442,7 +442,7 @@ commit.
 
 | Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| (pending) | **D.1** — `table/affordances.tsx`: two full-size **ghost strips**, not one circular button. Each is invisible until hovered/focused **itself** (not the table): a full-height strip outside the table's inline-end edge (`Add column to the right`) and a full-width strip directly below it (`Add row below`). Both are labelled, focusable `<button>`s, `data-visible` is the reveal contract, `mousedown` + `preventDefault` protects the cell's focus, and Enter/Space cancels native activation so one press is one append. `grid.tsx` wires both through `runCommand` (`addColumnRight` / `addRowBelow`), reserves a `pe-6` gutter for the column strip only while editable, keeps the C.2 tail below the row strip, and asks the range drag's "past the edge?" against the table's box rather than the grid's. 14 tests. |
+| `7147d68` | **D.1** — `table/affordances.tsx`: two full-size **ghost strips**, not one circular button. Each is invisible until hovered/focused **itself** (not the table): a full-height strip outside the table's inline-end edge (`Add column to the right`) and a full-width strip directly below it (`Add row below`). Both are labelled, focusable `<button>`s, `data-visible` is the reveal contract, `mousedown` + `preventDefault` protects the cell's focus, and Enter/Space cancels native activation so one press is one append. `grid.tsx` wires both through `runCommand` (`addColumnRight` / `addRowBelow`), reserves a `pe-6` gutter for the column strip only while editable, keeps the C.2 tail below the row strip, and asks the range drag's "past the edge?" against the table's box rather than the grid's. 14 tests. |
 
 `@user`-directed amendments (2026-10-23), recorded so Phase Check reads them as
 directed, never as parity claims:
@@ -471,9 +471,54 @@ Deviations recorded (no plan re-open):
   not beside the `+` glyph. Recorded as a §11 visual-pass item if `@user` wants
   it anchored to the glyph instead.
 
-**Next task pointer: Plan Task D.2 — column drag-and-drop (B-4, S1/S2).** Then
-D.3 (context menu), E.1 (viewport-bounded scanner) and E.2 (close-out + `@user`
-visual pass). No soft-stop is in effect.
+**2026-10-25 — Plan Task D.2 complete (amended twice by `@user` during the visual
+pass).** One commit, both per-task gates green (`npx vitest run` in `packages/ui`;
+`npx nx typecheck ui --skip-nx-cache` at the repo root); `npx nx lint ui
+--skip-nx-cache` green (6 pre-existing warnings, 0 errors).
+
+| Commit    | What landed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ac86096` | **D.2** — `table/drag.ts` (pure `dropIndex`, `dragTo`, `columnAtOffset`, `dragOffset`, `dropIndicator`), one always-mounted **six-dot grip per column** in `affordances.tsx`, and the grid wiring in `grid.tsx`; `theme.ts` carries the lift wash/edges, the drag-source lift and the drop line. Drop runs `moveColumn` through `runCommand` (uncommitted text travels, alignment follows, focus lands on the moved header); Escape and `pointercancel` clear with no write. 10 pure + 13 DOM tests. |
+
+`@user`-directed amendments, recorded so Phase Check reads them as directed, never
+as parity claims:
+
+- **2026-10-24 — reveal model:** one ghost grip per column, each revealing only
+  itself on its own hover/focus (the D.1 strip model). Hovering a column's cells
+  paints nothing.
+- **2026-10-25 — grip alignment:** the first cut positioned grips from
+  `getBoundingClientRect()` measured in a `useLayoutEffect` that ran before the
+  nested cell editors mounted, so every grip landed on the `4rem` fallback box
+  (64px spacing). The grip is now a child of its own header cell, anchored with
+  `inset-inline-start: calc(50% - 0.75rem)`; no measurement can go stale and a
+  widening column keeps it centred.
+- **2026-10-25 — drag follow:** the grip now tracks the pointer 1:1 (inline
+  `transform`), the **source** column is the lifted one (`data-column-drag`), and
+  a thin accent **drop line** marks the target edge and slides between targets.
+  This follows Obsidian 1.14.4's `createDragHandle` implementation, inspected in
+  `RE-Obsidian/obsidian-1.14.4-extract/app.js` at `@user`'s suggestion; columns
+  themselves do not translate. A grip press no longer arms a cell-range drag.
+
+Deviations recorded (no plan re-open):
+
+- **No table-bounds clamp and no scroller auto-scroll** (Obsidian has both): the
+  grip follows the pointer exactly, so dragging far past the table inside
+  `overflow-x: auto` can clip it at the wrapper edge. Recorded as a §11
+  visual-pass item; the 1:1 motion was the directed requirement.
+- **`theme.test.ts` B-2 guard honoured with `min-inline-size`** on the drop line
+  rather than `inline-size`: every `width`/`inline-size` in the table block must
+  stay `max-content`/`100%`, so the 2px hairline is a minimum; visually identical.
+- **The header cell's accessible name now includes the grip label** (the grip is
+  an interactive child of the `th`). Same shape as a sort button in a header;
+  flagged for the a11y pass, not changed.
+
+Gate evidence, D.2: `npx vitest run` **1090/1090** (60 files); typecheck, lint and
+Prettier green. `@user` verified grip alignment, 1:1 tracking, source lift, drop
+line, reorder, focus, and Escape abort in the running dev server.
+
+**Next task pointer: Plan Task D.3 — cell context menu (MENU-002; B-5 seam).**
+Then E.1 (viewport-bounded scanner) and E.2 (close-out + `@user` visual pass). No
+soft-stop is in effect.
 
 ## Objective
 
